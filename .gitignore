@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env/
+
+# Data
+data/
+MGN_ADM/
+*.pbix
+*.csv
+*.xlsx
+*.shp
+*.shx
+*.dbf
+*.prj
+
+# OS
+.DS_Store
+Thumbs.db
