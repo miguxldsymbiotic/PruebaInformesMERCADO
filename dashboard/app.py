@@ -1,10 +1,12 @@
 import faicons as fa
 from pathlib import Path
 import polars as pl
-from shiny import App, reactive, render, ui
+from shiny import App, reactive, render, ui, session
 import plotly.express as px
 import plotly.graph_objects as go
 from shinywidgets import output_widget, render_widget
+from report_engine import ReportEngine
+import datetime
 
 # Custom palette global para Plotly (puntos, lineas, barras, etc.)
 px.defaults.color_discrete_sequence = [
@@ -55,6 +57,7 @@ df_desercion = pl.read_parquet(data_dir / "df_SPADIES_Desercion.parquet").filter
 ).with_columns(
     pl.col("codigo_snies_del_programa").cast(pl.Int64)
 )
+max_anno_desercion = df_desercion["anno"].max()
 
 import pandas as pd
 # Carga de Salario Mínimo Histórico
@@ -164,6 +167,7 @@ app_ui = ui.page_sidebar(
         ui.input_selectize("sector", "Sector", choices=valores_iniciales["sector"], multiple=True),
         ui.input_selectize("departamento", "Departamento de Oferta", choices=departamentos_oferta, multiple=True),
         ui.input_selectize("municipio", "Municipio de Oferta", choices=[], multiple=True),
+        ui.download_button("download_pdf", "Descargar Informe (PDF)", class_="btn-primary w-100 mt-4"),
         open="desktop",
     ),
     ui.navset_card_underline(
@@ -424,7 +428,6 @@ app_ui = ui.page_sidebar(
                     "Tasa de Deserción Promedio (%)", 
                     ui.output_ui("kpi_desercion_promedio"), 
                     showcase=fa.icon_svg("user-minus", "solid"),
-                    style="background-color: #f8d7da; color: #842029;"
                 ),
                 fill=False, class_="mb-4"
             ),
@@ -638,123 +641,86 @@ def server(input, output, session):
         
         return cobertura_filtered["snies_divipola"].unique()
 
-    @render.ui
-    def kpi_empleabilidad():
+    @reactive.calc
+    def calc_kpi_empleabilidad():
         fs = filtered_snies()
         snies_codigos = fs["codigo_snies_del_programa"].unique()
-        
-        if len(snies_codigos) == 0:
-            return "Sin dato"
-            
+        if len(snies_codigos) == 0: return "Sin dato"
         max_anno_corte = df_ole_m0["anno_corte"].max()
-        ole_filtered = df_ole_m0.filter(
-            pl.col("codigo_snies_del_programa").is_in(snies_codigos) & 
-            (pl.col("anno_corte") == max_anno_corte)
-        )
-                
-        if ole_filtered.height == 0:
-            return "Sin dato"
-            
-        # 1. Agrupar por SNIES y sumar cotizantes y graduados
-        df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([
-            pl.col("graduados_que_cotizan").sum().alias("cotizan"),
-            pl.col("graduados").sum().alias("total")
-        ])
-        
-        # 2. Filtrar programas con cero graduados para evitar división por cero
+        ole_filtered = df_ole_m0.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos) & (pl.col("anno_corte") == max_anno_corte))
+        if ole_filtered.height == 0: return "Sin dato"
+        df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([pl.col("graduados_que_cotizan").sum().alias("cotizan"), pl.col("graduados").sum().alias("total")])
         df_snies_agg = df_snies_agg.filter(pl.col("total") > 0)
-        if df_snies_agg.height == 0:
-            return "0%"
-            
-        # 3. Calcular la tasa de empleabilidad por cada programa SNIES
-        df_snies_agg = df_snies_agg.with_columns(
-            (pl.col("cotizan") / pl.col("total")).alias("tasa_programa")
-        )
-        
-        # 4. Promediar las tasas de todos los programas
+        if df_snies_agg.height == 0: return "0%"
+        df_snies_agg = df_snies_agg.with_columns((pl.col("cotizan") / pl.col("total")).alias("tasa_programa"))
         promedio_empleabilidad = df_snies_agg["tasa_programa"].mean()
-        if promedio_empleabilidad is None:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0%</div>")
-            
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{promedio_empleabilidad:.1%}</div>")
+        if promedio_empleabilidad is None: return "0%"
+        return f"{promedio_empleabilidad:.1%}"
+
+    @render.ui
+    def kpi_empleabilidad():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_empleabilidad()}</div>")
+
+    @reactive.calc
+    def calc_kpi_cotizantes_dependientes():
+        fs = filtered_snies()
+        snies_codigos = fs["codigo_snies_del_programa"].unique()
+        if len(snies_codigos) == 0: return "0%"
+        max_anno_corte = df_ole_m0["anno_corte"].max()
+        ole_filtered = df_ole_m0.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos) & (pl.col("anno_corte") == max_anno_corte))
+        if ole_filtered.height == 0: return "0%"
+        df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([pl.col("graduados_cotizantes_dependientes").sum().alias("dependientes"), pl.col("graduados_que_cotizan").sum().alias("total_cotizan")])
+        df_snies_agg = df_snies_agg.filter(pl.col("total_cotizan") > 0)
+        if df_snies_agg.height == 0: return "0%"
+        df_snies_agg = df_snies_agg.with_columns((pl.col("dependientes") / pl.col("total_cotizan")).alias("tasa_programa"))
+        promedio_dependientes = df_snies_agg["tasa_programa"].mean()
+        if promedio_dependientes is None: return "0%"
+        return f"{promedio_dependientes:.1%}"
 
     @render.ui
     def kpi_cotizantes_dependientes():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_cotizantes_dependientes()}</div>")
+
+    @reactive.calc
+    def calc_kpi_dependientes_graduados():
         fs = filtered_snies()
         snies_codigos = fs["codigo_snies_del_programa"].unique()
-        
-        if len(snies_codigos) == 0:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0%</div>")
-            
+        if len(snies_codigos) == 0: return "0%"
         max_anno_corte = df_ole_m0["anno_corte"].max()
-        ole_filtered = df_ole_m0.filter(
-            pl.col("codigo_snies_del_programa").is_in(snies_codigos) & 
-            (pl.col("anno_corte") == max_anno_corte)
-        )
-                
-        if ole_filtered.height == 0:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0%</div>")
-            
-        # 1. Agrupar por SNIES
-        df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([
-            pl.col("graduados_cotizantes_dependientes").sum().alias("dependientes"),
-            pl.col("graduados_que_cotizan").sum().alias("total_cotizan")
-        ])
-        
-        # 2. Filtrar programas con cero cotizantes para evitar división por cero
-        df_snies_agg = df_snies_agg.filter(pl.col("total_cotizan") > 0)
-        if df_snies_agg.height == 0:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0%</div>")
-            
-        # 3. Calcular la tasa de cotizantes dependientes por cada programa SNIES
-        df_snies_agg = df_snies_agg.with_columns(
-            (pl.col("dependientes") / pl.col("total_cotizan")).alias("tasa_programa")
-        )
-        
-        # 4. Promediar las tasas
-        promedio_dependientes = df_snies_agg["tasa_programa"].mean()
-        if promedio_dependientes is None:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0%</div>")
-            
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{promedio_dependientes:.1%}</div>")
+        ole_filtered = df_ole_m0.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos) & (pl.col("anno_corte") == max_anno_corte))
+        if ole_filtered.height == 0: return "0%"
+        df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([pl.col("graduados_cotizantes_dependientes").sum().alias("dependientes"), pl.col("graduados").sum().alias("total_graduados")]).filter(pl.col("total_graduados") > 0)
+        if df_snies_agg.height == 0: return "0%"
+        df_snies_agg = df_snies_agg.with_columns((pl.col("dependientes") / pl.col("total_graduados")).alias("tasa"))
+        promedio = df_snies_agg["tasa"].mean()
+        return f"{promedio:.1%}" if promedio is not None else "0%"
 
     @render.ui
     def kpi_dependientes_graduados():
-        fs = filtered_snies()
-        snies_codigos = fs["codigo_snies_del_programa"].unique()
-        if len(snies_codigos) == 0:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0%</div>")
-        max_anno_corte = df_ole_m0["anno_corte"].max()
-        ole_filtered = df_ole_m0.filter(
-            pl.col("codigo_snies_del_programa").is_in(snies_codigos) & 
-            (pl.col("anno_corte") == max_anno_corte)
-        )
-        if ole_filtered.height == 0:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0%</div>")
-        df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([
-            pl.col("graduados_cotizantes_dependientes").sum().alias("dependientes"),
-            pl.col("graduados").sum().alias("total_graduados")
-        ]).filter(pl.col("total_graduados") > 0)
-        if df_snies_agg.height == 0:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0%</div>")
-        df_snies_agg = df_snies_agg.with_columns((pl.col("dependientes") / pl.col("total_graduados")).alias("tasa"))
-        promedio = df_snies_agg["tasa"].mean()
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{promedio:.1%}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_dependientes_graduados()}</div>")
 
-    @render.ui
-    def total_instituciones():
+    @reactive.calc
+    def calc_total_instituciones():
         snies_filtered = filtered_snies()
         total = snies_filtered["nombre_institucion"].n_unique()
         return f"{total:,.0f}".replace(",", ".")
 
     @render.ui
-    def total_programas():
+    def total_instituciones():
+        return calc_total_instituciones()
+
+    @reactive.calc
+    def calc_total_programas():
         snies_filtered = filtered_snies()
         total = snies_filtered["codigo_snies_del_programa"].n_unique()
         return f"{total:,.0f}".replace(",", ".")
 
     @render.ui
-    def total_primer_curso():
+    def total_programas():
+        return calc_total_programas()
+
+    @reactive.calc
+    def calc_total_primer_curso():
         divipolas = valid_divipolas()
         if len(divipolas) == 0:
             return "0"
@@ -769,7 +735,11 @@ def server(input, output, session):
         return f"{total:,.0f}".replace(",", ".")
 
     @render.ui
-    def total_matriculados():
+    def total_primer_curso():
+        return calc_total_primer_curso()
+
+    @reactive.calc
+    def calc_total_matriculados():
         divipolas = valid_divipolas()
         if len(divipolas) == 0:
             return "0"
@@ -784,7 +754,11 @@ def server(input, output, session):
         return f"{total:,.0f}".replace(",", ".")
 
     @render.ui
-    def total_graduados():
+    def total_matriculados():
+        return calc_total_matriculados()
+
+    @reactive.calc
+    def calc_total_graduados():
         divipolas = valid_divipolas()
         if len(divipolas) == 0:
             return "0"
@@ -797,6 +771,10 @@ def server(input, output, session):
         total = graduados_filtered["graduados_sum"].sum()
         if total is None: return "0"
         return f"{total:,.0f}".replace(",", ".")
+
+    @render.ui
+    def total_graduados():
+        return calc_total_graduados()
 
     @render.data_frame
     def table():
@@ -863,16 +841,24 @@ def server(input, output, session):
                 
         return df_pd
 
+    @reactive.calc
+    def calc_table_pcurso():
+        divipolas = valid_divipolas()
+        return create_gender_table(df_pcurso, divipolas, "primer_curso_sum")
+
     @render.data_frame
     def table_pcurso():
-        divipolas = valid_divipolas()
-        df_pd = create_gender_table(df_pcurso, divipolas, "primer_curso_sum")
+        df_pd = calc_table_pcurso()
         return render.DataGrid(df_pd, filters=False, width="100%", selection_mode="none")
+
+    @reactive.calc
+    def calc_table_matriculados():
+        divipolas = valid_divipolas()
+        return create_gender_table(df_matricula, divipolas, "matricula_sum")
 
     @render.data_frame
     def table_matriculados():
-        divipolas = valid_divipolas()
-        df_pd = create_gender_table(df_matricula, divipolas, "matricula_sum")
+        df_pd = calc_table_matriculados()
         return render.DataGrid(df_pd, filters=False, width="100%", selection_mode="none")
 
     def create_ole_trend_df(measure_numerator, measure_denominator, group_by_cols):
@@ -906,64 +892,44 @@ def server(input, output, session):
         res_df = agg_df.group_by(final_group_cols).agg(pl.col("tasa").mean()).sort(final_group_cols)
         return res_df.to_pandas()
 
-    @render_widget
-    def plot_empleabilidad_total():
+    @reactive.calc
+    def calc_plot_empleabilidad_total():
         df_pd = create_ole_trend_df("graduados_que_cotizan", "graduados", ["anno_corte", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="tasa", markers=True)
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
         fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
+            plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año de Corte", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Tasa de Empleabilidad", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=".1%",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
+            xaxis=dict(title=dict(text="Año de Corte", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Tasa de Empleabilidad", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=".1%", automargin=True, showgrid=True, gridcolor='#EEEEEE')
         )
         return fig
 
     @render_widget
-    def plot_dependientes_total():
+    def plot_empleabilidad_total():
+        return calc_plot_empleabilidad_total()
+
+    @reactive.calc
+    def calc_plot_dependientes_total():
         df_pd = create_ole_trend_df("graduados_cotizantes_dependientes", "graduados", ["anno_corte", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="tasa", markers=True)
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
         fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
+            plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año de Corte", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Relación Dependientes sobre Graduados", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=".1%",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
+            xaxis=dict(title=dict(text="Año de Corte", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Relación Dependientes sobre Graduados", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=".1%", automargin=True, showgrid=True, gridcolor='#EEEEEE')
         )
         return fig
 
     @render_widget
-    def plot_empleabilidad_sexo():
+    def plot_dependientes_total():
+        return calc_plot_dependientes_total()
+
+    @reactive.calc
+    def calc_plot_empleabilidad_sexo():
         df_pd = create_ole_trend_df("graduados_que_cotizan", "graduados", ["anno_corte", "sexo", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="tasa", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
@@ -971,30 +937,19 @@ def server(input, output, session):
             trace.marker = dict(size=9, color="white", line=dict(width=1.5, color=trace.line.color))
             trace.line.width = 2
         fig.update_layout(
-            legend_title_text="Sexo",
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
+            legend_title_text="Sexo", plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año de Corte", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Tasa de Empleabilidad", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=".1%",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
+            xaxis=dict(title=dict(text="Año de Corte", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Tasa de Empleabilidad", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=".1%", automargin=True, showgrid=True, gridcolor='#EEEEEE')
         )
         return fig
 
     @render_widget
-    def plot_dependientes_sexo():
+    def plot_empleabilidad_sexo():
+        return calc_plot_empleabilidad_sexo()
+
+    @reactive.calc
+    def calc_plot_dependientes_sexo():
         df_pd = create_ole_trend_df("graduados_cotizantes_dependientes", "graduados", ["anno_corte", "sexo", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="tasa", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
@@ -1002,27 +957,16 @@ def server(input, output, session):
             trace.marker = dict(size=9, color="white", line=dict(width=1.5, color=trace.line.color))
             trace.line.width = 2
         fig.update_layout(
-            legend_title_text="Sexo",
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
+            legend_title_text="Sexo", plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año de Corte", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Relación Dependientes sobre Graduados", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=".1%",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
+            xaxis=dict(title=dict(text="Año de Corte", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Relación Dependientes sobre Graduados", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=".1%", automargin=True, showgrid=True, gridcolor='#EEEEEE')
         )
         return fig
+
+    @render_widget
+    def plot_dependientes_sexo():
+        return calc_plot_dependientes_sexo()
 
     def get_ole_distribution_df(measure_numerator, measure_denominator, group_by_cols=["codigo_snies_del_programa"]):
         import pandas as pd
@@ -1317,20 +1261,30 @@ def server(input, output, session):
         )
         return fig
 
+    @reactive.calc
+    def calc_kpi_retencion():
+        val = calc_mobility_kpis()["retencion"]
+        return f"{val*100:,.1f}%"
+
     @render.ui
     def kpi_retencion():
-        val = calc_mobility_kpis()["retencion"]
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{val*100:,.1f}%</div>")
+        val = calc_kpi_retencion()
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{val}</div>")
         
     @render.ui
     def kpi_fuga():
         val = calc_mobility_kpis()["fuga"]
         return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{val*100:,.1f}%</div>")
         
+    @reactive.calc
+    def calc_kpi_ratio():
+        val = calc_mobility_kpis()["ratio"]
+        return f"{val:,.2f}"
+
     @render.ui
     def kpi_ratio():
-        val = calc_mobility_kpis()["ratio"]
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{val:,.2f}</div>")
+        val = calc_kpi_ratio()
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{val}</div>")
 
     # --- SALARIO DE ENGANCHE ---
     @reactive.calc
@@ -1359,15 +1313,17 @@ def server(input, output, session):
             
         return df
 
-    @render.ui
-    def kpi_salario_dependientes_sum():
+    @reactive.calc
+    def calc_kpi_salario_dependientes_sum():
         df = filtered_ole_salario()
-        if df.height == 0:
-            return ui.HTML("<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>0</div>")
-            
+        if df.height == 0: return "0"
         max_yr = df["anno_corte"].max()
         total = df.filter(pl.col("anno_corte") == max_yr)["graduados_cotizantes_dependientes"].sum()
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{total:,.0f}</div>".replace(",", "."))
+        return f"{total:,.0f}".replace(",", ".")
+
+    @render.ui
+    def kpi_salario_dependientes_sum():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_salario_dependientes_sum()}</div>")
 
     def _calculate_salary_trend_data(is_constant=False):
         fs = filtered_snies()
@@ -1430,11 +1386,10 @@ def server(input, output, session):
         return _calculate_salary_trend_data(is_constant=True)
 
 
-    @render_widget
-    def plot_salario_evolucion_total():
+    @reactive.calc
+    def calc_plot_salario_evolucion_total():
         df_pd = get_salary_trend_data()
         if df_pd.empty: return go.Figure()
-        
         df_plot = df_pd[df_pd["label"] == "TOTAL"]
         fig = px.line(df_plot, x="anno_corte", y="salario_pesos", markers=True)
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
@@ -1444,6 +1399,10 @@ def server(input, output, session):
             yaxis=dict(title="Salario Promedio ($)", tickformat="$,.0f", gridcolor='#EEEEEE')
         )
         return fig
+
+    @render_widget
+    def plot_salario_evolucion_total():
+        return calc_plot_salario_evolucion_total()
 
     @render_widget
     def plot_salario_evolucion_sexo():
@@ -1507,27 +1466,27 @@ def server(input, output, session):
             return pl.DataFrame()
         return df_desercion.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos))
 
-    @render.ui
-    def kpi_desercion_promedio():
+    @reactive.calc
+    def calc_kpi_desercion_promedio():
         df = filtered_desercion()
-        if df.height == 0: return ui.HTML("0%")
-        
+        if df.height == 0: return "0%"
         max_yr = df["anno"].max()
         val = df.filter(pl.col("anno") == max_yr)["desercion_anual_mean"].mean()
-        if val is None: return ui.HTML("0%")
-        
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #842029;'>{val:.1%}</div>")
+        if val is None: return "0%"
+        return f"{val:.1%}"
 
-    @render_widget
-    def plot_dist_desercion():
+    @render.ui
+    def kpi_desercion_promedio():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_desercion_promedio()}</div>")
+
+    @reactive.calc
+    def calc_plot_dist_desercion():
         df = filtered_desercion()
         if df.height == 0: return go.Figure()
-        
         max_yr = df["anno"].max()
         df_plot = df.filter(pl.col("anno") == max_yr).to_pandas()
-        
         fig = px.histogram(df_plot, x="desercion_anual_mean", nbins=50, histnorm='percent')
-        fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.02), marker_color="#DC3545", marker_line_color="white", marker_line_width=1)
+        fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.02), marker_color="#1A05A2", marker_line_color="white", marker_line_width=1)
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Tasa de Deserción", tickformat=".0%", gridcolor='#EEEEEE'),
@@ -1536,14 +1495,16 @@ def server(input, output, session):
         return fig
 
     @render_widget
-    def plot_trend_desercion():
+    def plot_dist_desercion():
+        return calc_plot_dist_desercion()
+
+    @reactive.calc
+    def calc_plot_trend_desercion():
         df = filtered_desercion()
         if df.height == 0: return go.Figure()
-        
         df_plot = df.group_by("anno").agg(pl.col("desercion_anual_mean").mean()).sort("anno").to_pandas()
-        
         fig = px.line(df_plot, x="anno", y="desercion_anual_mean", markers=True)
-        fig.update_traces(line=dict(color="#DC3545", width=3), marker=dict(size=10, color="white", line=dict(width=2, color="#DC3545")))
+        fig.update_traces(line=dict(color="#1A05A2", width=3), marker=dict(size=10, color="white", line=dict(width=2, color="#1A05A2")))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Año", tickmode="linear", gridcolor='#EEEEEE'),
@@ -1551,52 +1512,62 @@ def server(input, output, session):
         )
         return fig
 
-    @render.ui
-    def kpi_salario_promedio_total():
+    @render_widget
+    def plot_trend_desercion():
+        return calc_plot_trend_desercion()
+
+    @reactive.calc
+    def calc_kpi_salario_promedio_total():
         df_pd = get_salary_trend_data()
-        if df_pd.empty: return ui.HTML("$ 0")
+        if df_pd.empty: return "$ 0"
         val = df_pd[(df_pd["label"] == "TOTAL") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
         s = val.iloc[0] if not val.empty else 0
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>$ {s:,.0f}</div>".replace(",", "."))
+        return f"$ {s:,.0f}".replace(",", ".")
+
+    @render.ui
+    def kpi_salario_promedio_total():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_salario_promedio_total()}</div>")
+
+    @reactive.calc
+    def calc_kpi_salario_promedio_fem():
+        df_pd = get_salary_trend_data()
+        if df_pd.empty: return "$ 0"
+        val = df_pd[(df_pd["label"] == "FEMENINO") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
+        s = val.iloc[0] if not val.empty else 0
+        return f"$ {s:,.0f}".replace(",", ".")
 
     @render.ui
     def kpi_salario_promedio_fem():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_salario_promedio_fem()}</div>")
+
+    @reactive.calc
+    def calc_kpi_salario_promedio_masc():
         df_pd = get_salary_trend_data()
-        if df_pd.empty: return ui.HTML("$ 0")
-        val = df_pd[(df_pd["label"] == "FEMENINO") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
+        if df_pd.empty: return "$ 0"
+        val = df_pd[(df_pd["label"] == "MASCULINO") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
         s = val.iloc[0] if not val.empty else 0
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>$ {s:,.0f}</div>".replace(",", "."))
+        return f"$ {s:,.0f}".replace(",", ".")
 
     @render.ui
     def kpi_salario_promedio_masc():
-        df_pd = get_salary_trend_data()
-        if df_pd.empty: return ui.HTML("$ 0")
-        val = df_pd[(df_pd["label"] == "MASCULINO") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
-        s = val.iloc[0] if not val.empty else 0
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>$ {s:,.0f}</div>".replace(",", "."))
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_salario_promedio_masc()}</div>")
 
-    @render_widget
-    def plot_salario_dist_total():
+    @reactive.calc
+    def calc_plot_salario_dist_total():
         import pandas as pd
         df = filtered_ole_salario()
         if df.height == 0: return go.Figure()
-        
         max_yr = df["anno_corte"].max()
         agg = df.filter(pl.col("anno_corte") == max_yr).group_by("rango_salario").agg(
             pl.col("graduados_cotizantes_dependientes").sum().alias("cantidad")
         ).to_pandas()
-        
-        # Sort categorical logic
         agg["rango_salario"] = pd.Categorical(agg["rango_salario"], categories=RANGO_SALARIO_ORDER, ordered=True)
         agg = agg.sort_values("rango_salario")
-        
-        # Calcular Porcentaje del Total
         total_selec = agg["cantidad"].sum()
         if total_selec > 0:
             agg["porcentaje"] = agg["cantidad"] / total_selec
         else:
             agg["porcentaje"] = 0
-            
         fig = px.bar(agg, x="porcentaje", y="rango_salario", orientation='h', text_auto='.1%')
         fig.update_traces(marker_color="#1A05A2", marker_line_color="white", marker_line_width=1.5)
         fig.update_layout(
@@ -1607,37 +1578,36 @@ def server(input, output, session):
         return fig
 
     @render_widget
-    def plot_salario_dist_sexo():
+    def plot_salario_dist_total():
+        return calc_plot_salario_dist_total()
+
+    @reactive.calc
+    def calc_plot_salario_dist_sexo():
         import pandas as pd
         df = filtered_ole_salario()
         if df.height == 0: return go.Figure()
-        
         max_yr = df["anno_corte"].max()
         agg = df.filter(pl.col("anno_corte") == max_yr).group_by(["rango_salario", "sexo"]).agg(
             pl.col("graduados_cotizantes_dependientes").sum().alias("cantidad")
         ).to_pandas()
-        
-        # Sort categorical logic
         agg["rango_salario"] = pd.Categorical(agg["rango_salario"], categories=RANGO_SALARIO_ORDER, ordered=True)
         agg = agg.sort_values(["rango_salario", "sexo"])
-        
-        # Calcular Porcentaje del Total de la Selección
         total_global = agg["cantidad"].sum()
         if total_global > 0:
             agg["porcentaje"] = agg["cantidad"] / total_global
         else:
             agg["porcentaje"] = 0
-            
-        fig = px.bar(agg, x="porcentaje", y="rango_salario", color="sexo", 
-                     orientation='h', barmode='group',
-                     color_discrete_map=COLOR_SEXO, text_auto='.1%')
+        fig = px.bar(agg, x="porcentaje", y="rango_salario", color="sexo", orientation='h', barmode='group', color_discrete_map=COLOR_SEXO, text_auto='.1%')
         fig.update_layout(
-            legend_title_text="Sexo",
-            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
+            legend_title_text="Sexo", plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Participación de Graduados (%)", tickformat=".0%", gridcolor='#EEEEEE'),
             yaxis=dict(title="", tickfont=dict(size=13))
         )
         return fig
+
+    @render_widget
+    def plot_salario_dist_sexo():
+        return calc_plot_salario_dist_sexo()
 
     def get_ole_mobility_df():
         import pandas as pd
@@ -1697,13 +1667,12 @@ def server(input, output, session):
         agg_df = agg_df.filter(pl.col("cotizantes") > 0).sort("cotizantes", descending=True)
         return agg_df.to_pandas(), col_origen, col_destino, label_ejes
 
-    @render_widget
-    def plot_mobility_matrix():
+    @reactive.calc
+    def calc_plot_mobility_matrix():
         df_pd, col_orig, col_dest, label_ejes = get_ole_mobility_df()
         if len(df_pd) == 0: return go.Figure()
         
         # Simplificación estética de nombres largos en la capa de presentación
-        # El archivo real de DIVIPOLA lo tiene sin comas
         long_name_san_andres = "ARCHIPIELAGO DE SAN ANDRES PROVIDENCIA Y SANTA CATALINA"
         df_pd[col_orig] = df_pd[col_orig].astype(str).str.replace(long_name_san_andres, "SAN ANDRES ISLAS").str.replace("ARCHIPIELAGO DE SAN ANDRES, PROVIDENCIA Y SANTA CATALINA", "SAN ANDRES ISLAS")
         df_pd[col_dest] = df_pd[col_dest].astype(str).str.replace(long_name_san_andres, "SAN ANDRES ISLAS").str.replace("ARCHIPIELAGO DE SAN ANDRES, PROVIDENCIA Y SANTA CATALINA", "SAN ANDRES ISLAS")
@@ -1718,7 +1687,6 @@ def server(input, output, session):
         
         # Forzar que la zona seleccionada SIEMPRE se muestre (independientemente del Top 40)
         for s in seleccionados_upper:
-            # Hacemos match parcial seguro para evitar problemas de tildes o variaciones mínimas
             for v in df_pd[col_orig].unique():
                 if s in str(v).upper(): top_origenes.add(v)
             for v in df_pd[col_dest].unique():
@@ -1736,7 +1704,6 @@ def server(input, output, session):
         # Ordenar ejes alfabéticamente (A-Z) para lectura estándar
         def sort_labels(labels):
             lst = sorted(list(labels))
-            # Mover "SIN INFORMACIÓN" estrictamente al final
             if "SIN INFORMACIÓN" in lst:
                 lst.remove("SIN INFORMACIÓN")
                 lst.append("SIN INFORMACIÓN")
@@ -1744,70 +1711,41 @@ def server(input, output, session):
             
         matriz = matriz.loc[sort_labels(matriz.index)]
         matriz = matriz[sort_labels(matriz.columns)]
-        
-        # Pre-calcular el máximo interno ANTES de agregar los totales,
-        # para que la escala de color no colapse (se blanquee) al toparse con el voluminoso Total Nacional.
         zmax_interno = float(matriz.values.max()) if matriz.size > 0 else 1.0
-
-        # Agregar Totales Marginales
         matriz["TOTAL"] = matriz.sum(axis=1)
         matriz.loc["TOTAL"] = matriz.sum(axis=0)
-
-        # Para que el eje Y se lea de A (arriba) a Z (abajo), debemos invertir la lista de índices.
-        # En Plotly, el primer índice de 'y' arranca visualmente desde abajo hacia arriba.
         idx = list(matriz.index)
         idx.remove("TOTAL")
         idx_inverted = idx[::-1]
-        
-        # Como queremos TOTAL al fondo del eje Y (que en Plotly es el index 0), 
-        # debemos insertarlo al principio de la lista invertida.
         idx_inverted.insert(0, "TOTAL")
-        
         cols = list(matriz.columns)
         cols.remove("TOTAL")
         cols.append("TOTAL")
-
         matriz = matriz.loc[idx_inverted, cols]
         
-        # Escala cromática armónica corporativa
         custom_scale = [
-            [0.0, '#FFFFFF'], 
-            [0.1, '#D2D2F2'], 
-            [0.3, '#A096E1'], 
-            [0.6, '#6C5CE7'], 
-            [1.0, '#1A05A2']
+            [0.0, '#FFFFFF'], [0.1, '#D2D2F2'], [0.3, '#A096E1'], [0.6, '#6C5CE7'], [1.0, '#1A05A2']
         ]
         
         fig = go.Figure(data=go.Heatmap(
-            z=matriz.values,
-            x=matriz.columns,
-            y=matriz.index,
-            zmax=zmax_interno, # Cap color scale contra el máximo de la matriz original
-            colorscale=custom_scale,
-            text=matriz.values,
-            texttemplate="%{text:,.0f}",
-            xgap=1, ygap=1 # Cuadrícula muy tenue entre celdas
+            z=matriz.values, x=matriz.columns, y=matriz.index,
+            zmax=zmax_interno, colorscale=custom_scale,
+            text=matriz.values, texttemplate="%{text:,.0f}",
+            xgap=1, ygap=1
         ))
         
-        fig.data[0].textfont.color = None # Autoajuste cromático por celdas oscuras/claras
+        fig.data[0].textfont.color = None
         fig.data[0].hovertemplate = "Origen: %{y}<br>Destino: %{x}<br>Graduados Cotizantes: %{z:,.0f}<extra></extra>"
         
-        # Implementación de Sombreado de la "T" para selecciones
         shapes = []
         for s in seleccionados_upper:
-            # Encontrar índices en la matriz para la T
             row_idx = None
             col_idx = None
-            
-            # Match por nombres (considerando que en la matriz los nombres están normalizados/simplificados)
             for i, name in enumerate(matriz.index):
                 if s in str(name).upper(): row_idx = i
             for i, name in enumerate(matriz.columns):
                 if s in str(name).upper(): col_idx = i
-                
-            # Solo sombreamos si el elemento existe en el encuadre actual de la matriz
             if row_idx is not None:
-                # Rectángulo Horizontal (Fila dándole la bienvenida a otros)
                 shapes.append(dict(
                     type="rect", xref="paper", yref="y",
                     x0=0, y0=row_idx-0.5, x1=1, y1=row_idx+0.5,
@@ -1815,7 +1753,6 @@ def server(input, output, session):
                     fillcolor="rgba(0, 180, 216, 0.05)", layer="below"
                 ))
             if col_idx is not None:
-                # Rectángulo Vertical (Columna mostrando a dónde se fueron)
                 shapes.append(dict(
                     type="rect", xref="x", yref="paper",
                     x0=col_idx-0.5, y0=0, x1=col_idx+0.5, y1=1,
@@ -1823,7 +1760,6 @@ def server(input, output, session):
                     fillcolor="rgba(0, 180, 216, 0.05)", layer="below"
                 ))
 
-        # Resaltado en Ejes Cartesianos usando HTML en Ticks
         def build_ticks(labels):
             ticktext = []
             for lab in labels:
@@ -1844,7 +1780,7 @@ def server(input, output, session):
         
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=10, r=10, t=20, b=10),
-            shapes=shapes, # Añadimos el sombreado dinámico
+            shapes=shapes,
             xaxis=dict(
                 title=dict(text=f"{label_ejes} de Destino Laboral (Donde Cotiza)", font=dict(size=17), standoff=20), 
                 tickmode='array', tickvals=list(matriz.columns), ticktext=x_ticks,
@@ -1858,256 +1794,274 @@ def server(input, output, session):
         )
         return fig
 
+    @render_widget
+    def plot_mobility_matrix():
+        return calc_plot_mobility_matrix()
+
+    @reactive.calc
+    def calc_table_graduados():
+        divipolas = valid_divipolas()
+        return create_gender_table(df_graduados, divipolas, "graduados_sum")
+
     @render.data_frame
     def table_graduados():
-        divipolas = valid_divipolas()
-        df_pd = create_gender_table(df_graduados, divipolas, "graduados_sum")
+        df_pd = calc_table_graduados()
         return render.DataGrid(df_pd, filters=False, width="100%", selection_mode="none")
 
-    @render_widget
-    def plot_primer_curso_total():
+    @reactive.calc
+    def calc_plot_primer_curso_total():
         divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return go.Figure()
-            
-        df_filtered = df_pcurso.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") >= 2016)
-        ).group_by("anno").agg(pl.col("primer_curso_sum").sum()).sort("anno")
-        
-        if df_filtered.height == 0:
-            return go.Figure()
-            
+        if len(divipolas) == 0: return go.Figure()
+        df_filtered = df_pcurso.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("primer_curso_sum").sum()).sort("anno")
+        if df_filtered.height == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="primer_curso_sum", markers=True)
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
         fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
+            plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Primer Curso", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=",.0f",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
+            xaxis=dict(title=dict(text="Año", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Primer Curso", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=",.0f", automargin=True, showgrid=True, gridcolor='#EEEEEE')
         )
         return fig
 
     @render_widget
-    def plot_primer_curso():
+    def plot_primer_curso_total():
+        return calc_plot_primer_curso_total()
+
+    @reactive.calc
+    def calc_plot_primer_curso():
         divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return go.Figure()
-            
-        df_filtered = df_pcurso.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") >= 2016)
-        ).group_by(["anno", "sexo"]).agg(pl.col("primer_curso_sum").sum()).sort(["sexo", "anno"])
-        
-        if df_filtered.height == 0:
-            return go.Figure()
-            
+        if len(divipolas) == 0: return go.Figure()
+        df_filtered = df_pcurso.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("primer_curso_sum").sum()).sort(["sexo", "anno"])
+        if df_filtered.height == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="primer_curso_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
             trace.marker.line.width = 1.5
             trace.marker.color = 'white'
-            
         fig.update_layout(
-            legend_title_text="Sexo",
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
+            legend_title_text="Sexo", plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Primer Curso", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=",.0f",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
+            xaxis=dict(title=dict(text="Año", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Primer Curso", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=",.0f", automargin=True, showgrid=True, gridcolor='#EEEEEE')
+        )
+        return fig
+
+    @render_widget
+    def plot_primer_curso():
+        return calc_plot_primer_curso()
+
+    @reactive.calc
+    def calc_plot_matriculados_total():
+        divipolas = valid_divipolas()
+        if len(divipolas) == 0: return go.Figure()
+        df_filtered = df_matricula.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("matricula_sum").sum()).sort("anno")
+        if df_filtered.height == 0: return go.Figure()
+        fig = px.line(df_filtered.to_pandas(), x="anno", y="matricula_sum", markers=True)
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', separators=",.",
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title=dict(text="Año", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Matriculados", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=",.0f", automargin=True, showgrid=True, gridcolor='#EEEEEE')
         )
         return fig
 
     @render_widget
     def plot_matriculados_total():
-        divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return go.Figure()
-            
-        df_filtered = df_matricula.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") >= 2016)
-        ).group_by("anno").agg(pl.col("matricula_sum").sum()).sort("anno")
-        
-        if df_filtered.height == 0:
-            return go.Figure()
-            
-        fig = px.line(df_filtered.to_pandas(), x="anno", y="matricula_sum", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
-        fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
-            margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Matriculados", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=",.0f",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
-        )
-        return fig
+        return calc_plot_matriculados_total()
 
-    @render_widget
-    def plot_matriculados():
+    @reactive.calc
+    def calc_plot_matriculados():
         divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return go.Figure()
-            
-        df_filtered = df_matricula.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") >= 2016)
-        ).group_by(["anno", "sexo"]).agg(pl.col("matricula_sum").sum()).sort(["sexo", "anno"])
-        
-        if df_filtered.height == 0:
-            return go.Figure()
-            
+        if len(divipolas) == 0: return go.Figure()
+        df_filtered = df_matricula.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("matricula_sum").sum()).sort(["sexo", "anno"])
+        if df_filtered.height == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="matricula_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
             trace.marker.line.width = 1.5
             trace.marker.color = 'white'
-            
         fig.update_layout(
-            legend_title_text="Sexo",
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
+            legend_title_text="Sexo", plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Matriculados", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=",.0f",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
+            xaxis=dict(title=dict(text="Año", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Matriculados", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=",.0f", automargin=True, showgrid=True, gridcolor='#EEEEEE')
+        )
+        return fig
+
+    @render_widget
+    def plot_matriculados():
+        return calc_plot_matriculados()
+
+    @reactive.calc
+    def calc_plot_graduados_total():
+        divipolas = valid_divipolas()
+        if len(divipolas) == 0: return go.Figure()
+        df_filtered = df_graduados.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("graduados_sum").sum()).sort("anno")
+        if df_filtered.height == 0: return go.Figure()
+        fig = px.line(df_filtered.to_pandas(), x="anno", y="graduados_sum", markers=True)
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', separators=",.",
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title=dict(text="Año", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Graduados", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=",.0f", automargin=True, showgrid=True, gridcolor='#EEEEEE')
         )
         return fig
 
     @render_widget
     def plot_graduados_total():
-        divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return go.Figure()
-            
-        df_filtered = df_graduados.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") >= 2016)
-        ).group_by("anno").agg(pl.col("graduados_sum").sum()).sort("anno")
-        
-        if df_filtered.height == 0:
-            return go.Figure()
-            
-        fig = px.line(df_filtered.to_pandas(), x="anno", y="graduados_sum", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
-        fig.update_layout(
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
-            margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Graduados", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=",.0f",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
-        )
-        return fig
+        return calc_plot_graduados_total()
 
-    @render_widget
-    def plot_graduados():
+    @reactive.calc
+    def calc_plot_graduados():
         divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return go.Figure()
-            
-        df_filtered = df_graduados.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") >= 2016)
-        ).group_by(["anno", "sexo"]).agg(pl.col("graduados_sum").sum()).sort(["sexo", "anno"])
-        
-        if df_filtered.height == 0:
-            return go.Figure()
-            
+        if len(divipolas) == 0: return go.Figure()
+        df_filtered = df_graduados.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("graduados_sum").sum()).sort(["sexo", "anno"])
+        if df_filtered.height == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="graduados_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
             trace.marker.line.width = 1.5
             trace.marker.color = 'white'
-            
         fig.update_layout(
-            legend_title_text="Sexo",
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            separators=",.",
+            legend_title_text="Sexo", plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(
-                title=dict(text="Año", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15), 
-                tickmode="linear",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            ),
-            yaxis=dict(
-                title=dict(text="Graduados", font=dict(size=17), standoff=20),
-                tickfont=dict(size=15),
-                tickformat=",.0f",
-                automargin=True,
-                showgrid=True, gridcolor='#EEEEEE'
-            )
+            xaxis=dict(title=dict(text="Año", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickmode="linear", automargin=True, showgrid=True, gridcolor='#EEEEEE'),
+            yaxis=dict(title=dict(text="Graduados", font=dict(size=17), standoff=20), tickfont=dict(size=15), tickformat=",.0f", automargin=True, showgrid=True, gridcolor='#EEEEEE')
         )
         return fig
+
+    @render_widget
+    def plot_graduados():
+        return calc_plot_graduados()
+
+    @render.download(filename=lambda: f"Informe_Educacion_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+    def download_pdf():
+        with ui.Progress(min=1, max=15) as p:
+            p.set(message="Iniciando generación de informe...", detail="Preparando motor de reportes")
+            engine = ReportEngine(app_dir)
+            
+            try:
+                # 1. Preparar Datos Generales
+                p.set(2, message="Capturando indicadores...", detail="Tendencias SNIES")
+                data_ctx = {
+                    "max_anno_snies": max_anno_snies,
+                    "max_anno_ole": max_anno_ole,
+                    "max_anno_spadies": max_anno_desercion,
+                    "date": datetime.datetime.now().strftime("%d/%m/%Y"),
+                    "kpis_summary": [
+                        ("Instituciones", calc_total_instituciones()),
+                        ("Programas", calc_total_programas()),
+                        ("Matrícula Total", calc_total_matriculados()),
+                        ("Tasa Empleabilidad", calc_kpi_empleabilidad())
+                    ],
+                    "sections": []
+                }
+                
+                # SECCIÓN 1: TENDENCIAS SNIES
+                p.set(4, message="Procesando sección:", detail="Tendencias SNIES")
+                snies_plots = [
+                    engine.export_plotly_fig(calc_plot_primer_curso_total(), "pcurso_total"),
+                    engine.export_plotly_fig(calc_plot_matriculados_total(), "matricula_total"),
+                    engine.export_plotly_fig(calc_plot_graduados_total(), "graduados_total"),
+                    engine.export_plotly_fig(calc_plot_primer_curso(), "pcurso_sexo"),
+                    engine.export_plotly_fig(calc_plot_matriculados(), "matricula_sexo"),
+                    engine.export_plotly_fig(calc_plot_graduados(), "graduados_sexo")
+                ]
+                
+                data_ctx["sections"].append({
+                    "title": "Tendencias SNIES (Oferta y Demanda)",
+                    "intro": "Esta sección analiza la evolución de la matrícula, los estudiantes de primer curso y los graduados. Permite identificar el flujo de entrada y salida del sistema de educación superior.",
+                    "kpis": [
+                        ("Primer Curso", calc_total_primer_curso()),
+                        ("Matriculados", calc_total_matriculados()),
+                        ("Graduados", calc_total_graduados())
+                    ],
+                    "plots": snies_plots,
+                    "table": f"""
+#v(1em)
+== Detalle de Estudiantes de Primer Curso
+{engine.format_as_typst_table(pl.from_pandas(calc_table_pcurso()))}
+
+#v(1em)
+== Detalle de Estudiantes Matriculados
+{engine.format_as_typst_table(pl.from_pandas(calc_table_matriculados()))}
+
+#v(1em)
+== Detalle de Graduados
+{engine.format_as_typst_table(pl.from_pandas(calc_table_graduados()))}
+"""
+                })
+                
+                # SECCIÓN 2: OBSERVATORIO LABORAL (OLE)
+                p.set(7, message="Procesando sección:", detail="Observatorio Laboral")
+                ole_plots = [
+                    engine.export_plotly_fig(calc_plot_empleabilidad_total(), "ole_emp_total"),
+                    engine.export_plotly_fig(calc_plot_dependientes_total(), "ole_dep_total"),
+                    engine.export_plotly_fig(calc_plot_empleabilidad_sexo(), "ole_emp_sexo"),
+                    engine.export_plotly_fig(calc_plot_dependientes_sexo(), "ole_dep_sexo"),
+                    engine.export_plotly_fig(calc_plot_mobility_matrix(), "ole_mobility")
+                ]
+                
+                data_ctx["sections"].append({
+                    "title": "Observatorio Laboral para la Educación (OLE)",
+                    "intro": "Métricas de vinculación laboral y movilidad de los graduados. Se analiza la capacidad de inserción en el mercado formal y el comportamiento geográfico de la fuerza laboral.",
+                    "kpis": [
+                        ("Tasa Empleabilidad", calc_kpi_empleabilidad()),
+                        ("Retención Local", calc_kpi_retencion()),
+                        ("Ratio Migratorio", calc_kpi_ratio())
+                    ],
+                    "plots": ole_plots
+                })
+
+                # SECCIÓN 3: SALARIOS DE ENGANCHE
+                p.set(10, message="Procesando sección:", detail="Salario de Enganche")
+                salario_plots = [
+                    engine.export_plotly_fig(calc_plot_salario_dist_total(), "sal_dist_total"),
+                    engine.export_plotly_fig(calc_plot_salario_dist_sexo(), "sal_dist_sexo"),
+                    engine.export_plotly_fig(calc_plot_salario_evolucion_total(), "sal_evol_total"),
+                    # engine.export_plotly_fig(calc_plot_salario_evolucion_sexo(), "sal_evol_sexo") # Si existe
+                ]
+                
+                data_ctx["sections"].append({
+                    "title": "Salarios de Enganche",
+                    "intro": "Análisis del ingreso de los graduados en su primer empleo formal. Se presentan distribuciones por rangos de SMMLV y evolución histórica ajustada.",
+                    "kpis": [
+                        ("Salario Promedio", calc_kpi_salario_promedio_total()),
+                        ("Brecha Género (F)", calc_kpi_salario_promedio_fem()),
+                        ("Brecha Género (M)", calc_kpi_salario_promedio_masc())
+                    ],
+                    "plots": salario_plots
+                })
+
+                # SECCIÓN 4: DESERCIÓN
+                p.set(13, message="Procesando sección:", detail="Deserción")
+                desercion_plots = [
+                    engine.export_plotly_fig(calc_plot_dist_desercion(), "des_dist"),
+                    engine.export_plotly_fig(calc_plot_trend_desercion(), "des_trend")
+                ]
+                
+                data_ctx["sections"].append({
+                    "title": "Permanencia y Deserción (SPADIES)",
+                    "intro": "Análisis de la deserción anual promedio. Esta métrica es crítica para entender la eficiencia interna de los programas y la retención estudiantil.",
+                    "kpis": [
+                        ("Tasa Deserción", calc_kpi_desercion_promedio())
+                    ],
+                    "plots": desercion_plots
+                })
+
+                p.set(14, message="Compilando informe...", detail="Cerrando archivos y generando PDF final")
+                pdf_path = engine.generate_report(data_ctx)
+                return pdf_path
+            
+            finally:
+                # El motor se encarga de limpiar los temporales
+                # engine.cleanup() 
+                pass
 
 app = App(app_ui, server)
