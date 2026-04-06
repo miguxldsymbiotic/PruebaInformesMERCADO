@@ -10,14 +10,32 @@ import datetime
 
 # Custom palette global para Plotly (puntos, lineas, barras, etc.)
 px.defaults.color_discrete_sequence = [
-    "#1A05A2", "#8F0177", "#DE1A58", "#F67D31"
+    "#31497e", "#674f95", "#a14e9a", "#d44c8d", "#f9596f", "#ff7a47", "#ffa600"
 ]
+import plotly.io as pio
+pio.templates[pio.templates.default].layout.separators = ',.'
+
+def format_num_es(val, decimals=0):
+    """Formatea números al estilo español: mil=. dec=,"""
+    if val is None: return "Sin dato"
+    try:
+        # Paso 1: Formato con comas y puntos estándar (US)
+        s = f"{val:,.{decimals}f}"
+        # Paso 2: Intercambio
+        return s.replace(",", "X").replace(".", ",").replace("X", ".")
+    except:
+        return "Sin dato"
+
+def format_pct_es(val, decimals=1):
+    """Formatea proporciones (0-1) como porcentajes estilo español (ej: 0.5423 -> 54,23%)"""
+    if val is None: return "Sin dato"
+    return format_num_es(val * 100, decimals=decimals) + "%"
 
 COLOR_SEXO = {
-    "FEMENINO": "#1A05A2",
-    "MASCULINO": "#8F0177",
-    "NO BINARIO": "#DE1A58",
-    "TRANS": "#F67D31"
+    "FEMENINO": "#31497e",
+    "MASCULINO": "#674f95",
+    "NO BINARIO": "#a14e9a",
+    "TRANS": "#d44c8d"
 }
 
 # Define paths
@@ -58,6 +76,11 @@ df_desercion = pl.read_parquet(data_dir / "df_SPADIES_Desercion.parquet").filter
     pl.col("codigo_snies_del_programa").cast(pl.Int64)
 )
 max_anno_desercion = df_desercion["anno"].max()
+
+df_saber = pl.read_parquet(data_dir / "df_SaberPRO.parquet").with_columns(
+    pl.col("codigo_snies_del_programa").cast(pl.Int64)
+)
+max_anno_saber = df_saber["anno"].max()
 
 import pandas as pd
 # Carga de Salario Mínimo Histórico
@@ -184,19 +207,19 @@ app_ui = ui.page_sidebar(
     ),
     ui.layout_columns(
         ui.card(
-            ui.card_header(ui.HTML("Tendencia Total de Estudiantes de <b style='color: #1A05A2;'>Primer Curso</b>")), 
+            ui.card_header(ui.HTML("Tendencia Total de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
             output_widget("plot_primer_curso_total"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
-            ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #1A05A2;'>Matriculados</b>")), 
+            ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
             output_widget("plot_matriculados_total"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
-            ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #1A05A2;'>Graduados</b>")), 
+            ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
             output_widget("plot_graduados_total"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
@@ -205,19 +228,19 @@ app_ui = ui.page_sidebar(
     ),
     ui.layout_columns(
         ui.card(
-            ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes de <b style='color: #1A05A2;'>Primer Curso</b>")), 
+            ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
             output_widget("plot_primer_curso"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
-            ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #1A05A2;'>Matriculados</b>")), 
+            ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
             output_widget("plot_matriculados"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
-            ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #1A05A2;'>Graduados</b>")), 
+            ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
             output_widget("plot_graduados"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
@@ -226,19 +249,19 @@ app_ui = ui.page_sidebar(
     ),
     ui.layout_columns(
         ui.card(
-            ui.card_header(ui.HTML("Estudiantes de <b style='color: #1A05A2;'>Primer Curso</b>")), 
+            ui.card_header(ui.HTML("Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
             ui.output_data_frame("table_pcurso"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True
         ),
         ui.card(
-            ui.card_header(ui.HTML("Estudiantes <b style='color: #1A05A2;'>Matriculados</b>")), 
+            ui.card_header(ui.HTML("Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
             ui.output_data_frame("table_matriculados"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True
         ),
         ui.card(
-            ui.card_header(ui.HTML("Estudiantes <b style='color: #1A05A2;'>Graduados</b>")), 
+            ui.card_header(ui.HTML("Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
             ui.output_data_frame("table_graduados"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True
@@ -283,34 +306,34 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.div(
                     ui.HTML("<b>Nota Metodológica:</b> Los indicadores porcentuales se calculan promediando las tasas de cada programa académico (SNIES). Las métricas de <b>Empleabilidad</b> y <b>Dependientes sobre Graduados</b> toman como base el 100% de los graduados. Las métricas de <b>Movilidad (Retención/Ratio)</b> y <b>Dependientes sobre Cotizantes</b> utilizan exclusivamente la población que registra cotización laboral activa."),
-                    style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #1A05A2; margin-bottom: 20px;"
+                    style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-bottom: 20px;"
                 ),
                 fill=False
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de <b style='color: #1A05A2;'>Empleabilidad</b>")), output_widget("plot_empleabilidad_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de la <b style='color: #1A05A2;'>Relación Dependientes sobre Graduados</b>")), output_widget("plot_dependientes_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), output_widget("plot_empleabilidad_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), output_widget("plot_dependientes_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Empleabilidad por <b style='color: #1A05A2;'>Sexo</b>")), output_widget("plot_empleabilidad_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
-                ui.card(ui.card_header(ui.HTML("Relación Dependientes sobre Graduados por <b style='color: #1A05A2;'>Sexo</b>")), output_widget("plot_dependientes_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Empleabilidad por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_empleabilidad_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Relación Dependientes sobre Graduados por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_dependientes_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de <b style='color: #1A05A2;'>Empleabilidad</b> ({max_anno_ole})")), output_widget("plot_dist_empleabilidad"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de la <b style='color: #1A05A2;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), output_widget("plot_dist_dependientes"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución Total de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), output_widget("plot_dist_empleabilidad"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), output_widget("plot_dist_dependientes"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución de <b style='color: #1A05A2;'>Empleabilidad</b> por Sexo ({max_anno_ole})")), output_widget("plot_dist_empleabilidad_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML(f"Distribución de la <b style='color: #1A05A2;'>Relación Dependientes sobre Graduados</b> por Sexo ({max_anno_ole})")), output_widget("plot_dist_dependientes_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de <b style='color: #31497e;'>Empleabilidad</b> por Sexo ({max_anno_ole})")), output_widget("plot_dist_empleabilidad_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> por Sexo ({max_anno_ole})")), output_widget("plot_dist_dependientes_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-4"
             ),
 
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(ui.HTML(f"Matriz de <b style='color: #1A05A2;'>Graduados que Cotizan</b> (Origen vs Destino) - {max_anno_ole}")), 
+                    ui.card_header(ui.HTML(f"Matriz de <b style='color: #31497e;'>Graduados que Cotizan</b> (Origen vs Destino) - {max_anno_ole}")), 
                     output_widget("plot_mobility_matrix"), 
                     ui.card_footer(
                         ui.HTML("Sumatoria de Graduados que Cotizan según zona de estudio (Origen) vs zona de cotización laboral (Destino). Fuente: Observatorio Laboral para la Educación (OLE)<br>"),
@@ -323,19 +346,19 @@ app_ui = ui.page_sidebar(
             ),
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(ui.HTML("Evolución de <b style='color: #1A05A2;'>Dependientes sobre Cotizantes</b>")), 
+                    ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Dependientes sobre Cotizantes</b>")), 
                     output_widget("plot_dependientes_trend"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
-                    ui.card_header(ui.HTML("Evolución de la <b style='color: #1A05A2;'>Tasa de Retención Local</b>")), 
+                    ui.card_header(ui.HTML("Evolución de la <b style='color: #31497e;'>Tasa de Retención Local</b>")), 
                     output_widget("plot_retencion_trend"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
-                    ui.card_header(ui.HTML("Evolución del <b style='color: #1A05A2;'>Ratio Salen / Entran</b>")), 
+                    ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Ratio Salen / Entran</b>")), 
                     output_widget("plot_ratio_trend"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
@@ -371,19 +394,19 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.div(
                     ui.HTML("<b>Nota Metodológica (Salario):</b> El salario promedio se estima ponderando los puntos medios de cada rango salarial del OLE (ej. 1,25 para el rango entre 1 y 1,5 SMMLV). Para '1 SMMLV' se toma 1,0 y para 'Más de 9 SMMLV' se toma 9,0 como base. Estos factores se multiplican por el Salario Mínimo Legal Mensual de cada año (Fuente: Banco de la República)."),
-                    style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #1A05A2; margin-bottom: 20px;"
+                    style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-bottom: 20px;"
                 ),
                 fill=False
             ),
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(ui.HTML(f"Distribución Total por <b style='color: #1A05A2;'>Rango Salarial</b> ({max_anno_ole:.0f})")), 
+                    ui.card_header(ui.HTML(f"Distribución Total por <b style='color: #31497e;'>Rango Salarial</b> ({max_anno_ole:.0f})")), 
                     output_widget("plot_salario_dist_total"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
-                    ui.card_header(ui.HTML(f"Distribución Salarial por <b style='color: #1A05A2;'>Sexo</b> ({max_anno_ole:.0f})")), 
+                    ui.card_header(ui.HTML(f"Distribución Salarial por <b style='color: #31497e;'>Sexo</b> ({max_anno_ole:.0f})")), 
                     output_widget("plot_salario_dist_sexo"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
@@ -392,13 +415,13 @@ app_ui = ui.page_sidebar(
             ),
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(ui.HTML("Evolución del <b style='color: #1A05A2;'>Salario Promedio Estimado</b> (Pesos corrientes)")), 
+                    ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos corrientes)")), 
                     output_widget("plot_salario_evolucion_total"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia con base en SMMLV histórico"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
-                    ui.card_header(ui.HTML("Evolución Salarial por <b style='color: #1A05A2;'>Sexo</b> (Pesos corrientes)")), 
+                    ui.card_header(ui.HTML("Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos corrientes)")), 
                     output_widget("plot_salario_evolucion_sexo"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia con base en SMMLV histórico"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
@@ -407,13 +430,13 @@ app_ui = ui.page_sidebar(
             ),
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(ui.HTML(f"Evolución del <b style='color: #1A05A2;'>Salario Promedio Estimado</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), 
+                    ui.card_header(ui.HTML(f"Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), 
                     output_widget("plot_salario_evolucion_total_constante"), 
                     ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_smmlv:.0f}"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
-                    ui.card_header(ui.HTML(f"Evolución Salarial por <b style='color: #1A05A2;'>Sexo</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), 
+                    ui.card_header(ui.HTML(f"Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), 
                     output_widget("plot_salario_evolucion_sexo_constante"), 
                     ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_smmlv:.0f}"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
@@ -433,19 +456,198 @@ app_ui = ui.page_sidebar(
             ),
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(ui.HTML("Distribución de la <b style='color: #1A05A2;'>Tasa de Deserción</b> (Último Año)")), 
+                    ui.card_header(ui.HTML("Distribución de la <b style='color: #31497e;'>Tasa de Deserción</b> (Último Año)")), 
                     output_widget("plot_dist_desercion"), 
                     ui.card_footer(ui.HTML("Fuente: SPADIES - Ministerio de Educación Nacional<br>Distribución por programa en pasos de 2%"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
-                    ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #1A05A2;'>Deserción Anual</b>")), 
+                    ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #31497e;'>Deserción Anual</b>")), 
                     output_widget("plot_trend_desercion"), 
                     ui.card_footer(ui.HTML("Fuente: SPADIES - Ministerio de Educación Nacional<br>Evolución promedio de los programas seleccionados"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 class_="mb-5"
             )
+        ),
+        ui.nav_panel(
+            "Prueba SABER",
+            ui.layout_columns(
+                ui.value_box(
+                    f"Puntaje Global Promedio ({max_anno_saber:.0f})", 
+                    ui.output_ui("kpi_saber_global"), 
+                    showcase=fa.icon_svg("award", "solid")
+                ),
+                ui.value_box(
+                    f"Razonamiento Cuantitativo ({max_anno_saber:.0f})", 
+                    ui.output_ui("kpi_saber_razona"), 
+                    showcase=fa.icon_svg("calculator", "solid")
+                ),
+                ui.value_box(
+                    f"Lectura Crítica ({max_anno_saber:.0f})", 
+                    ui.output_ui("kpi_saber_lectura"), 
+                    showcase=fa.icon_svg("book-open", "solid")
+                ),
+                fill=False, class_="mb-4"
+            ),
+            ui.layout_columns(
+                ui.value_box(
+                    f"Competencias Ciudadanas ({max_anno_saber:.0f})", 
+                    ui.output_ui("kpi_saber_ciuda"), 
+                    showcase=fa.icon_svg("users-line", "solid")
+                ),
+                ui.value_box(
+                    f"Inglés ({max_anno_saber:.0f})", 
+                    ui.output_ui("kpi_saber_ingles"), 
+                    showcase=fa.icon_svg("language", "solid")
+                ),
+                ui.value_box(
+                    f"Comunicación Escrita ({max_anno_saber:.0f})", 
+                    ui.output_ui("kpi_saber_escrita"), 
+                    showcase=fa.icon_svg("pen-nib", "solid")
+                ),
+                fill=False, class_="mb-4"
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Competencias Genéricas</b> (Promedio por Programa)")), 
+                    output_widget("plot_saber_trend"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución del puntaje promedio de los programas capturados por los filtros activos."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML(f"Distribución del <b style='color: #31497e;'>Puntaje Global</b> ({max_anno_saber:.0f})")), 
+                    output_widget("plot_saber_dist"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Frecuencia relativa de los programas académicos según su puntaje promedio."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                class_="mb-5"
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Sexo</b>")), 
+                    output_widget("plot_saber_count_sexo"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución del conteo de estudiantes que presentaron la prueba."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Edad</b>")), 
+                    output_widget("plot_saber_count_edad"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución del conteo de estudiantes que presentaron la prueba."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                class_="mb-5"
+            ),
+            ui.h3("Evolución Detallada por Perfil Sociodemográfico", class_="mt-5 mb-3", style="color: #31497e; border-bottom: 2px solid #31497e; padding-bottom: 5px;"),
+            
+            # FILA 1: PUNTAJE GLOBAL
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_global_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_global_edad"), full_screen=True),
+            ),
+            # FILA 2: RAZONAMIENTO CUANTITATIVO
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_razona_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_razona_edad"), full_screen=True),
+            ),
+            # FILA 3: LECTURA CRÍTICA
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_lectura_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_lectura_edad"), full_screen=True),
+            ),
+            # FILA 4: COMPETENCIAS CIUDADANAS
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_ciuda_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_ciuda_edad"), full_screen=True),
+            ),
+            # FILA 5: INGLÉS
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_ingles_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_ingles_edad"), full_screen=True),
+            ),
+            # FILA 6: COMUNICACIÓN ESCRITA
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_escrita_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_escrita_edad"), full_screen=True),
+                class_="mb-5"
+            ),
+        ),
+        ui.nav_panel(
+            "Socio-demografía",
+            ui.layout_columns(
+                ui.value_box(
+                    f"Total de Evaluados ({max_anno_saber:.0f})", 
+                    ui.output_ui("kpi_demo_evaluados"), 
+                    showcase=fa.icon_svg("users", "solid")
+                ),
+                ui.value_box(
+                    f"Programas Académicos ({max_anno_saber:.0f})", 
+                    ui.output_ui("kpi_demo_programas"), 
+                    showcase=fa.icon_svg("graduation-cap", "solid")
+                ),
+                fill=False, class_="mb-4"
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Sexo</b> ({max_anno_saber:.0f})")), 
+                    output_widget("plot_saber_demo_sexo"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución porcentual por sexo de los evaluados en el último año."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Grupo de Edad</b> ({max_anno_saber:.0f})")), 
+                    output_widget("plot_saber_demo_edad"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución porcentual por rangos de edad en el último año."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                class_="mb-5"
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Horas de Trabajo</b> ({max_anno_saber:.0f})")), 
+                    output_widget("plot_saber_demo_trabajo"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución porcentual de la carga laboral reportada por los estudiantes."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Estrato Social</b> ({max_anno_saber:.0f})")), 
+                    output_widget("plot_saber_demo_estrato"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución porcentual por estrato socioeconómico de la vivienda."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                class_="mb-5"
+            ),
+            ui.h3("Evolución Temporal de la Socio-demografía", class_="mt-5 mb-3", style="color: #31497e; border-bottom: 2px solid #31497e; padding-bottom: 5px;"),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Sexo</b>")), 
+                    output_widget("plot_saber_demo_sexo_trend"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición por género."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Grupo de Edad</b>")), 
+                    output_widget("plot_saber_demo_edad_trend"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición por rangos de edad."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                class_="mb-5"
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Horas de Trabajo</b>")), 
+                    output_widget("plot_saber_demo_trabajo_trend"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la participación según carga laboral."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Estrato Social</b>")), 
+                    output_widget("plot_saber_demo_estrato_trend"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición socioeconómica."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                class_="mb-5"
+            ),
         )
     ),
     ui.head_content(
@@ -482,10 +684,10 @@ SALARIO_MIDPOINTS = {
     "Más de 9 SMMLV": 9.0
 }
 COLOR_SEXO = {
-    "FEMENINO": "#E83A85",
-    "MASCULINO": "#1A05A2",
-    "NO BINARIO": "#FFCC00",
-    "TRANS": "#00CCFF"
+    "FEMENINO": "#f9596f",
+    "MASCULINO": "#31497e",
+    "NO BINARIO": "#ffa600",
+    "TRANS": "#a14e9a"
 }
 
 # Server definition
@@ -654,12 +856,12 @@ def server(input, output, session):
         if df_snies_agg.height == 0: return "0%"
         df_snies_agg = df_snies_agg.with_columns((pl.col("cotizan") / pl.col("total")).alias("tasa_programa"))
         promedio_empleabilidad = df_snies_agg["tasa_programa"].mean()
-        if promedio_empleabilidad is None: return "0%"
-        return f"{promedio_empleabilidad:.1%}"
+        if promedio_empleabilidad is None: return "0,0%"
+        return format_pct_es(promedio_empleabilidad)
 
     @render.ui
     def kpi_empleabilidad():
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_empleabilidad()}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_kpi_empleabilidad()}</div>")
 
     @reactive.calc
     def calc_kpi_cotizantes_dependientes():
@@ -674,12 +876,12 @@ def server(input, output, session):
         if df_snies_agg.height == 0: return "0%"
         df_snies_agg = df_snies_agg.with_columns((pl.col("dependientes") / pl.col("total_cotizan")).alias("tasa_programa"))
         promedio_dependientes = df_snies_agg["tasa_programa"].mean()
-        if promedio_dependientes is None: return "0%"
-        return f"{promedio_dependientes:.1%}"
+        if promedio_dependientes is None: return "0,0%"
+        return format_pct_es(promedio_dependientes)
 
     @render.ui
     def kpi_cotizantes_dependientes():
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_cotizantes_dependientes()}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_kpi_cotizantes_dependientes()}</div>")
 
     @reactive.calc
     def calc_kpi_dependientes_graduados():
@@ -693,17 +895,17 @@ def server(input, output, session):
         if df_snies_agg.height == 0: return "0%"
         df_snies_agg = df_snies_agg.with_columns((pl.col("dependientes") / pl.col("total_graduados")).alias("tasa"))
         promedio = df_snies_agg["tasa"].mean()
-        return f"{promedio:.1%}" if promedio is not None else "0%"
+        return format_pct_es(promedio) if promedio is not None else "0,0%"
 
     @render.ui
     def kpi_dependientes_graduados():
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_dependientes_graduados()}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_kpi_dependientes_graduados()}</div>")
 
     @reactive.calc
     def calc_total_instituciones():
         snies_filtered = filtered_snies()
         total = snies_filtered["nombre_institucion"].n_unique()
-        return f"{total:,.0f}".replace(",", ".")
+        return format_num_es(total)
 
     @render.ui
     def total_instituciones():
@@ -713,7 +915,7 @@ def server(input, output, session):
     def calc_total_programas():
         snies_filtered = filtered_snies()
         total = snies_filtered["codigo_snies_del_programa"].n_unique()
-        return f"{total:,.0f}".replace(",", ".")
+        return format_num_es(total)
 
     @render.ui
     def total_programas():
@@ -722,17 +924,10 @@ def server(input, output, session):
     @reactive.calc
     def calc_total_primer_curso():
         divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return "0"
-            
+        if len(divipolas) == 0: return "0"
         max_anno = df_pcurso["anno"].max()
-        pcurso_filtered = df_pcurso.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") == max_anno)
-        )
-        total = pcurso_filtered["primer_curso_sum"].sum()
-        if total is None: return "0"
-        return f"{total:,.0f}".replace(",", ".")
+        total = df_pcurso.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") == max_anno))["primer_curso_sum"].sum()
+        return format_num_es(total)
 
     @render.ui
     def total_primer_curso():
@@ -741,17 +936,10 @@ def server(input, output, session):
     @reactive.calc
     def calc_total_matriculados():
         divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return "0"
-            
+        if len(divipolas) == 0: return "0"
         max_anno = df_matricula["anno"].max()
-        matricula_filtered = df_matricula.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") == max_anno)
-        )
-        total = matricula_filtered["matricula_sum"].sum()
-        if total is None: return "0"
-        return f"{total:,.0f}".replace(",", ".")
+        total = df_matricula.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") == max_anno))["matricula_sum"].sum()
+        return format_num_es(total)
 
     @render.ui
     def total_matriculados():
@@ -760,17 +948,10 @@ def server(input, output, session):
     @reactive.calc
     def calc_total_graduados():
         divipolas = valid_divipolas()
-        if len(divipolas) == 0:
-            return "0"
-            
+        if len(divipolas) == 0: return "0"
         max_anno = df_graduados["anno"].max()
-        graduados_filtered = df_graduados.filter(
-            pl.col("snies_divipola").is_in(divipolas) &
-            (pl.col("anno") == max_anno)
-        )
-        total = graduados_filtered["graduados_sum"].sum()
-        if total is None: return "0"
-        return f"{total:,.0f}".replace(",", ".")
+        total = df_graduados.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") == max_anno))["graduados_sum"].sum()
+        return format_num_es(total)
 
     @render.ui
     def total_graduados():
@@ -793,14 +974,7 @@ def server(input, output, session):
         })
         
         def format_currency(x):
-            if x is None:
-                return "Sin dato"
-            # Rellenamos con espacios a la izquierda (hasta 15 caracteres).
-            # Como la tabla ordena texto carácter por carácter, los espacios
-            # aseguran que el orden alfabético coincida con el orden numérico.
-            # Visualmente, HTML colapsa estos espacios en uno solo.
-            formatted = f"{x:,.0f}".replace(",", ".")
-            return f"$ {formatted.rjust(15, ' ')}"
+            return f"$ {format_num_es(x).rjust(15, ' ')}"
 
         df = df.with_columns(
             pl.col("Valor Matrícula").map_elements(format_currency, return_dtype=pl.Utf8)
@@ -897,7 +1071,7 @@ def server(input, output, session):
         df_pd = create_ole_trend_df("graduados_que_cotizan", "graduados", ["anno_corte", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="tasa", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
@@ -915,7 +1089,7 @@ def server(input, output, session):
         df_pd = create_ole_trend_df("graduados_cotizantes_dependientes", "graduados", ["anno_corte", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="tasa", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
@@ -1001,7 +1175,7 @@ def server(input, output, session):
         df_pd = get_ole_distribution_df("graduados_que_cotizan", "graduados")
         if df_pd.empty: return go.Figure()
         fig = px.histogram(df_pd, x="tasa", histnorm='percent')
-        fig.update_traces(marker=dict(color="#1A05A2"), xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white")
+        fig.update_traces(marker=dict(color="#31497e"), xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white")
         fig.update_layout(
             showlegend=False,
             plot_bgcolor='white',
@@ -1032,7 +1206,7 @@ def server(input, output, session):
         df_pd = get_ole_distribution_df("graduados_cotizantes_dependientes", "graduados")
         if df_pd.empty: return go.Figure()
         fig = px.histogram(df_pd, x="tasa", histnorm='percent')
-        fig.update_traces(marker=dict(color="#1A05A2"), xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white")
+        fig.update_traces(marker=dict(color="#31497e"), xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white")
         fig.update_layout(
             showlegend=False,
             plot_bgcolor='white',
@@ -1226,7 +1400,7 @@ def server(input, output, session):
         df_pd = calc_mobility_yoy_data()
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="retencion", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Año de Corte", tickmode="linear", gridcolor='#EEEEEE'),
@@ -1239,7 +1413,7 @@ def server(input, output, session):
         df_pd = calc_mobility_yoy_data()
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="ratio", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Año de Corte", tickmode="linear", gridcolor='#EEEEEE'),
@@ -1253,7 +1427,7 @@ def server(input, output, session):
         df_pd = create_ole_trend_df("graduados_cotizantes_dependientes", "graduados_que_cotizan", ["anno_corte", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
         fig = px.line(df_pd, x="anno_corte", y="tasa", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Año de Corte", tickmode="linear", gridcolor='#EEEEEE'),
@@ -1264,27 +1438,27 @@ def server(input, output, session):
     @reactive.calc
     def calc_kpi_retencion():
         val = calc_mobility_kpis()["retencion"]
-        return f"{val*100:,.1f}%"
+        return format_pct_es(val)
 
     @render.ui
     def kpi_retencion():
         val = calc_kpi_retencion()
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{val}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{val}</div>")
         
     @render.ui
     def kpi_fuga():
         val = calc_mobility_kpis()["fuga"]
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{val*100:,.1f}%</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{format_pct_es(val)}</div>")
         
     @reactive.calc
     def calc_kpi_ratio():
         val = calc_mobility_kpis()["ratio"]
-        return f"{val:,.2f}"
+        return format_num_es(val, decimals=2)
 
     @render.ui
     def kpi_ratio():
         val = calc_kpi_ratio()
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{val}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{val}</div>")
 
     # --- SALARIO DE ENGANCHE ---
     @reactive.calc
@@ -1323,7 +1497,7 @@ def server(input, output, session):
 
     @render.ui
     def kpi_salario_dependientes_sum():
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_salario_dependientes_sum()}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_kpi_salario_dependientes_sum()}</div>")
 
     def _calculate_salary_trend_data(is_constant=False):
         fs = filtered_snies()
@@ -1392,7 +1566,7 @@ def server(input, output, session):
         if df_pd.empty: return go.Figure()
         df_plot = df_pd[df_pd["label"] == "TOTAL"]
         fig = px.line(df_plot, x="anno_corte", y="salario_pesos", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Año de Corte", tickmode="linear", gridcolor='#EEEEEE'),
@@ -1430,7 +1604,7 @@ def server(input, output, session):
         
         df_plot = df_pd[df_pd["label"] == "TOTAL"]
         fig = px.line(df_plot, x="anno_corte", y="salario_pesos", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Año de Corte", tickmode="linear", gridcolor='#EEEEEE'),
@@ -1472,12 +1646,12 @@ def server(input, output, session):
         if df.height == 0: return "0%"
         max_yr = df["anno"].max()
         val = df.filter(pl.col("anno") == max_yr)["desercion_anual_mean"].mean()
-        if val is None: return "0%"
-        return f"{val:.1%}"
+        if val is None: return "0,0%"
+        return format_pct_es(val)
 
     @render.ui
     def kpi_desercion_promedio():
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_desercion_promedio()}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_kpi_desercion_promedio()}</div>")
 
     @reactive.calc
     def calc_plot_dist_desercion():
@@ -1486,7 +1660,7 @@ def server(input, output, session):
         max_yr = df["anno"].max()
         df_plot = df.filter(pl.col("anno") == max_yr).to_pandas()
         fig = px.histogram(df_plot, x="desercion_anual_mean", nbins=50, histnorm='percent')
-        fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.02), marker_color="#1A05A2", marker_line_color="white", marker_line_width=1)
+        fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.02), marker_color="#31497e", marker_line_color="white", marker_line_width=1)
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Tasa de Deserción", tickformat=".0%", gridcolor='#EEEEEE'),
@@ -1504,7 +1678,7 @@ def server(input, output, session):
         if df.height == 0: return go.Figure()
         df_plot = df.group_by("anno").agg(pl.col("desercion_anual_mean").mean()).sort("anno").to_pandas()
         fig = px.line(df_plot, x="anno", y="desercion_anual_mean", markers=True)
-        fig.update_traces(line=dict(color="#1A05A2", width=3), marker=dict(size=10, color="white", line=dict(width=2, color="#1A05A2")))
+        fig.update_traces(line=dict(color="#31497e", width=3), marker=dict(size=10, color="white", line=dict(width=2, color="#31497e")))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Año", tickmode="linear", gridcolor='#EEEEEE'),
@@ -1522,11 +1696,11 @@ def server(input, output, session):
         if df_pd.empty: return "$ 0"
         val = df_pd[(df_pd["label"] == "TOTAL") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
         s = val.iloc[0] if not val.empty else 0
-        return f"$ {s:,.0f}".replace(",", ".")
+        return f"$ {format_num_es(s)}"
 
     @render.ui
     def kpi_salario_promedio_total():
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_salario_promedio_total()}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_kpi_salario_promedio_total()}</div>")
 
     @reactive.calc
     def calc_kpi_salario_promedio_fem():
@@ -1534,11 +1708,11 @@ def server(input, output, session):
         if df_pd.empty: return "$ 0"
         val = df_pd[(df_pd["label"] == "FEMENINO") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
         s = val.iloc[0] if not val.empty else 0
-        return f"$ {s:,.0f}".replace(",", ".")
+        return f"$ {format_num_es(s)}"
 
     @render.ui
     def kpi_salario_promedio_fem():
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_salario_promedio_fem()}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_kpi_salario_promedio_fem()}</div>")
 
     @reactive.calc
     def calc_kpi_salario_promedio_masc():
@@ -1546,11 +1720,11 @@ def server(input, output, session):
         if df_pd.empty: return "$ 0"
         val = df_pd[(df_pd["label"] == "MASCULINO") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
         s = val.iloc[0] if not val.empty else 0
-        return f"$ {s:,.0f}".replace(",", ".")
+        return f"$ {format_num_es(s)}"
 
     @render.ui
     def kpi_salario_promedio_masc():
-        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #1A05A2;'>{calc_kpi_salario_promedio_masc()}</div>")
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_kpi_salario_promedio_masc()}</div>")
 
     @reactive.calc
     def calc_plot_salario_dist_total():
@@ -1569,7 +1743,7 @@ def server(input, output, session):
         else:
             agg["porcentaje"] = 0
         fig = px.bar(agg, x="porcentaje", y="rango_salario", orientation='h', text_auto='.1%')
-        fig.update_traces(marker_color="#1A05A2", marker_line_color="white", marker_line_width=1.5)
+        fig.update_traces(marker_color="#31497e", marker_line_color="white", marker_line_width=1.5)
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Participación de Graduados (%)", tickformat=".0%", gridcolor='#EEEEEE'),
@@ -1724,7 +1898,7 @@ def server(input, output, session):
         matriz = matriz.loc[idx_inverted, cols]
         
         custom_scale = [
-            [0.0, '#FFFFFF'], [0.1, '#D2D2F2'], [0.3, '#A096E1'], [0.6, '#6C5CE7'], [1.0, '#1A05A2']
+            [0.0, '#FFFFFF'], [0.1, '#D2D2F2'], [0.3, '#A096E1'], [0.6, '#6C5CE7'], [1.0, '#31497e']
         ]
         
         fig = go.Figure(data=go.Heatmap(
@@ -1815,7 +1989,7 @@ def server(input, output, session):
         df_filtered = df_pcurso.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("primer_curso_sum").sum()).sort("anno")
         if df_filtered.height == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="primer_curso_sum", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
@@ -1859,7 +2033,7 @@ def server(input, output, session):
         df_filtered = df_matricula.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("matricula_sum").sum()).sort("anno")
         if df_filtered.height == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="matricula_sum", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
@@ -1903,7 +2077,7 @@ def server(input, output, session):
         df_filtered = df_graduados.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("graduados_sum").sum()).sort("anno")
         if df_filtered.height == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="graduados_sum", markers=True)
-        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#1A05A2")), line=dict(width=2, color="#1A05A2"))
+        fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
             margin=dict(l=20, r=20, t=20, b=20),
@@ -1940,6 +2114,324 @@ def server(input, output, session):
     def plot_graduados():
         return calc_plot_graduados()
 
+    @reactive.calc
+    def filtered_saber():
+        fs = filtered_snies()
+        snies_codigos = fs["codigo_snies_del_programa"].unique()
+        if len(snies_codigos) == 0:
+            return pl.DataFrame()
+        return df_saber.filter(
+            pl.col("codigo_snies_del_programa").is_in(snies_codigos) &
+            (pl.col("sexo") != "ND")
+        )
+
+    @reactive.calc
+    def filtered_saber_latest():
+        df = filtered_saber()
+        if df.height == 0: return pl.DataFrame()
+        return df.filter(pl.col("anno") == max_anno_saber)
+
+    def calc_saber_score(column):
+        df = filtered_saber_latest()
+        if df.height == 0: return "Sin dato"
+        agg = df.group_by("codigo_snies_del_programa").agg(pl.col(column).mean())
+        val = agg[column].mean()
+        return format_num_es(val, decimals=1) if val is not None else "Sin dato"
+
+    @render.ui
+    def kpi_saber_global():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_saber_score('pro_gen_punt_global')}</div>")
+
+    @render.ui
+    def kpi_saber_razona():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_saber_score('pro_gen_mod_razona_cuantitat_punt')}</div>")
+
+    @render.ui
+    def kpi_saber_lectura():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_saber_score('pro_gen_mod_lectura_critica_punt')}</div>")
+
+    @render.ui
+    def kpi_saber_ciuda():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_saber_score('pro_gen_mod_competen_ciudada_punt')}</div>")
+
+    @render.ui
+    def kpi_saber_ingles():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_saber_score('pro_gen_mod_ingles_punt')}</div>")
+
+    @render.ui
+    def kpi_saber_escrita():
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{calc_saber_score('pro_gen_mod_comuni_escrita_punt')}</div>")
+
+    @reactive.calc
+    def calc_plot_saber_trend():
+        df = filtered_saber()
+        if df.height == 0: return go.Figure()
+        
+        cols_map = {
+            "pro_gen_punt_global": "Puntaje Global",
+            "pro_gen_mod_razona_cuantitat_punt": "Razonamiento Cuantitativo",
+            "pro_gen_mod_lectura_critica_punt": "Lectura Crítica",
+            "pro_gen_mod_competen_ciudada_punt": "Competencias Ciudadanas",
+            "pro_gen_mod_ingles_punt": "Inglés",
+            "pro_gen_mod_comuni_escrita_punt": "Comunicación Escrita"
+        }
+        
+        # Agregación por año: promedio de los promedios de los programas
+        # 1. Promedio por programa y año
+        df_agg = df.group_by(["anno", "codigo_snies_del_programa"]).agg([
+            pl.col(c).mean().alias(c) for c in cols_map.keys()
+        ])
+        # 2. Promedio de los programas por año
+        df_trend = df_agg.group_by("anno").agg([
+            pl.col(c).mean().alias(name) for c, name in cols_map.items()
+        ]).sort("anno")
+        
+        df_pd = df_trend.to_pandas()
+        # Convertir a formato largo para Plotly
+        df_plot = df_pd.melt(id_vars="anno", var_name="Componente", value_name="Puntaje")
+        
+        fig = px.line(df_plot, x="anno", y="Puntaje", color="Componente", markers=True)
+        fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
+        for trace in fig.data:
+            trace.marker.line.color = trace.line.color
+            
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title="Año", tickmode="linear", gridcolor='#EEEEEE'),
+            yaxis=dict(title="Puntaje Promedio", gridcolor='#EEEEEE')
+        )
+        return fig
+
+    @render_widget
+    def plot_saber_trend():
+        return calc_plot_saber_trend()
+
+    @reactive.calc
+    def calc_plot_saber_dist():
+        df = filtered_saber_latest()
+        if df.height == 0: return go.Figure()
+        
+        # Agregación por programa académico
+        agg = df.group_by("codigo_snies_del_programa").agg(pl.col("pro_gen_punt_global").mean())
+        df_pd = agg.to_pandas()
+        
+        fig = px.histogram(df_pd, x="pro_gen_punt_global", histnorm='percent', nbins=100)
+        fig.update_traces(marker_color="#31497e", marker_line_color="white", marker_line_width=1, xbins=dict(size=1))
+        
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title="Puntaje Global Promedio", gridcolor='#EEEEEE'),
+            yaxis=dict(title="Participación de Programas (%)", ticksuffix="%", gridcolor='#EEEEEE')
+        )
+        return fig
+
+    @render_widget
+    def plot_saber_dist():
+        return calc_plot_saber_dist()
+
+    # --- Conteos Demográficos ---
+    @reactive.calc
+    def calc_plot_saber_count_sexo():
+        df = filtered_saber()
+        if df.height == 0: return go.Figure()
+        trend = df.group_by(["anno", "sexo"]).len().sort(["anno", "sexo"])
+        fig = px.line(trend.to_pandas(), x="anno", y="len", color="sexo", markers=True)
+        fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
+        for trace in fig.data:
+            trace.marker.line.color = trace.line.color
+            
+        fig.update_layout(plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+                        xaxis=dict(title="Año", tickmode="linear"), yaxis=dict(title="Número de Evaluados", gridcolor='#EEEEEE'))
+        return fig
+
+    @render_widget
+    def plot_saber_count_sexo(): return calc_plot_saber_count_sexo()
+
+    @reactive.calc
+    def calc_plot_saber_count_edad():
+        df = filtered_saber()
+        if df.height == 0: return go.Figure()
+        trend = df.group_by(["anno", "grupo_edad"]).len().sort(["anno", "grupo_edad"])
+        fig = px.line(trend.to_pandas(), x="anno", y="len", color="grupo_edad", markers=True)
+        fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
+        for trace in fig.data:
+            trace.marker.line.color = trace.line.color
+            
+        fig.update_layout(plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+                        xaxis=dict(title="Año", tickmode="linear"), yaxis=dict(title="Número de Evaluados", gridcolor='#EEEEEE'))
+        return fig
+
+    @render_widget
+    def plot_saber_count_edad(): return calc_plot_saber_count_edad()
+
+    # --- Ayudante de Tendencias Detalladas ---
+    def calc_plot_saber_trend_dim(column, dim):
+        df = filtered_saber()
+        if df.height == 0: return go.Figure()
+        
+        # Agregación por año, programa y dimensión
+        agg = df.group_by(["anno", "codigo_snies_del_programa", dim]).agg(pl.col(column).mean())
+        # Tendencia final de promedios
+        trend = agg.group_by(["anno", dim]).agg(pl.col(column).mean()).sort(["anno", dim])
+        
+        fig = px.line(trend.to_pandas(), x="anno", y=column, color=dim, markers=True)
+        fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
+        for trace in fig.data:
+            trace.marker.line.color = trace.line.color
+            
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+            xaxis=dict(title="Año", tickmode="linear", gridcolor='#EEEEEE'),
+            yaxis=dict(title="Puntaje", gridcolor='#EEEEEE'),
+            legend_title=dim.capitalize()
+        )
+        return fig
+
+    # Global
+    @render_widget
+    def plot_saber_trend_global_sexo(): return calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo")
+    @render_widget
+    def plot_saber_trend_global_edad(): return calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad")
+    # Razonamiento
+    @render_widget
+    def plot_saber_trend_razona_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo")
+    @render_widget
+    def plot_saber_trend_razona_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad")
+    # Lectura
+    @render_widget
+    def plot_saber_trend_lectura_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo")
+    @render_widget
+    def plot_saber_trend_lectura_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad")
+    # Ciudadanas
+    @render_widget
+    def plot_saber_trend_ciuda_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo")
+    @render_widget
+    def plot_saber_trend_ciuda_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad")
+    # Inglés
+    @render_widget
+    def plot_saber_trend_ingles_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo")
+    @render_widget
+    def plot_saber_trend_ingles_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad")
+    # Escrita
+    @render_widget
+    def plot_saber_trend_escrita_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo")
+    @render_widget
+    def plot_saber_trend_escrita_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad")
+
+    # --- Socio-demografía (SaberPRO) ---
+    def calc_plot_saber_categorical(column, label, sort_vals=False):
+        df = filtered_saber_latest()
+        if df.height == 0: return go.Figure()
+        
+        # Limpieza básica
+        df_clean = df.with_columns(
+            pl.col(column).cast(pl.Utf8).fill_null("Sin Registro")
+        ).with_columns(
+            pl.when(pl.col(column) == "").then(pl.lit("Sin Registro"))
+            .when(pl.col(column) == "-1").then(pl.lit("Sin Registro"))
+            .otherwise(pl.col(column)).alias(column)
+        )
+        
+        # Conteo por categoría
+        df_plot = df_clean.group_by(column).len()
+        
+        if sort_vals:
+            df_plot = df_plot.sort(column)
+        else:
+            df_plot = df_plot.sort("len", descending=True)
+            
+        # Porcentaje
+        total = df_plot["len"].sum()
+        df_pd = df_plot.with_columns((pl.col("len") / total).alias("porcentaje")).to_pandas()
+        
+        fig = px.bar(df_pd, y=column, x="porcentaje", orientation='h', text_auto='.2%')
+        fig.update_traces(marker_color="#31497e", marker_line_color="white", marker_line_width=1.5)
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+            xaxis=dict(title="Participación (%)", tickformat=".2%", gridcolor='#EEEEEE'),
+            yaxis=dict(title=label, gridcolor='#EEEEEE', autorange="reversed"),
+            separators=',.'
+        )
+        return fig
+
+    @render_widget
+    def plot_saber_demo_sexo(): return calc_plot_saber_categorical("sexo", "Sexo")
+    @render_widget
+    def plot_saber_demo_edad(): return calc_plot_saber_categorical("grupo_edad", "Grupo de Edad")
+    @render_widget
+    def plot_saber_demo_trabajo(): return calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Horas de Trabajo")
+    @render_widget
+    def plot_saber_demo_estrato(): return calc_plot_saber_categorical("pro_gen_fami_estratovivienda", "Estrato Vivienda", sort_vals=True)
+
+    # Tendencias Socio-demográficas
+    def calc_plot_saber_categorical_trend(column, label):
+        df = filtered_saber()
+        if df.height == 0: return go.Figure()
+        
+        # Limpieza básica
+        df_clean = df.with_columns(
+            pl.col(column).cast(pl.Utf8).fill_null("Sin Registro")
+        ).with_columns(
+            pl.when(pl.col(column) == "").then(pl.lit("Sin Registro"))
+            .when(pl.col(column) == "-1").then(pl.lit("Sin Registro"))
+            .otherwise(pl.col(column)).alias(column)
+        )
+        
+        # Conteo por año y categoría
+        df_counts = df_clean.group_by(["anno", column]).len()
+        # Totales por año para calcular participación %
+        df_totals = df_clean.group_by("anno").agg(pl.len().alias("total"))
+        
+        df_plot = df_counts.join(df_totals, on="anno").with_columns(
+            (pl.col("len") / pl.col("total")).alias("participacion")
+        ).sort(["anno", column])
+        
+        df_pd = df_plot.to_pandas()
+        fig = px.line(df_pd, x="anno", y="participacion", color=column, markers=True)
+        fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
+        for trace in fig.data:
+            trace.marker.line.color = trace.line.color
+            
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+            xaxis=dict(title="Año", tickmode="linear"),
+            yaxis=dict(title="Participación (%)", tickformat=".2%", gridcolor='#EEEEEE'),
+            legend_title=label,
+            separators=',.'
+        )
+        return fig
+
+    @render_widget
+    def plot_saber_demo_sexo_trend(): return calc_plot_saber_categorical_trend("sexo", "Sexo")
+    @render_widget
+    def plot_saber_demo_edad_trend(): return calc_plot_saber_categorical_trend("grupo_edad", "Grupo Edad")
+    @render_widget
+    def plot_saber_demo_trabajo_trend(): return calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo")
+    @render_widget
+    def plot_saber_demo_estrato_trend(): return calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato")
+
+    # KPIs Socio-demográficos
+    @reactive.calc
+    def calc_total_evaluados_saber():
+        df = filtered_saber_latest()
+        return df.height
+
+    @render.ui
+    def kpi_demo_evaluados():
+        val = calc_total_evaluados_saber()
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
+    @reactive.calc
+    def calc_total_programas_saber():
+        df = filtered_saber_latest()
+        if df.height == 0: return 0
+        return df["codigo_snies_del_programa"].n_unique()
+
+    @render.ui
+    def kpi_demo_programas():
+        val = calc_total_programas_saber()
+        return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
     @render.download(filename=lambda: f"Informe_Educacion_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
     def download_pdf():
         with ui.Progress(min=1, max=15) as p:
@@ -1953,6 +2445,7 @@ def server(input, output, session):
                     "max_anno_snies": max_anno_snies,
                     "max_anno_ole": max_anno_ole,
                     "max_anno_spadies": max_anno_desercion,
+                    "max_anno_saber": max_anno_saber,
                     "date": datetime.datetime.now().strftime("%d/%m/%Y"),
                     "kpis_summary": [
                         ("Instituciones", calc_total_instituciones()),
@@ -1986,15 +2479,15 @@ def server(input, output, session):
                     "table": f"""
 #v(1em)
 == Detalle de Estudiantes de Primer Curso
-{engine.format_as_typst_table(pl.from_pandas(calc_table_pcurso()))}
+{{engine.format_as_typst_table(pl.from_pandas(calc_table_pcurso()))}}
 
 #v(1em)
 == Detalle de Estudiantes Matriculados
-{engine.format_as_typst_table(pl.from_pandas(calc_table_matriculados()))}
+{{engine.format_as_typst_table(pl.from_pandas(calc_table_matriculados()))}}
 
 #v(1em)
 == Detalle de Graduados
-{engine.format_as_typst_table(pl.from_pandas(calc_table_graduados()))}
+{{engine.format_as_typst_table(pl.from_pandas(calc_table_graduados()))}}
 """
                 })
                 
@@ -2055,7 +2548,63 @@ def server(input, output, session):
                     "plots": desercion_plots
                 })
 
-                p.set(14, message="Compilando informe...", detail="Cerrando archivos y generando PDF final")
+                # SECCIÓN 5: PRUEBA SABER PRO
+                p.set(14, message="Procesando sección:", detail="Prueba SABER PRO")
+                saber_plots = [
+                    engine.export_plotly_fig(calc_plot_saber_trend(), "saber_trend"),
+                    engine.export_plotly_fig(calc_plot_saber_dist(), "saber_dist"),
+                    # Evolución de conteos
+                    engine.export_plotly_fig(calc_plot_saber_count_sexo(), "saber_count_sexo"),
+                    engine.export_plotly_fig(calc_plot_saber_count_edad(), "saber_count_edad"),
+                    # Detalle por dimensiones
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo"), "saber_global_sexo"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad"), "saber_global_edad"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo"), "saber_razona_sexo"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad"), "saber_razona_edad"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo"), "saber_lectura_sexo"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad"), "saber_lectura_edad"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo"), "saber_ciuda_sexo"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad"), "saber_ciuda_edad"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo"), "saber_ingles_sexo"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad"), "saber_ingles_edad"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo"), "saber_escrita_sexo"),
+                    engine.export_plotly_fig(calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad"), "saber_escrita_edad")
+                ]
+                
+                data_ctx["sections"].append({
+                    "title": "Excelencia Académica (Prueba SABER PRO)",
+                    "intro": "Resultados de las pruebas de Estado que evalúan las competencias genéricas de los estudiantes de último año. El puntaje global es un indicador de la calidad educativa.",
+                    "kpis": [
+                        ("Puntaje Global Promedio", calc_saber_score("pro_gen_punt_global"))
+                    ],
+                    "plots": saber_plots
+                })
+
+                # SECCIÓN 6: SOCIO-DEMOGRAFÍA
+                p.set(14.5, message="Procesando sección:", detail="Socio-demografía")
+                demo_plots = [
+                    engine.export_plotly_fig(calc_plot_saber_categorical("sexo", "Sexo"), "demo_sexo"),
+                    engine.export_plotly_fig(calc_plot_saber_categorical("grupo_edad", "Edad"), "demo_edad"),
+                    engine.export_plotly_fig(calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Trabajo"), "demo_trabajo"),
+                    engine.export_plotly_fig(calc_plot_saber_categorical("pro_gen_fami_estratovivienda", "Estrato"), "demo_estrato"),
+                    # Evolución temporal
+                    engine.export_plotly_fig(calc_plot_saber_categorical_trend("sexo", "Sexo"), "demo_sexo_trend"),
+                    engine.export_plotly_fig(calc_plot_saber_categorical_trend("grupo_edad", "Edad"), "demo_edad_trend"),
+                    engine.export_plotly_fig(calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo"), "demo_trabajo_trend"),
+                    engine.export_plotly_fig(calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato"), "demo_estrato_trend")
+                ]
+                
+                data_ctx["sections"].append({
+                    "title": "Perfil Socio-demográfico de los Evaluados",
+                    "intro": "Caracterización demográfica y socioeconómica de los estudiantes que presentaron la prueba en el último año. Incluye la distribución por sexo, grupo de edad, carga laboral y estrato de vivienda.",
+                    "kpis": [
+                        ("Total de Evaluados", calc_total_evaluados_saber()),
+                        ("Programas Académicos", calc_total_programas_saber())
+                    ],
+                    "plots": demo_plots
+                })
+
+                p.set(15, message="Compilando informe...", detail="Cerrando archivos y generando PDF final")
                 pdf_path = engine.generate_report(data_ctx)
                 return pdf_path
             
