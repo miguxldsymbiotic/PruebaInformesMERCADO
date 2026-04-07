@@ -191,7 +191,8 @@ app_ui = ui.page_sidebar(
         ui.input_selectize("sector", "Sector", choices=valores_iniciales["sector"], multiple=True),
         ui.input_selectize("departamento", "Departamento de Oferta", choices=departamentos_oferta, multiple=True),
         ui.input_selectize("municipio", "Municipio de Oferta", choices=[], multiple=True),
-        ui.download_button("download_pdf", "Descargar Informe (PDF)", class_="btn-primary w-100 mt-4"),
+        ui.input_action_button("btn_calcular", "Aplicar Filtros", class_="btn-danger w-100 mt-2 mb-2", style="font-weight: bold; font-size: 1.1em;"),
+        ui.download_button("download_pdf", "Descargar Informe (PDF)", class_="btn-primary w-100 mt-2"),
         open="desktop",
     ),
     ui.navset_card_underline(
@@ -814,6 +815,79 @@ app_ui = ui.page_sidebar(
                 ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Estrato Social</b>")), output_widget("prev_demo_estrato_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición socioeconómica."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
                 class_="mb-5"
             )
+        ),
+        ui.nav_panel(
+            "Tendencia Comparada",
+            ui.h2("Análisis Comparativo de Tendencias", class_="mt-2 mb-3", style="color: #31497e; font-weight: bold;"),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("<b style='color: #31497e;'>1. Selección de Programa Base</b>")),
+                    ui.input_selectize("comp_snies_base", "Buscar Programa Académico por SNIES o Nombre:", choices=[], multiple=False, width="100%"),
+                    ui.output_ui("comp_perfil_snies"),
+                    class_="mb-3"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("<b style='color: #31497e;'>2. Definir Grupo Comparable</b>")),
+                    ui.input_checkbox_group(
+                        "comp_criterios",
+                        "Seleccione los atributos que deben coincidir para formar el grupo de comparación:",
+                        choices={
+                            "departamento_oferta": "Mismo Departamento de Oferta",
+                            "nivel_de_formacion": "Mismo Nivel de Formación",
+                            "modalidad": "Misma Modalidad",
+                            "sector": "Mismo Sector (Público/Privado)",
+                            "area_de_conocimiento": "Misma Área de Conocimiento",
+                            "nucleo_basico_del_conocimiento": "Mismo Núcleo Básico de Conocimiento"
+                        },
+                        selected=[
+                            "departamento_oferta", "nivel_de_formacion", "modalidad", 
+                            "sector", "area_de_conocimiento", "nucleo_basico_del_conocimiento"
+                        ],
+                        inline=True
+                    ),
+                    ui.div(
+                        ui.HTML("<b>Nota Analítica:</b> Al agregar menos atributos de similitud, el grupo de comparación será más masivo (nivel nacional). Al ir activando criterios, la tendencia comparable representará un nicho cada vez más específico."),
+                        style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #f9596f; margin-top: 10px;"
+                    ),
+                    class_="mb-3"
+                ),
+                class_="mb-4",
+                col_widths=(4, 8)
+            ),
+            ui.layout_columns(
+                ui.value_box("Universo de Comparación (Últ. Año)", ui.output_ui("comp_kpi_universo"), showcase=fa.icon_svg("users-rays", "solid")),
+                ui.value_box("Total Neto Primer Curso", ui.output_ui("comp_kpi_neto_pcurso"), showcase=ICONS["student"]),
+                ui.value_box("Total Neto Matriculados", ui.output_ui("comp_kpi_neto_matricula"), showcase=fa.icon_svg("users", "solid")),
+                ui.value_box("Total Neto Graduados", ui.output_ui("comp_kpi_neto_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
+                fill=False, class_="mb-4"
+            ),
+            ui.layout_columns(
+                ui.value_box("Promedio Muestral Primer Curso", ui.output_ui("comp_kpi_pcurso"), showcase=ICONS["student"]),
+                ui.value_box("Promedio Muestral Matriculados", ui.output_ui("comp_kpi_matricula"), showcase=fa.icon_svg("users", "solid")),
+                ui.value_box("Promedio Muestral Graduados", ui.output_ui("comp_kpi_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
+                fill=False, class_="mb-4"
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
+                    output_widget("plot_comp_pcurso"), 
+                    ui.card_footer(ui.HTML("Fuente: SNIES. La banda sombreada representa ±1 Desviación Estándar de la muestra, mostrando dónde se concentra el 68% de los programas comparables."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
+                    output_widget("plot_comp_matricula"), 
+                    ui.card_footer(ui.HTML("Fuente: SNIES. La banda sombreada representa ±1 Desviación Estándar de la muestra."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
+                    output_widget("plot_comp_graduados"), 
+                    ui.card_footer(ui.HTML("Fuente: SNIES. La banda sombreada representa ±1 Desviación Estándar de la muestra."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                class_="mb-5"
+            )
         )
     ),
     ui.head_content(
@@ -868,6 +942,12 @@ def server(input, output, session):
 
     @reactive.effect
     def update_filters():
+        # Llenar la lista del selector comparativo (solo la primera vez para no agotar la memoria)
+        if len(last_choices.get("comp_snies_base", [])) == 0:
+            snies_choices = sorted(df_snies["snies_label"].drop_nulls().unique().to_list())
+            ui.update_selectize("comp_snies_base", choices=snies_choices, server=True)
+            last_choices["comp_snies_base"] = snies_choices
+
         # Capturamos como tuplas usando `or ()` por si es None
         curr_vals = {
             "institucion_label": input.institucion_label() or (),
@@ -961,17 +1041,35 @@ def server(input, output, session):
                     last_choices[col] = choices
 
     @reactive.calc
+    @reactive.event(lambda: input.btn_calcular(), ignore_none=False)
+    def isolated_filters():
+        return {
+            "institucion_label": input.institucion_label(),
+            "snies_label": input.snies_label(),
+            "nombre_institucion": input.nombre_institucion(),
+            "estado_programa": input.estado_programa(),
+            "modalidad": input.modalidad(),
+            "nivel_de_formacion": input.nivel_de_formacion(),
+            "area_de_conocimiento": input.area_de_conocimiento(),
+            "nucleo_basico_del_conocimiento": input.nucleo_basico_del_conocimiento(),
+            "sector": input.sector(),
+            "departamento": input.departamento(),
+            "municipio": input.municipio()
+        }
+
+    @reactive.calc
     def filtered_snies():
         df = df_snies
+        f_vals = isolated_filters()
         
         for col in filtros_cols:
-            val = getattr(input, col)()
+            val = f_vals[col]
             if is_filtered(val): 
                 df = df.filter(pl.col(col).is_in(val))
         
         # Filtro de Cobertura Geográfica
-        dept = input.departamento()
-        mpio = input.municipio()
+        dept = f_vals["departamento"]
+        mpio = f_vals["municipio"]
         df_cob = df_cobertura
         has_geo = False
         
@@ -1001,7 +1099,7 @@ def server(input, output, session):
             pl.col("codigo_snies_del_programa").is_in(valid_snies_codes)
         )
         
-        dept_vals = input.departamento()
+        dept_vals = isolated_filters()["departamento"]
         if is_filtered(dept_vals):
             cobertura_filtered = cobertura_filtered.filter(
                 pl.col("departamento_oferta").is_in(dept_vals)
@@ -2637,6 +2735,284 @@ def server(input, output, session):
     def kpi_demo_programas():
         val = calc_total_programas_saber()
         return ui.HTML(f"<div style='font-size: 48px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
+    # ==========================================
+    # TENDENCIA COMPARADA
+    # ==========================================
+    @reactive.calc
+    def comp_profile_attr():
+        """Retorna un diccionario con los atributos del SNIES seleccionado."""
+        snies_label = input.comp_snies_base()
+        if not snies_label: return None
+        
+        try:
+            # Extraer el código del string "1234 - Nombre..."
+            snies_code = int(snies_label.split(" - ")[0])
+        except:
+            return None
+            
+        df_base = df_snies.filter(pl.col("codigo_snies_del_programa") == snies_code)
+        if df_base.height == 0: return None
+        
+        # Unir también con cobertura para tener el departamento
+        df_cob = df_cobertura.filter(pl.col("codigo_snies_del_programa") == snies_code)
+        
+        return {
+            "codigo": snies_code,
+            "nombre": df_base["programa_academico"][0],
+            "institucion": df_base["nombre_institucion"][0],
+            "nivel_de_formacion": df_base["nivel_de_formacion"][0] if df_base["nivel_de_formacion"].len() > 0 else None,
+            "modalidad": df_base["modalidad"][0] if df_base["modalidad"].len() > 0 else None,
+            "sector": df_base["sector"][0] if df_base["sector"].len() > 0 else None,
+            "area_de_conocimiento": df_base["area_de_conocimiento"][0] if df_base["area_de_conocimiento"].len() > 0 else None,
+            "nucleo_basico_del_conocimiento": df_base["nucleo_basico_del_conocimiento"][0] if df_base["nucleo_basico_del_conocimiento"].len() > 0 else None,
+            "departamento_oferta": df_cob["departamento_oferta"][0] if df_cob.height > 0 else None
+        }
+
+    @render.ui
+    def comp_perfil_snies():
+        attr = comp_profile_attr()
+        if not attr:
+            return ui.HTML("<i style='color: gray;'>Seleccione un programa de la lista superior para ver sus atributos.</i>")
+            
+        items = [
+            f"<b>Institución:</b> {attr['institucion']}",
+            f"<b>Nivel:</b> {attr['nivel_de_formacion']}" if attr.get('nivel_de_formacion') else "",
+            f"<b>Modalidad:</b> {attr['modalidad']}" if attr.get('modalidad') else "",
+            f"<b>Sector:</b> {attr['sector']}" if attr.get('sector') else "",
+            f"<b>Departamento:</b> {attr['departamento_oferta']}" if attr.get('departamento_oferta') else "",
+            f"<b>Estado:</b> {attr['estado_programa']}" if attr.get('estado_programa') else ""
+        ]
+        items_html = " • ".join([i for i in items if i])
+        return ui.HTML(f"<div style='margin-top: 10px; padding: 10px; background-color: #f0f4f8; border-radius: 5px; font-size: 14px;'>{items_html}</div>")
+
+    @reactive.calc
+    def comparable_snies_list():
+        """Devuelve la lista de divipolas/snies que forman el grupo comparable."""
+        attr = comp_profile_attr()
+        if not attr: return []
+        
+        criterios = input.comp_criterios() or []
+        
+        # Empezamos con todos los SNIES (sin aplicar los filtros globales del sidebar)
+        df_comp = df_snies
+        df_cob_comp = df_cobertura
+        
+        # Aplicamos los filtros locales basados en checkboxes marcados
+        if "nivel_de_formacion" in criterios and attr.get("nivel_de_formacion"):
+            df_comp = df_comp.filter(pl.col("nivel_de_formacion") == attr["nivel_de_formacion"])
+        if "modalidad" in criterios and attr.get("modalidad"):
+            df_comp = df_comp.filter(pl.col("modalidad") == attr["modalidad"])
+        if "sector" in criterios and attr.get("sector"):
+            df_comp = df_comp.filter(pl.col("sector") == attr["sector"])
+        if "area_de_conocimiento" in criterios and attr.get("area_de_conocimiento"):
+            df_comp = df_comp.filter(pl.col("area_de_conocimiento") == attr["area_de_conocimiento"])
+        if "nucleo_basico_del_conocimiento" in criterios and attr.get("nucleo_basico_del_conocimiento"):
+            df_comp = df_comp.filter(pl.col("nucleo_basico_del_conocimiento") == attr["nucleo_basico_del_conocimiento"])
+            
+        # Filtrar por defecto solo por programas en estado ACTIVO
+        df_comp = df_comp.filter(pl.col("estado_programa") == "ACTIVO")
+
+        # Filtro de Cobertura (Depto)
+        valid_snies = df_comp["codigo_snies_del_programa"].unique()
+        df_cob_comp = df_cob_comp.filter(pl.col("codigo_snies_del_programa").is_in(valid_snies))
+        
+        if "departamento_oferta" in criterios and attr.get("departamento_oferta"):
+            df_cob_comp = df_cob_comp.filter(pl.col("departamento_oferta") == attr["departamento_oferta"])
+            
+        # Nota: Decidimos NO excluir el SNIES actual del grupo comparable.
+        # De esta forma, si configuras un grupo idéntico a lo que harías en el sidebar,
+        # la masa total y los elementos cuadran de manera exacta.
+        # Retornamos los códigos Divipola unicos para el filtro de dfs (pcurso, matriculados)
+        return df_cob_comp["snies_divipola"].unique().to_list()
+
+    def calc_comp_metric(df_source, metric_col):
+        import pandas as pd
+        attr = comp_profile_attr()
+        if not attr: 
+            return pd.DataFrame(), pd.DataFrame()
+            
+        # 1. SERIE BASE (SNIES INDIVIDUAL)
+        df_snies_base = df_cobertura.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+        divipolas_base = df_snies_base["snies_divipola"].unique()
+        
+        # Sumamos por si tiene multiples divipolas (ej. se oferta en varias sedes)
+        df_base_agg = df_source.filter(
+            pl.col("snies_divipola").is_in(divipolas_base) & (pl.col("anno") >= 2016)
+        ).group_by("anno").agg(pl.col(metric_col).sum().alias("valor_base")).sort("anno")
+        
+        df_base_pd = df_base_agg.to_pandas()
+        
+        # 2. SERIE COMPARABLE (PROMEDIO NACIONAL/FILTRADO)
+        comp_divipolas = comparable_snies_list()
+        if len(comp_divipolas) == 0:
+            return df_base_pd, pd.DataFrame()
+            
+        df_comp = df_source.filter(
+            pl.col("snies_divipola").is_in(comp_divipolas) & (pl.col("anno") >= 2016)
+        )
+        
+        # Primero sumamos a nivel de SNIES Divipola individualmente en cada año
+        # (agrupando por las iteraciones que haya si las hay) para tener el valor "por programa"
+        df_comp_prog = df_comp.group_by(["anno", "snies_divipola"]).agg(pl.col(metric_col).sum())
+        
+        # Segundo, promediamos todos los programas por año y calculamos std_dev
+        df_comp_agg = df_comp_prog.group_by("anno").agg([
+            pl.col(metric_col).mean().alias("valor_comp_mean"),
+            pl.col(metric_col).std().alias("valor_comp_std"),
+            pl.col(metric_col).sum().alias("valor_comp_sum"),
+            pl.col(metric_col).count().alias("n_programas")
+        ]).sort("anno")
+        
+        df_comp_pd = df_comp_agg.to_pandas()
+        
+        # Manejar std NA (cuando n=1)
+        df_comp_pd["valor_comp_std"] = df_comp_pd["valor_comp_std"].fillna(0)
+        
+        return df_base_pd, df_comp_pd
+
+    def build_comp_plot(df_base_pd, df_comp_pd, title):
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        
+        if df_comp_pd.empty and df_base_pd.empty:
+            return fig
+            
+        color_base = "#f9596f"  # Color destaque
+        color_comp = "#31497e"  # Azul base
+        color_band = "rgba(49, 73, 126, 0.15)" # Azul semitransparente
+        
+        # Traza de Banda Inferior (Desviacion estandar)
+        if not df_comp_pd.empty:
+            y_lower = (df_comp_pd["valor_comp_mean"] - df_comp_pd["valor_comp_std"]).clip(lower=0) 
+            y_upper = df_comp_pd["valor_comp_mean"] + df_comp_pd["valor_comp_std"]
+            
+            fig.add_trace(go.Scatter(
+                x=df_comp_pd["anno"],
+                y=y_lower,
+                marker=dict(color="#444"),
+                line=dict(width=0),
+                mode='lines',
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+            
+            # Traza de Banda Superior
+            fig.add_trace(go.Scatter(
+                x=df_comp_pd["anno"],
+                y=y_upper,
+                marker=dict(color="#444"),
+                line=dict(width=0),
+                mode='lines',
+                fillcolor=color_band,
+                fill='tonexty',
+                name='Dispersión (±1 Std. Dev)',
+                hoverinfo='skip'
+            ))
+            
+            # Traza Promedio Comparable
+            fig.add_trace(go.Scatter(
+                x=df_comp_pd["anno"],
+                y=df_comp_pd["valor_comp_mean"],
+                mode='lines+markers',
+                name='Media Comparable',
+                line=dict(color=color_comp, width=3, dash='dash'),
+                marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
+                hovertemplate="Año: %{x}<br>Media: %{y:,.0f} est.<br>N: %{customdata} prog.<extra></extra>",
+                customdata=df_comp_pd["n_programas"]
+            ))
+
+        # Traza Programa Base
+        if not df_base_pd.empty:
+            attr = comp_profile_attr()
+            prog_name = f"SNIES {attr['codigo']}" if attr else "Prog. Base"
+            fig.add_trace(go.Scatter(
+                x=df_base_pd["anno"],
+                y=df_base_pd["valor_base"],
+                mode='lines+markers',
+                name=prog_name,
+                line=dict(color=color_base, width=4),
+                marker=dict(size=9, color="white", line=dict(width=2.5, color=color_base)),
+                hovertemplate="Año: %{x}<br>Total: %{y:,.0f} est.<extra></extra>"
+            ))
+            
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+            xaxis=dict(title="Año", tickmode="linear"),
+            yaxis=dict(title="Número de Estudiantes", gridcolor='#EEEEEE'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            separators=',.'
+        )
+        return fig
+
+    # Gráficas
+    @render_widget
+    def plot_comp_pcurso():
+        df_base, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
+        return build_comp_plot(df_base, df_comp, "Primer Curso")
+
+    @render_widget
+    def plot_comp_matricula():
+        df_base, df_comp = calc_comp_metric(df_matricula, "matricula_sum")
+        return build_comp_plot(df_base, df_comp, "Matriculados")
+
+    @render_widget
+    def plot_comp_graduados():
+        df_base, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
+        return build_comp_plot(df_base, df_comp, "Graduados")
+
+    # KPIs
+    @render.ui
+    def comp_kpi_universo():
+        _, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>0 prog.</div>")
+        n = df_comp["n_programas"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(n)} prog.</div>")
+
+    @render.ui
+    def comp_kpi_neto_pcurso():
+        _, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_comp["valor_comp_sum"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_neto_matricula():
+        _, df_comp = calc_comp_metric(df_matricula, "matricula_sum")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_comp["valor_comp_sum"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_neto_graduados():
+        _, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_comp["valor_comp_sum"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_pcurso():
+        _, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        mean = df_comp["valor_comp_mean"].iloc[-1]
+        std = df_comp["valor_comp_std"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(mean)} <span style='font-size: 18px; color: gray;'>±{format_num_es(std)}</span></div>")
+
+    @render.ui
+    def comp_kpi_matricula():
+        _, df_comp = calc_comp_metric(df_matricula, "matricula_sum")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        mean = df_comp["valor_comp_mean"].iloc[-1]
+        std = df_comp["valor_comp_std"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(mean)} <span style='font-size: 18px; color: gray;'>±{format_num_es(std)}</span></div>")
+
+    @render.ui
+    def comp_kpi_graduados():
+        _, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        mean = df_comp["valor_comp_mean"].iloc[-1]
+        std = df_comp["valor_comp_std"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(mean)} <span style='font-size: 18px; color: gray;'>±{format_num_es(std)}</span></div>")
 
     def _prepare_report_content(engine, p):
         # 1. Preparar Datos Generales
