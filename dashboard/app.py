@@ -73,9 +73,45 @@ df_desercion = pl.read_parquet(data_dir / "df_SPADIES_Desercion.parquet").filter
     (pl.col("codigo_snies_del_programa") < 1_000_000) &
     pl.col("desercion_anual_mean").is_not_null() &
     pl.col("desercion_anual_mean").is_not_nan()
-).with_columns(
-    pl.col("codigo_snies_del_programa").cast(pl.Int64)
-)
+).with_columns([
+    pl.col("codigo_snies_del_programa").cast(pl.Int64),
+    pl.col("anno").cast(pl.Int32)
+])
+
+# --- CÁLCULO DE PROXY DE DESERCIÓN PARA PROGRAMAS FALTANTES ---
+_df_m_agg = df_matricula.with_columns([pl.col("codigo_snies_del_programa").cast(pl.Int64), pl.col("anno").cast(pl.Int32)]).group_by(["codigo_snies_del_programa", "anno"]).agg(pl.col("matricula_sum").sum().alias("matriculados"))
+_df_g_agg = df_graduados.with_columns([pl.col("codigo_snies_del_programa").cast(pl.Int64), pl.col("anno").cast(pl.Int32)]).group_by(["codigo_snies_del_programa", "anno"]).agg(pl.col("graduados_sum").sum().alias("graduados"))
+_df_p_agg = df_pcurso.with_columns([pl.col("codigo_snies_del_programa").cast(pl.Int64), pl.col("anno").cast(pl.Int32)]).group_by(["codigo_snies_del_programa", "anno"]).agg(pl.col("primer_curso_sum").sum().alias("primer_curso"))
+
+_df_universe = pl.concat([
+    _df_m_agg.select(["codigo_snies_del_programa", "anno"]),
+    _df_g_agg.select(["codigo_snies_del_programa", "anno"]),
+    _df_p_agg.select(["codigo_snies_del_programa", "anno"])
+]).unique()
+
+_df_proxy = _df_universe.join(_df_m_agg, on=["codigo_snies_del_programa", "anno"], how="left") \
+                        .join(_df_p_agg, on=["codigo_snies_del_programa", "anno"], how="left") \
+                        .join(_df_g_agg, on=["codigo_snies_del_programa", "anno"], how="left") \
+                        .fill_null(0).sort(["codigo_snies_del_programa", "anno"])
+
+_df_proxy = _df_proxy.with_columns(pl.col("matriculados").shift(1).over("codigo_snies_del_programa").alias("matriculados_t_1"))
+_df_proxy = _df_proxy.with_columns(poblacion_riesgo=(pl.col("matriculados_t_1") + pl.col("primer_curso"))) \
+                     .filter(pl.col("matriculados_t_1").is_not_null() & (pl.col("poblacion_riesgo") > 0)) \
+                     .with_columns(desercion_anual_mean=((pl.col("matriculados_t_1") + pl.col("primer_curso") - pl.col("graduados") - pl.col("matriculados")) / pl.col("poblacion_riesgo"))) \
+                     .with_columns(pl.col("desercion_anual_mean").clip(lower_bound=0.0, upper_bound=1.0).cast(pl.Float64)) \
+                     .select(["codigo_snies_del_programa", "anno", "desercion_anual_mean"])
+
+_max_anno_orig = df_desercion["anno"].max()
+
+_df_existentes = df_desercion.select(["codigo_snies_del_programa", "anno"]).with_columns(pl.lit(True).alias("existe"))
+_df_proxy_filtrado = _df_proxy.filter(pl.col("anno") <= _max_anno_orig) \
+                              .join(_df_existentes, on=["codigo_snies_del_programa", "anno"], how="left") \
+                              .filter(pl.col("existe").is_null()) \
+                              .drop("existe")
+
+df_desercion = pl.concat([df_desercion, _df_proxy_filtrado]).sort(["codigo_snies_del_programa", "anno"])
+# -------------------------------------------------------------
+
 max_anno_desercion = df_desercion["anno"].max()
 
 df_saber = pl.read_parquet(data_dir / "df_SaberPRO.parquet").with_columns(
@@ -460,13 +496,13 @@ app_ui = ui.page_sidebar(
                 ui.card(
                     ui.card_header(ui.HTML("Distribución de la <b style='color: #31497e;'>Tasa de Deserción</b> (Último Año)")), 
                     output_widget("plot_dist_desercion"), 
-                    ui.card_footer(ui.HTML("Fuente: SPADIES - Ministerio de Educación Nacional<br>Distribución por programa en pasos de 2%"), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML("Fuente: SPADIES - Ministerio de Educación Nacional<br>Distribución por programa en pasos de 2%.<br><i>Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})</i>"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #31497e;'>Deserción Anual</b>")), 
                     output_widget("plot_trend_desercion"), 
-                    ui.card_footer(ui.HTML("Fuente: SPADIES - Ministerio de Educación Nacional<br>Evolución promedio de los programas seleccionados"), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML("Fuente: SPADIES - Ministerio de Educación Nacional<br>Evolución promedio de los programas seleccionados.<br><i>Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})</i>"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 class_="mb-5"
@@ -860,10 +896,10 @@ app_ui = ui.page_sidebar(
             ),
             ui.h3("Grupo de Comparación", class_="mt-4 mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
-                ui.value_box("Universo de Comparación (Últ. Año)", ui.output_ui("comp_kpi_universo"), showcase=fa.icon_svg("users-rays", "solid")),
-                ui.value_box("Total Neto Primer Curso", ui.output_ui("comp_kpi_neto_pcurso"), showcase=ICONS["student"]),
-                ui.value_box("Total Neto Matriculados", ui.output_ui("comp_kpi_neto_matricula"), showcase=fa.icon_svg("users", "solid")),
-                ui.value_box("Total Neto Graduados", ui.output_ui("comp_kpi_neto_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
+                ui.value_box("Universo de Comparación (Últ. Año)", ui.output_ui("comp_kpi_universo"), showcase=fa.icon_svg("users-rays", "solid"), class_="card-comparable"),
+                ui.value_box("Total Neto Primer Curso", ui.output_ui("comp_kpi_neto_pcurso"), showcase=ICONS["student"], class_="card-comparable"),
+                ui.value_box("Total Neto Matriculados", ui.output_ui("comp_kpi_neto_matricula"), showcase=fa.icon_svg("users", "solid"), class_="card-comparable"),
+                ui.value_box("Total Neto Graduados", ui.output_ui("comp_kpi_neto_graduados"), showcase=fa.icon_svg("graduation-cap", "solid"), class_="card-comparable"),
                 fill=False, class_="mb-5"
             ),
             ui.h3("Tendencias de Matrícula", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
@@ -874,9 +910,9 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.value_box("Mediana Comparable (Primer Curso)", ui.output_ui("comp_kpi_pcurso"), showcase=ICONS["student"]),
-                ui.value_box("Mediana Comparable (Matriculados)", ui.output_ui("comp_kpi_matricula"), showcase=fa.icon_svg("users", "solid")),
-                ui.value_box("Mediana Comparable (Graduados)", ui.output_ui("comp_kpi_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
+                ui.value_box("Mediana Comparable (Primer Curso)", ui.output_ui("comp_kpi_pcurso"), showcase=ICONS["student"], class_="card-comparable"),
+                ui.value_box("Mediana Comparable (Matriculados)", ui.output_ui("comp_kpi_matricula"), showcase=fa.icon_svg("users", "solid"), class_="card-comparable"),
+                ui.value_box("Mediana Comparable (Graduados)", ui.output_ui("comp_kpi_graduados"), showcase=fa.icon_svg("graduation-cap", "solid"), class_="card-comparable"),
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
@@ -904,7 +940,7 @@ app_ui = ui.page_sidebar(
             ui.h3("Observatorio Laboral y Calidad", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Programa Seleccionado (Tasa Empleabilidad)", ui.output_ui("comp_kpi_base_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid")),
-                ui.value_box("Media Comparable (Tasa Empleabilidad)", ui.output_ui("comp_kpi_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid")),
+                ui.value_box("Media Comparable (Tasa Empleabilidad)", ui.output_ui("comp_kpi_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid"), class_="card-comparable"),
                 fill=False, class_="mb-4", col_widths=(6, 6)
             ),
             ui.layout_columns(
@@ -936,7 +972,7 @@ app_ui = ui.page_sidebar(
             ui.h3("Salario de Enganche (Estimado)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Salario Promedio Estimado", ui.output_ui("comp_kpi_base_salario"), showcase=fa.icon_svg("hand-holding-dollar", "solid")),
-                ui.value_box("Promedio Estimado (Grupo)", ui.output_ui("comp_kpi_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid")),
+                ui.value_box("Promedio Estimado (Grupo)", ui.output_ui("comp_kpi_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid"), class_="card-comparable"),
                 fill=False, class_="mb-4", col_widths=(6, 6)
             ),
             ui.layout_columns(
@@ -958,21 +994,99 @@ app_ui = ui.page_sidebar(
             ui.h3("Deserción (SPADIES)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Programa Seleccionado (Tasa Deserción Promedio)", ui.output_ui("comp_kpi_base_desercion"), showcase=fa.icon_svg("user-minus", "solid")),
-                ui.value_box("Media Comparable (Tasa Deserción Promedio)", ui.output_ui("comp_kpi_desercion"), showcase=fa.icon_svg("user-minus", "solid")),
+                ui.value_box("Media Comparable (Tasa Deserción Promedio)", ui.output_ui("comp_kpi_desercion"), showcase=fa.icon_svg("user-minus", "solid"), class_="card-comparable"),
                 fill=False, class_="mb-4", col_widths=(6, 6)
             ),
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #31497e;'>Deserción Anual</b>")), 
                     output_widget("plot_comp_desercion_trend"), 
-                    ui.card_footer(ui.HTML("Fuente: SPADIES.<br>La línea central representa el promedio y la zona sombreada la dispersión muestral (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML("Fuente: SPADIES.<br>La línea central representa el promedio y la zona sombreada la dispersión muestral (±1 Desviación Estándar).<br><i>Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})</i>"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.output_ui("comp_dist_desercion_header")), 
                     output_widget("plot_comp_dist_desercion"), 
-                    ui.card_footer(ui.HTML("Fuente: SPADIES.<br><b>El fondo gris</b> representa a todos los programas del mismo Nivel de Formación.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca la tasa del Programa Seleccionado."), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML("Fuente: SPADIES.<br><b>El fondo gris</b> representa a todos los programas del mismo Nivel de Formación.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca la tasa del Programa Seleccionado.<br><i>Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})</i>"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
+                ),
+                class_="mb-5", col_widths=(6, 6)
+            ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
+            ui.h3("Prueba SABER PRO", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.div(
+                ui.HTML("<b>Nota:</b> Esta sección aplica exclusivamente para programas habilitados en la Prueba SABER PRO. Si no se visualiza ninguna información, el programa seleccionado es de posgrado o carece de registros."),
+                style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-bottom: 20px;"
+            ),
+            ui.layout_columns(
+                ui.value_box("Programa (Global)", ui.output_ui("comp_kpi_base_saber_global"), showcase=fa.icon_svg("award", "solid")),
+                ui.value_box("Comparable (Global)", ui.output_ui("comp_kpi_saber_global"), showcase=fa.icon_svg("award", "solid"), class_="card-comparable"),
+                ui.value_box("Programa (Razonamiento)", ui.output_ui("comp_kpi_base_saber_razona"), showcase=fa.icon_svg("calculator", "solid")),
+                ui.value_box("Comparable (Razonamiento)", ui.output_ui("comp_kpi_saber_razona"), showcase=fa.icon_svg("calculator", "solid"), class_="card-comparable"),
+                fill=False, class_="mb-3", col_widths=(3, 3, 3, 3)
+            ),
+            ui.layout_columns(
+                ui.value_box("Programa (Lectura)", ui.output_ui("comp_kpi_base_saber_lectura"), showcase=fa.icon_svg("book-open", "solid")),
+                ui.value_box("Comparable (Lectura)", ui.output_ui("comp_kpi_saber_lectura"), showcase=fa.icon_svg("book-open", "solid"), class_="card-comparable"),
+                ui.value_box("Programa (Ciudadanas)", ui.output_ui("comp_kpi_base_saber_ciuda"), showcase=fa.icon_svg("users-line", "solid")),
+                ui.value_box("Comparable (Ciudadanas)", ui.output_ui("comp_kpi_saber_ciuda"), showcase=fa.icon_svg("users-line", "solid"), class_="card-comparable"),
+                fill=False, class_="mb-3", col_widths=(3, 3, 3, 3)
+            ),
+            ui.layout_columns(
+                ui.value_box("Programa (Inglés)", ui.output_ui("comp_kpi_base_saber_ingles"), showcase=fa.icon_svg("language", "solid")),
+                ui.value_box("Comparable (Inglés)", ui.output_ui("comp_kpi_saber_ingles"), showcase=fa.icon_svg("language", "solid"), class_="card-comparable"),
+                ui.value_box("Programa (Com. Escrita)", ui.output_ui("comp_kpi_base_saber_escrita"), showcase=fa.icon_svg("pen-nib", "solid")),
+                ui.value_box("Comparable (Com. Escrita)", ui.output_ui("comp_kpi_saber_escrita"), showcase=fa.icon_svg("pen-nib", "solid"), class_="card-comparable"),
+                fill=False, class_="mb-4", col_widths=(3, 3, 3, 3)
+            ),
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Puntaje Global</b>")), output_widget("plot_comp_saber_trend_global"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Razonamiento Cuantitativo</b>")), output_widget("plot_comp_saber_trend_razona"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                class_="mb-3", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Lectura Crítica</b>")), output_widget("plot_comp_saber_trend_lectura"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Competencias Ciudadanas</b>")), output_widget("plot_comp_saber_trend_ciuda"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                class_="mb-3", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Inglés</b>")), output_widget("plot_comp_saber_trend_ingles"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Comunicación Escrita</b>")), output_widget("plot_comp_saber_trend_escrita"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                class_="mb-5", col_widths=(6, 6)
+            ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
+            ui.h3("Perfil Socioeconómico", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.div(
+                ui.HTML("<b>Nota:</b> Distribución sociodemográfica de los estudiantes matriculados en niveles de pregrado en el último año disponible (Saber PRO). Si no se visualiza ninguna información, el programa seleccionado es de posgrado o carece de registros estadísticos."),
+                style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-bottom: 20px;"
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Sexo</b>")), 
+                    output_widget("plot_comp_saber_demo_sexo"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 400px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Grupo de Edad</b>")), 
+                    output_widget("plot_comp_saber_demo_edad"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 400px;"
+                ),
+                class_="mb-4", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Horas de Trabajo</b>")), 
+                    output_widget("plot_comp_saber_demo_trabajo"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 400px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Estrato Social</b>")), 
+                    output_widget("plot_comp_saber_demo_estrato"), 
+                    ui.card_footer(ui.HTML("Fuente: ICFES."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 400px;"
                 ),
                 class_="mb-5", col_widths=(6, 6)
             )
@@ -985,6 +1099,7 @@ app_ui = ui.page_sidebar(
             shiny-data-grid::part(headerCell) { justify-content: center !important; text-align: center !important; }
             .shiny-data-grid-table td, .shiny-data-grid-table th { text-align: center !important; }
             .card-header { font-weight: bold; }
+            .card-comparable { background-color: #faf7fc !important; border: 1px solid #e2dcf2 !important; box-shadow: 0 4px 6px rgba(103, 79, 149, 0.05) !important; }
         """)
     ),
     ui.include_css(app_dir / "styles.css"),
@@ -4084,6 +4199,241 @@ def server(input, output, session):
     @render.ui
     def comp_kpi_desercion():
         return ui.HTML(f"<div style='font-size: 44px; font-weight: bold; color: #31497e;'>{calc_comp_kpi_desercion()}</div>")
+
+    # --- TENDENCIA COMPARADA PRUEBA SABER ---
+    @reactive.calc
+    def _df_saber_filt_base():
+        attr = comp_profile_attr()
+        if not attr: return None
+        return df_saber.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+
+    @reactive.calc
+    def _df_saber_filt_comp():
+        comp_codigos = comparable_snies_codigos()
+        if len(comp_codigos) == 0: return None
+        return df_saber.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos))
+
+    def get_comp_saber_series(score_col):
+        import pandas as pd
+        df_base = _df_saber_filt_base()
+        df_comp = _df_saber_filt_comp()
+        
+        # Base
+        if df_base is None or df_base.height == 0:
+            pd_base = pd.DataFrame()
+        else:
+            pd_base = df_base.group_by("anno").agg([
+                pl.col(score_col).mean().alias("valor_base")
+            ]).drop_nulls().sort("anno").to_pandas()
+            
+        # Comp
+        if df_comp is None or df_comp.height == 0:
+            pd_comp = pd.DataFrame()
+        else:
+            pd_comp = df_comp.group_by("anno").agg([
+                pl.col(score_col).mean().alias("valor_comp_mean"),
+                pl.col(score_col).std().alias("valor_comp_std"),
+                pl.col("codigo_snies_del_programa").n_unique().alias("n_programas")
+            ]).drop_nulls().sort("anno").to_pandas()
+            
+        return pd_base, pd_comp
+
+    def get_saber_base_html(col):
+        df_b, _ = get_comp_saber_series(col)
+        if df_b.empty: return ui.HTML(f"<div style='font-size: 38px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_b['valor_base'].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 38px; font-weight: bold; color: #31497e;'>{format_num_es(val, decimals=1)}</div>")
+
+    def get_saber_comp_html(col):
+        _, df_c = get_comp_saber_series(col)
+        if df_c.empty: return ui.HTML(f"<div style='font-size: 38px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        mean = df_c['valor_comp_mean'].iloc[-1]
+        std = df_c['valor_comp_std'].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 38px; font-weight: bold; color: #674f95;'>{format_num_es(mean, decimals=1)} <span style='font-size: 18px; color: gray;'>±{format_num_es(std, decimals=1)} (SD)</span></div>")
+
+    @render.ui
+    def comp_kpi_base_saber_global(): return get_saber_base_html('pro_gen_punt_global')
+    @render.ui
+    def comp_kpi_saber_global(): return get_saber_comp_html('pro_gen_punt_global')
+    
+    @render.ui
+    def comp_kpi_base_saber_razona(): return get_saber_base_html('pro_gen_mod_razona_cuantitat_punt')
+    @render.ui
+    def comp_kpi_saber_razona(): return get_saber_comp_html('pro_gen_mod_razona_cuantitat_punt')
+
+    @render.ui
+    def comp_kpi_base_saber_lectura(): return get_saber_base_html('pro_gen_mod_lectura_critica_punt')
+    @render.ui
+    def comp_kpi_saber_lectura(): return get_saber_comp_html('pro_gen_mod_lectura_critica_punt')
+
+    @render.ui
+    def comp_kpi_base_saber_ciuda(): return get_saber_base_html('pro_gen_mod_competen_ciudada_punt')
+    @render.ui
+    def comp_kpi_saber_ciuda(): return get_saber_comp_html('pro_gen_mod_competen_ciudada_punt')
+
+    @render.ui
+    def comp_kpi_base_saber_ingles(): return get_saber_base_html('pro_gen_mod_ingles_punt')
+    @render.ui
+    def comp_kpi_saber_ingles(): return get_saber_comp_html('pro_gen_mod_ingles_punt')
+
+    @render.ui
+    def comp_kpi_base_saber_escrita(): return get_saber_base_html('pro_gen_mod_comuni_escrita_punt')
+    @render.ui
+    def comp_kpi_saber_escrita(): return get_saber_comp_html('pro_gen_mod_comuni_escrita_punt')
+
+    def build_comp_plot_saber(df_base_pd, df_comp_pd, title):
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        
+        if df_comp_pd.empty and df_base_pd.empty:
+            return fig
+            
+        color_base = "#31497e"
+        color_comp = "#674f95"
+        color_band = "rgba(103, 79, 149, 0.15)"
+        
+        if not df_comp_pd.empty:
+            y_lower = (df_comp_pd["valor_comp_mean"] - df_comp_pd["valor_comp_std"]).clip(lower=0) 
+            y_upper = (df_comp_pd["valor_comp_mean"] + df_comp_pd["valor_comp_std"])
+            
+            fig.add_trace(go.Scatter(x=df_comp_pd["anno"], y=y_lower, marker=dict(color="#444"), line=dict(width=0), mode='lines', showlegend=False, hoverinfo='skip'))
+            fig.add_trace(go.Scatter(x=df_comp_pd["anno"], y=y_upper, marker=dict(color="#444"), line=dict(width=0), mode='lines', fillcolor=color_band, fill='tonexty', name='Dispersión (Media ± 1 SD)', hoverinfo='skip'))
+            
+            fig.add_trace(go.Scatter(
+                x=df_comp_pd["anno"],
+                y=df_comp_pd["valor_comp_mean"],
+                mode='lines+markers',
+                name='Media Comparable',
+                line=dict(color=color_comp, width=3, dash='dash'),
+                marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
+                hovertemplate="Año: %{x}<br>Media: %{y:.1f}<br>N: %{customdata} prog.<extra></extra>",
+                customdata=df_comp_pd["n_programas"]
+            ))
+
+        if not df_base_pd.empty:
+            attr = comp_profile_attr()
+            prog_name = f"SNIES {attr['codigo']}" if attr else "Prog. Base"
+            fig.add_trace(go.Scatter(
+                x=df_base_pd["anno"],
+                y=df_base_pd["valor_base"],
+                mode='lines+markers',
+                name=prog_name,
+                line=dict(color=color_base, width=4),
+                marker=dict(size=9, color="white", line=dict(width=2.5, color=color_base)),
+                hovertemplate="Año: %{x}<br>Puntaje: %{y:.1f}<extra></extra>"
+            ))
+            
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+            xaxis=dict(title="Año", tickmode="linear", gridcolor='#EEEEEE'),
+            yaxis=dict(title="Puntaje", gridcolor='#EEEEEE'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        return fig
+
+    @render_widget
+    def plot_comp_saber_trend_global():
+        df_base, df_comp = get_comp_saber_series('pro_gen_punt_global')
+        return build_comp_plot_saber(df_base, df_comp, "Puntaje Global")
+
+    @render_widget
+    def plot_comp_saber_trend_razona():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_razona_cuantitat_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Razonamiento Cuantitativo")
+
+    @render_widget
+    def plot_comp_saber_trend_lectura():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_lectura_critica_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Lectura Crítica")
+
+    @render_widget
+    def plot_comp_saber_trend_ciuda():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_competen_ciudada_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Competencias Ciudadanas")
+
+    @render_widget
+    def plot_comp_saber_trend_ingles():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_ingles_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Inglés")
+
+    @render_widget
+    def plot_comp_saber_trend_escrita():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_comuni_escrita_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Comunicación Escrita")
+
+    def build_comp_saber_categorical(column_id):
+        import pandas as pd
+        import plotly.express as px
+        import plotly.graph_objects as go
+        
+        attr = comp_profile_attr()
+        if not attr: return go.Figure()
+        
+        max_yr = df_saber["anno"].max()
+        df_base_raw = df_saber.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("anno") == max_yr))
+        
+        comp_codigos = comparable_snies_codigos()
+        df_comp_raw = df_saber.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos) & (pl.col("anno") == max_yr)) if comp_codigos else pl.DataFrame()
+        
+        def process_cat(df_raw, grupo_name):
+            if df_raw.height == 0: return pl.DataFrame()
+            d_clean = df_raw.with_columns(
+                pl.col(column_id).cast(pl.Utf8).fill_null("Sin Registro")
+            ).with_columns(
+                pl.when((pl.col(column_id) == "") | (pl.col(column_id) == "-1")).then(pl.lit("Sin Registro"))
+                .otherwise(pl.col(column_id)).alias(column_id)
+            )
+            agg = d_clean.group_by(column_id).len()
+            
+            total = agg["len"].sum()
+            return agg.with_columns(
+                (pl.col("len") / total).alias("porcentaje"),
+                pl.lit(grupo_name).alias("grupo")
+            )
+
+        df_b = process_cat(df_base_raw, "Programa Seleccionado")
+        df_c = process_cat(df_comp_raw, "Grupo Comparable")
+        
+        if df_b.height == 0 and df_c.height == 0:
+            return go.Figure()
+            
+        dfs_to_concat = []
+        if df_b.height > 0: dfs_to_concat.append(df_b)
+        if df_c.height > 0: dfs_to_concat.append(df_c)
+        df_comb = pl.concat(dfs_to_concat)
+        
+        df_pd = df_comb.to_pandas()
+        
+        if df_pd.empty: return go.Figure()
+        
+        fig = px.bar(df_pd, x="porcentaje", y=column_id, color="grupo", orientation='h', barmode='group', 
+                     color_discrete_map={"Programa Seleccionado": "#31497e", "Grupo Comparable": "#674f95"}, 
+                     text_auto='.1%')
+        fig.update_traces(marker_line_width=1.5, marker_line_color="white", textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
+        fig.update_layout(
+            legend_title_text="",
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=40, t=20, b=20),
+            xaxis=dict(title="Participación de Evaluados (%)", tickformat=".0%", gridcolor='#EEEEEE'),
+            yaxis=dict(title="", tickfont=dict(size=12), categoryorder='total ascending'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        return fig
+
+    @render_widget
+    def plot_comp_saber_demo_sexo():
+        return build_comp_saber_categorical("sexo")
+
+    @render_widget
+    def plot_comp_saber_demo_edad():
+        return build_comp_saber_categorical("grupo_edad")
+
+    @render_widget
+    def plot_comp_saber_demo_trabajo():
+        return build_comp_saber_categorical("pro_gen_estu_horassemanatrabaja")
+
+    @render_widget
+    def plot_comp_saber_demo_estrato():
+        return build_comp_saber_categorical("pro_gen_fami_estratovivienda")
 
     @render.download(filename=lambda: f"Informe_Educacion_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
     def download_pdf():
