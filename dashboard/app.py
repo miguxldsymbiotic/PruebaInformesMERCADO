@@ -847,46 +847,112 @@ app_ui = ui.page_sidebar(
                     ),
                     ui.div(
                         ui.HTML("<b>Nota Analítica:</b> Al agregar menos atributos de similitud, el grupo de comparación será más masivo (nivel nacional). Al ir activando criterios, la tendencia comparable representará un nicho cada vez más específico."),
-                        style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #f9596f; margin-top: 10px;"
+                        style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-top: 10px;"
+                    ),
+                    ui.div(
+                        ui.HTML("<b>Nota Técnica (Estadística Robusta):</b> Se utiliza la <b>Mediana</b> y el <b>MAD</b> (Desviación Absoluta de la Mediana) porque los datos de matrícula presentan una distribución tipo Pareto (varios programas pequeños y pocos con volúmenes masivos). En estos casos, el promedio y la desviación estándar se ven fuertemente sesgados por los valores extremos. La mediana representa mejor al 'programa típico' del grupo, y el MAD escalado por 1.4826 ofrece una medida de dispersión equivalente a la desviación estándar pero protegida contra anomalías."),
+                        style="font-size: 0.85em; color: #555; background-color: #fef9e7; padding: 12px; border-radius: 8px; border-left: 4px solid #ffa600; margin-top: 10px;"
                     ),
                     class_="mb-3"
                 ),
                 class_="mb-4",
                 col_widths=(4, 8)
             ),
+            ui.h3("Grupo de Comparación", class_="mt-4 mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Universo de Comparación (Últ. Año)", ui.output_ui("comp_kpi_universo"), showcase=fa.icon_svg("users-rays", "solid")),
                 ui.value_box("Total Neto Primer Curso", ui.output_ui("comp_kpi_neto_pcurso"), showcase=ICONS["student"]),
                 ui.value_box("Total Neto Matriculados", ui.output_ui("comp_kpi_neto_matricula"), showcase=fa.icon_svg("users", "solid")),
                 ui.value_box("Total Neto Graduados", ui.output_ui("comp_kpi_neto_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
+                fill=False, class_="mb-5"
+            ),
+            ui.h3("Tendencias de Matrícula", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.layout_columns(
+                ui.value_box("Programa Seleccionado (Primer Curso)", ui.output_ui("comp_kpi_base_pcurso"), showcase=ICONS["student"]),
+                ui.value_box("Programa Seleccionado (Matriculados)", ui.output_ui("comp_kpi_base_matricula"), showcase=fa.icon_svg("users", "solid")),
+                ui.value_box("Programa Seleccionado (Graduados)", ui.output_ui("comp_kpi_base_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.value_box("Promedio Muestral Primer Curso", ui.output_ui("comp_kpi_pcurso"), showcase=ICONS["student"]),
-                ui.value_box("Promedio Muestral Matriculados", ui.output_ui("comp_kpi_matricula"), showcase=fa.icon_svg("users", "solid")),
-                ui.value_box("Promedio Muestral Graduados", ui.output_ui("comp_kpi_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
+                ui.value_box("Mediana Comparable (Primer Curso)", ui.output_ui("comp_kpi_pcurso"), showcase=ICONS["student"]),
+                ui.value_box("Mediana Comparable (Matriculados)", ui.output_ui("comp_kpi_matricula"), showcase=fa.icon_svg("users", "solid")),
+                ui.value_box("Mediana Comparable (Graduados)", ui.output_ui("comp_kpi_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
                     output_widget("plot_comp_pcurso"), 
-                    ui.card_footer(ui.HTML("Fuente: SNIES. La banda sombreada representa ±1 Desviación Estándar de la muestra, mostrando dónde se concentra el 68% de los programas comparables."), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML("Fuente: SNIES.<br>La línea central representa la mediana y la zona sombreada el intervalo de dispersión basado en la Mediana (±1.48 MAD)."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
                     output_widget("plot_comp_matricula"), 
-                    ui.card_footer(ui.HTML("Fuente: SNIES. La banda sombreada representa ±1 Desviación Estándar de la muestra."), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML("Fuente: SNIES.<br>La línea central representa la mediana y la zona sombreada el intervalo de dispersión basado en la Mediana (±1.48 MAD)."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
                     output_widget("plot_comp_graduados"), 
-                    ui.card_footer(ui.HTML("Fuente: SNIES. La banda sombreada representa ±1 Desviación Estándar de la muestra."), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML("Fuente: SNIES.<br>La línea central representa la mediana y la zona sombreada el intervalo de dispersión basado en la Mediana (±1.48 MAD)."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 class_="mb-5"
+            ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
+            ui.h3("Observatorio Laboral y Calidad", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.layout_columns(
+                ui.value_box("Programa Seleccionado (Tasa Empleabilidad)", ui.output_ui("comp_kpi_base_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid")),
+                ui.value_box("Media Comparable (Tasa Empleabilidad)", ui.output_ui("comp_kpi_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid")),
+                fill=False, class_="mb-4", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), 
+                    output_widget("plot_comp_ole_empleabilidad"), 
+                    ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación.<br>La línea central representa el promedio y la zona sombreada la dispersión muestral (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Dependientes sobre Cotizantes</b>")), 
+                    output_widget("plot_comp_ole_dependientes"), 
+                    ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación.<br>La línea central representa el promedio y la zona sombreada la dispersión muestral (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                class_="mb-5", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.output_ui("comp_dist_empleabilidad_header")), 
+                    output_widget("plot_comp_dist_empleabilidad"), 
+                    ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación.<br><b>El fondo gris</b> representa a todos los programas del mismo Nivel de Formación.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca la tasa del Programa Seleccionado."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                ui.div(),
+                class_="mb-5", col_widths=(6, 6)
+            ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
+            ui.h3("Salario de Enganche (Estimado)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.layout_columns(
+                ui.value_box("Programa Seleccionado (Salario)", ui.output_ui("comp_kpi_base_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid")),
+                ui.value_box("Media Comparable (Salario)", ui.output_ui("comp_kpi_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid")),
+                fill=False, class_="mb-4", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.output_ui("comp_salario_evolucion_header")), 
+                    output_widget("plot_comp_salario_evolucion"), 
+                    ui.card_footer(ui.HTML("Fuente: OLE.<br>Salario estimado en pesos constantes. El grupo comparable presenta la media ±1 Desviación Estándar."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Rango Salarial</b> (Últ. Año)")), 
+                    output_widget("plot_comp_salario_dist"), 
+                    ui.card_footer(ui.HTML("Fuente: OLE.<br>Frecuencia de graduados por rangos salariales comparando el programa con su grupo."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                class_="mb-5", col_widths=(6, 6)
             )
         )
     ),
@@ -1815,8 +1881,12 @@ def server(input, output, session):
         df_base = df_base.join(df_smmlv_pl, on="anno_corte", how="inner")
         
         if is_constant:
-            # Usar el SMMLV más reciente disponible
-            latest_smmlv = df_smmlv_pl.sort("anno_corte").get_column("smmlv").tail(1).item()
+            max_data_year = df_ole_salario["anno_corte"].max()
+            smmlv_ref = df_smmlv_pl.filter(pl.col("anno_corte") == max_data_year)["smmlv"]
+            if smmlv_ref.len() > 0:
+                latest_smmlv = smmlv_ref[0]
+            else:
+                latest_smmlv = df_smmlv_pl.sort("anno_corte").get_column("smmlv").tail(1).item()
             df_base = df_base.with_columns(pl.lit(latest_smmlv).alias("smmlv_calc"))
         else:
             df_base = df_base.with_columns(pl.col("smmlv").alias("smmlv_calc"))
@@ -2783,8 +2853,15 @@ def server(input, output, session):
             f"<b>Departamento:</b> {attr['departamento_oferta']}" if attr.get('departamento_oferta') else "",
             f"<b>Estado:</b> {attr['estado_programa']}" if attr.get('estado_programa') else ""
         ]
-        items_html = " • ".join([i for i in items if i])
-        return ui.HTML(f"<div style='margin-top: 10px; padding: 10px; background-color: #f0f4f8; border-radius: 5px; font-size: 14px;'>{items_html}</div>")
+        items_clean = [i for i in items if i]
+        li_html = "".join([f"<li style='margin-bottom: 2px;'>{i}</li>" for i in items_clean])
+        return ui.HTML(f"""
+            <div style='margin-top: 10px; padding: 15px; background-color: #f0f4f8; border-radius: 8px; font-size: 14px; border-left: 4px solid #31497e;'>
+                <ul style='margin: 0; padding-left: 20px;'>
+                    {li_html}
+                </ul>
+            </div>
+        """)
 
     @reactive.calc
     def comparable_snies_list():
@@ -2813,14 +2890,45 @@ def server(input, output, session):
         # Filtrar por defecto solo por programas en estado ACTIVO
         df_comp = df_comp.filter(pl.col("estado_programa") == "ACTIVO")
 
-        # Filtro de Cobertura (Depto)
+        # Filtro de Cobertura (Depto) para Divipolas
         valid_snies = df_comp["codigo_snies_del_programa"].unique()
         df_cob_comp = df_cob_comp.filter(pl.col("codigo_snies_del_programa").is_in(valid_snies))
         
         if "departamento_oferta" in criterios and attr.get("departamento_oferta"):
             df_cob_comp = df_cob_comp.filter(pl.col("departamento_oferta") == attr["departamento_oferta"])
             
-        # Nota: Decidimos NO excluir el SNIES actual del grupo comparable.
+        return df_cob_comp["snies_divipola"].unique().to_list()
+
+    @reactive.calc
+    def comparable_snies_codigos():
+        """Devuelve la lista de codigos SNIES que forman el grupo comparable (para OLE)."""
+        attr = comp_profile_attr()
+        if not attr: return []
+        
+        criterios = input.comp_criterios() or []
+        df_comp = df_snies
+        df_cob_comp = df_cobertura
+        
+        if "nivel_de_formacion" in criterios and attr.get("nivel_de_formacion"):
+            df_comp = df_comp.filter(pl.col("nivel_de_formacion") == attr["nivel_de_formacion"])
+        if "modalidad" in criterios and attr.get("modalidad"):
+            df_comp = df_comp.filter(pl.col("modalidad") == attr["modalidad"])
+        if "sector" in criterios and attr.get("sector"):
+            df_comp = df_comp.filter(pl.col("sector") == attr["sector"])
+        if "area_de_conocimiento" in criterios and attr.get("area_de_conocimiento"):
+            df_comp = df_comp.filter(pl.col("area_de_conocimiento") == attr["area_de_conocimiento"])
+        if "nucleo_basico_del_conocimiento" in criterios and attr.get("nucleo_basico_del_conocimiento"):
+            df_comp = df_comp.filter(pl.col("nucleo_basico_del_conocimiento") == attr["nucleo_basico_del_conocimiento"])
+            
+        df_comp = df_comp.filter(pl.col("estado_programa") == "ACTIVO")
+
+        valid_snies = df_comp["codigo_snies_del_programa"].unique()
+        df_cob_comp = df_cob_comp.filter(pl.col("codigo_snies_del_programa").is_in(valid_snies))
+        
+        if "departamento_oferta" in criterios and attr.get("departamento_oferta"):
+            df_cob_comp = df_cob_comp.filter(pl.col("departamento_oferta") == attr["departamento_oferta"])
+            
+        return df_cob_comp["codigo_snies_del_programa"].unique().to_list()
         # De esta forma, si configuras un grupo idéntico a lo que harías en el sidebar,
         # la masa total y los elementos cuadran de manera exacta.
         # Retornamos los códigos Divipola unicos para el filtro de dfs (pcurso, matriculados)
@@ -2856,18 +2964,19 @@ def server(input, output, session):
         # (agrupando por las iteraciones que haya si las hay) para tener el valor "por programa"
         df_comp_prog = df_comp.group_by(["anno", "snies_divipola"]).agg(pl.col(metric_col).sum())
         
-        # Segundo, promediamos todos los programas por año y calculamos std_dev
+        # Segundo, calculamos mediana y MAD (Desviación Absoluta de la Mediana) por año
+        # El MAD se escala por 1.4826 para ser comparable con la desviación estándar en distribuciones normales.
         df_comp_agg = df_comp_prog.group_by("anno").agg([
-            pl.col(metric_col).mean().alias("valor_comp_mean"),
-            pl.col(metric_col).std().alias("valor_comp_std"),
+            pl.col(metric_col).median().alias("valor_comp_median"),
+            ((pl.col(metric_col) - pl.col(metric_col).median()).abs().median() * 1.4826).alias("valor_comp_mad"),
             pl.col(metric_col).sum().alias("valor_comp_sum"),
             pl.col(metric_col).count().alias("n_programas")
         ]).sort("anno")
         
         df_comp_pd = df_comp_agg.to_pandas()
         
-        # Manejar std NA (cuando n=1)
-        df_comp_pd["valor_comp_std"] = df_comp_pd["valor_comp_std"].fillna(0)
+        # Manejar casos sin dispersión (n=1)
+        df_comp_pd["valor_comp_mad"] = df_comp_pd["valor_comp_mad"].fillna(0)
         
         return df_base_pd, df_comp_pd
 
@@ -2878,14 +2987,14 @@ def server(input, output, session):
         if df_comp_pd.empty and df_base_pd.empty:
             return fig
             
-        color_base = "#f9596f"  # Color destaque
-        color_comp = "#31497e"  # Azul base
-        color_band = "rgba(49, 73, 126, 0.15)" # Azul semitransparente
+        color_base = "#31497e"  # Primer color: Azul
+        color_comp = "#674f95"  # Segundo color: Púrpura
+        color_band = "rgba(103, 79, 149, 0.15)" # Púrpura semitransparente (basado en #674f95)
         
-        # Traza de Banda Inferior (Desviacion estandar)
+        # Traza de Banda Sombreada (Mediana ± MAD escalado)
         if not df_comp_pd.empty:
-            y_lower = (df_comp_pd["valor_comp_mean"] - df_comp_pd["valor_comp_std"]).clip(lower=0) 
-            y_upper = df_comp_pd["valor_comp_mean"] + df_comp_pd["valor_comp_std"]
+            y_lower = (df_comp_pd["valor_comp_median"] - df_comp_pd["valor_comp_mad"]).clip(lower=0) 
+            y_upper = df_comp_pd["valor_comp_median"] + df_comp_pd["valor_comp_mad"]
             
             fig.add_trace(go.Scatter(
                 x=df_comp_pd["anno"],
@@ -2906,19 +3015,19 @@ def server(input, output, session):
                 mode='lines',
                 fillcolor=color_band,
                 fill='tonexty',
-                name='Dispersión (±1 Std. Dev)',
+                name='Dispersión (Mediana ± 1.48 MAD)',
                 hoverinfo='skip'
             ))
             
-            # Traza Promedio Comparable
+            # Traza Mediana Comparable
             fig.add_trace(go.Scatter(
                 x=df_comp_pd["anno"],
-                y=df_comp_pd["valor_comp_mean"],
+                y=df_comp_pd["valor_comp_median"],
                 mode='lines+markers',
-                name='Media Comparable',
+                name='Mediana Comparable',
                 line=dict(color=color_comp, width=3, dash='dash'),
                 marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
-                hovertemplate="Año: %{x}<br>Media: %{y:,.0f} est.<br>N: %{customdata} prog.<extra></extra>",
+                hovertemplate="Año: %{x}<br>Mediana: %{y:,.0f} est.<br>N: %{customdata} prog.<extra></extra>",
                 customdata=df_comp_pd["n_programas"]
             ))
 
@@ -2961,58 +3070,475 @@ def server(input, output, session):
         df_base, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
         return build_comp_plot(df_base, df_comp, "Graduados")
 
+    def calc_comp_ole_metric(num_col, den_col):
+        import pandas as pd
+        attr = comp_profile_attr()
+        if not attr: 
+            return pd.DataFrame(), pd.DataFrame()
+            
+        # 1. SERIE BASE
+        df_base_filtered = df_ole_m0.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+        df_base_agg = df_base_filtered.group_by("anno_corte").agg([
+            pl.col(num_col).sum().alias("num"),
+            pl.col(den_col).sum().alias("den")
+        ]).filter(pl.col("den") > 0).sort("anno_corte")
+        
+        df_base_pd = df_base_agg.with_columns((pl.col("num") / pl.col("den")).alias("valor_base")).to_pandas()
+        
+        # 2. SERIE COMPARABLE
+        comp_codigos = comparable_snies_codigos()
+        if len(comp_codigos) == 0:
+            return df_base_pd, pd.DataFrame()
+            
+        df_comp_filtered = df_ole_m0.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos))
+        
+        df_comp_prog = df_comp_filtered.group_by(["anno_corte", "codigo_snies_del_programa"]).agg([
+            pl.col(num_col).sum().alias("num"),
+            pl.col(den_col).sum().alias("den")
+        ]).filter(pl.col("den") > 0).with_columns((pl.col("num") / pl.col("den")).alias("tasa"))
+        
+        df_comp_agg = df_comp_prog.group_by("anno_corte").agg([
+            pl.col("tasa").mean().alias("valor_comp_mean"),
+            pl.col("tasa").std().alias("valor_comp_std"),
+            pl.col("tasa").count().alias("n_programas")
+        ]).sort("anno_corte")
+        
+        df_comp_pd = df_comp_agg.to_pandas()
+        df_comp_pd["valor_comp_std"] = df_comp_pd["valor_comp_std"].fillna(0)
+        
+        # Estandarizar nombre de columna de año
+        if not df_base_pd.empty: df_base_pd["anno"] = df_base_pd["anno_corte"]
+        if not df_comp_pd.empty: df_comp_pd["anno"] = df_comp_pd["anno_corte"]
+        
+        return df_base_pd, df_comp_pd
+
+    def build_comp_plot_ole(df_base_pd, df_comp_pd, title):
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        
+        if df_comp_pd.empty and df_base_pd.empty:
+            return fig
+            
+        color_base = "#31497e"
+        color_comp = "#674f95"
+        color_band = "rgba(103, 79, 149, 0.15)"
+        
+        if not df_comp_pd.empty:
+            y_lower = (df_comp_pd["valor_comp_mean"] - df_comp_pd["valor_comp_std"]).clip(lower=0) 
+            y_upper = (df_comp_pd["valor_comp_mean"] + df_comp_pd["valor_comp_std"]).clip(upper=1)
+            
+            fig.add_trace(go.Scatter(x=df_comp_pd["anno"], y=y_lower, marker=dict(color="#444"), line=dict(width=0), mode='lines', showlegend=False, hoverinfo='skip'))
+            fig.add_trace(go.Scatter(x=df_comp_pd["anno"], y=y_upper, marker=dict(color="#444"), line=dict(width=0), mode='lines', fillcolor=color_band, fill='tonexty', name='Dispersión (Media ± 1 Std. Dev)', hoverinfo='skip'))
+            
+            fig.add_trace(go.Scatter(
+                x=df_comp_pd["anno"],
+                y=df_comp_pd["valor_comp_mean"],
+                mode='lines+markers',
+                name='Media Comparable',
+                line=dict(color=color_comp, width=3, dash='dash'),
+                marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
+                hovertemplate="Año: %{x}<br>Media: %{y:.1%}<br>N: %{customdata} prog.<extra></extra>",
+                customdata=df_comp_pd["n_programas"]
+            ))
+
+        if not df_base_pd.empty:
+            attr = comp_profile_attr()
+            prog_name = f"SNIES {attr['codigo']}" if attr else "Prog. Base"
+            fig.add_trace(go.Scatter(
+                x=df_base_pd["anno"],
+                y=df_base_pd["valor_base"],
+                mode='lines+markers',
+                name=prog_name,
+                line=dict(color=color_base, width=4),
+                marker=dict(size=9, color="white", line=dict(width=2.5, color=color_base)),
+                hovertemplate="Año: %{x}<br>Tasa: %{y:.1%}<extra></extra>"
+            ))
+            
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+            xaxis=dict(title="Año", tickmode="linear", gridcolor='#EEEEEE'),
+            yaxis=dict(title="Tasa", tickformat=".1%", gridcolor='#EEEEEE'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        return fig
+
+    def build_comp_plot_salario(df_base_pd, df_comp_pd, title):
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        
+        if df_comp_pd.empty and df_base_pd.empty:
+            return fig
+            
+        color_base = "#31497e"
+        color_comp = "#674f95"
+        color_band = "rgba(103, 79, 149, 0.15)"
+        
+        if not df_comp_pd.empty:
+            y_lower = (df_comp_pd["valor_comp_mean"] - df_comp_pd["valor_comp_std"]).clip(lower=0) 
+            y_upper = (df_comp_pd["valor_comp_mean"] + df_comp_pd["valor_comp_std"])
+            
+            fig.add_trace(go.Scatter(x=df_comp_pd["anno"], y=y_lower, marker=dict(color="#444"), line=dict(width=0), mode='lines', showlegend=False, hoverinfo='skip'))
+            fig.add_trace(go.Scatter(x=df_comp_pd["anno"], y=y_upper, marker=dict(color="#444"), line=dict(width=0), mode='lines', fillcolor=color_band, fill='tonexty', name='Dispersión (±1 SD)', hoverinfo='skip'))
+            
+            fig.add_trace(go.Scatter(
+                x=df_comp_pd["anno"],
+                y=df_comp_pd["valor_comp_mean"],
+                mode='lines+markers',
+                name='Media',
+                line=dict(color=color_comp, width=3, dash='dash'),
+                marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
+                hovertemplate="Año: %{x}<br>Media: $%{y:,.0f}<br>N: %{customdata} prog.<extra></extra>",
+                customdata=df_comp_pd["n_programas"]
+            ))
+
+        if not df_base_pd.empty:
+            attr = comp_profile_attr()
+            prog_name = f"SNIES {attr['codigo']}" if attr else "Prog. Base"
+            fig.add_trace(go.Scatter(
+                x=df_base_pd["anno"],
+                y=df_base_pd["valor_base"],
+                mode='lines+markers',
+                name=prog_name,
+                line=dict(color=color_base, width=4),
+                marker=dict(size=9, color="white", line=dict(width=2.5, color=color_base)),
+                hovertemplate="Año: %{x}<br>Salario: $%{y:,.0f}<extra></extra>"
+            ))
+            
+        fig.update_layout(
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
+            xaxis=dict(title="Año", tickmode="linear", gridcolor='#EEEEEE'),
+            yaxis=dict(title="Salario ($)", tickformat="$,.0f", gridcolor='#EEEEEE'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        return fig
+
+    @render_widget
+    def plot_comp_ole_empleabilidad():
+        df_base, df_comp = calc_comp_ole_metric("graduados_que_cotizan", "graduados")
+        return build_comp_plot_ole(df_base, df_comp, "Tasa de Empleabilidad")
+
+    @render_widget
+    def plot_comp_ole_dependientes():
+        df_base, df_comp = calc_comp_ole_metric("graduados_cotizantes_dependientes", "graduados_que_cotizan")
+        return build_comp_plot_ole(df_base, df_comp, "Dependientes sobre Cotizantes")
+
+    @render.ui
+    def comp_dist_empleabilidad_header():
+        max_yr = df_ole_m0["anno_corte"].max()
+        return ui.HTML(f"Distribución de <b style='color: #31497e;'>Tasa de Empleabilidad</b> ({max_yr})")
+
+    @reactive.calc
+    def get_comp_ole_dist_empleabilidad():
+        import pandas as pd
+        max_anno_corte = df_ole_m0["anno_corte"].max()
+        
+        attr = comp_profile_attr()
+        df_total = pd.DataFrame()
+        if attr and attr.get("nivel_de_formacion"):
+            nivel = attr["nivel_de_formacion"]
+            valid_snies_nivel = df_snies.filter((pl.col("nivel_de_formacion") == nivel) & (pl.col("estado_programa") == "ACTIVO"))["codigo_snies_del_programa"].unique()
+            
+            ole_nivel = df_ole_m0.filter(
+                pl.col("codigo_snies_del_programa").is_in(valid_snies_nivel) & 
+                (pl.col("anno_corte") == max_anno_corte)
+            )
+            
+            if ole_nivel.height > 0:
+                agg_total = ole_nivel.group_by(["codigo_snies_del_programa"]).agg([
+                    pl.col("graduados_que_cotizan").sum().alias("num"),
+                    pl.col("graduados").sum().alias("den")
+                ]).filter(pl.col("den") > 0).with_columns((pl.col("num") / pl.col("den")).alias("tasa"))
+                df_total = agg_total.to_pandas()
+                df_total["grupo"] = "Mismo Nivel de Formación"
+        
+        comp_codigos = comparable_snies_codigos()
+        df_comp = pd.DataFrame()
+        if len(comp_codigos) > 0:
+            ole_comp = df_ole_m0.filter(
+                pl.col("codigo_snies_del_programa").is_in(comp_codigos) & 
+                (pl.col("anno_corte") == max_anno_corte)
+            )
+            if ole_comp.height > 0:
+                agg_comp = ole_comp.group_by(["codigo_snies_del_programa"]).agg([
+                    pl.col("graduados_que_cotizan").sum().alias("num"),
+                    pl.col("graduados").sum().alias("den")
+                ]).filter(pl.col("den") > 0).with_columns((pl.col("num") / pl.col("den")).alias("tasa"))
+                df_comp = agg_comp.to_pandas()
+                df_comp["grupo"] = "Grupo Comparable"
+                
+        if df_total.empty and df_comp.empty:
+            return pd.DataFrame()
+        
+        return pd.concat([df_total, df_comp], ignore_index=True)
+
+    @reactive.calc
+    def calc_plot_comp_dist_empleabilidad():
+        import plotly.graph_objects as go
+        df_pd = get_comp_ole_dist_empleabilidad()
+        if df_pd.empty: return go.Figure()
+        
+        fig = px.histogram(df_pd, x="tasa", color="grupo", barmode='overlay', histnorm='percent', 
+                           color_discrete_map={"Mismo Nivel de Formación": "#ced4da", "Grupo Comparable": "#674f95"})
+        fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white", opacity=0.8)
+        
+        # Agregar línea del programa base
+        attr = comp_profile_attr()
+        if attr:
+            df_base, _ = calc_comp_ole_metric("graduados_que_cotizan", "graduados")
+            if not df_base.empty:
+                tasa_base = df_base["valor_base"].iloc[-1]
+                fig.add_vline(x=tasa_base, line_width=3, line_dash="dash", line_color="#31497e", 
+                              annotation_text=f"Prog. Seleccionado<br>({tasa_base:.1%})", annotation_position="top",
+                              annotation_font_color="#31497e")
+                          
+        fig.update_layout(
+            legend_title_text="",
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=40, b=20),
+            xaxis=dict(title="Tasa de Empleabilidad", tickformat=".0%", dtick=0.05, gridcolor='#EEEEEE', automargin=True),
+            yaxis=dict(title="Porcentaje de Programas (%)", ticksuffix="%", gridcolor='#EEEEEE', automargin=True),
+            legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5)
+        )
+        # Format tooltips
+        fig.update_traces(hovertemplate='Tasa: %{x}<br>Frecuencia: %{y:.1f}%<extra></extra>')
+        return fig
+
+    @render_widget
+    def plot_comp_dist_empleabilidad():
+        return calc_plot_comp_dist_empleabilidad()
+
+    @render.ui
+    def comp_salario_evolucion_header():
+        max_yr = df_ole_salario["anno_corte"].max()
+        return ui.HTML(f"Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos Ctes. {max_yr})")
+
+    @reactive.calc
+    def calc_comp_salario_evolucion():
+        import pandas as pd
+        attr = comp_profile_attr()
+        if not attr: 
+            return pd.DataFrame(), pd.DataFrame()
+        
+        df_base = df_ole_salario.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+        comp_codigos = comparable_snies_codigos()
+        
+        if len(comp_codigos) == 0:
+            df_comp = pd.DataFrame()
+        else:
+            df_comp = df_ole_salario.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos))
+            
+        def process_salary_df(df_in):
+            if df_in.height == 0: return pl.DataFrame()
+            d = df_in.join(df_smmlv_pl, on="anno_corte", how="inner")
+            
+            # Pesos constantes basados en el último año de datos salariales reales
+            max_data_year = df_ole_salario["anno_corte"].max()
+            smmlv_ref = df_smmlv_pl.filter(pl.col("anno_corte") == max_data_year)["smmlv"]
+            if smmlv_ref.len() > 0:
+                latest_smmlv = smmlv_ref[0]
+            else:
+                latest_smmlv = df_smmlv_pl.sort("anno_corte").get_column("smmlv").tail(1).item()
+                
+            d = d.with_columns(pl.lit(latest_smmlv).alias("smmlv_calc"))
+                
+            d = d.with_columns(
+                pl.col("rango_salario").replace(SALARIO_MIDPOINTS, default=1.0).cast(pl.Float64).alias("midpoint")
+            )
+            agg_prog = d.group_by(["anno_corte", "codigo_snies_del_programa"]).agg([
+                ((pl.col("midpoint") * pl.col("graduados_cotizantes_dependientes")).sum() / 
+                 pl.col("graduados_cotizantes_dependientes").sum() * pl.col("smmlv_calc").first()).alias("sal_prog")
+            ]).filter(pl.col("sal_prog").is_not_null())
+            return agg_prog
+
+        base_prog = process_salary_df(df_base)
+        if base_prog.height > 0:
+            df_base_pd = base_prog.group_by("anno_corte").agg(pl.col("sal_prog").mean().alias("valor_base")).sort("anno_corte").to_pandas()
+            df_base_pd["anno"] = df_base_pd["anno_corte"]
+        else:
+            df_base_pd = pd.DataFrame()
+
+        comp_prog = process_salary_df(df_comp)
+        if comp_prog.height > 0:
+            df_comp_pd = comp_prog.group_by("anno_corte").agg([
+                pl.col("sal_prog").mean().alias("valor_comp_mean"),
+                pl.col("sal_prog").std().alias("valor_comp_std"),
+                pl.col("sal_prog").count().alias("n_programas")
+            ]).sort("anno_corte").to_pandas()
+            df_comp_pd["valor_comp_std"] = df_comp_pd["valor_comp_std"].fillna(0)
+            df_comp_pd["anno"] = df_comp_pd["anno_corte"]
+        else:
+            df_comp_pd = pd.DataFrame()
+            
+        return df_base_pd, df_comp_pd
+
+    @reactive.calc
+    def calc_comp_salario_dist_data():
+        import pandas as pd
+        attr = comp_profile_attr()
+        df_base = pd.DataFrame()
+        df_comp = pd.DataFrame()
+        
+        if attr:
+            base_pl = df_ole_salario.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+            if base_pl.height > 0:
+                max_yr = base_pl["anno_corte"].max()
+                agg_base = base_pl.filter(pl.col("anno_corte") == max_yr).group_by("rango_salario").agg(
+                    pl.col("graduados_cotizantes_dependientes").sum().alias("cantidad")
+                ).to_pandas()
+                tot = agg_base["cantidad"].sum()
+                agg_base["porcentaje"] = agg_base["cantidad"] / tot if tot > 0 else 0
+                agg_base["grupo"] = "Programa Seleccionado"
+                df_base = agg_base
+                
+        comp_codigos = comparable_snies_codigos()
+        if len(comp_codigos) > 0:
+            comp_pl = df_ole_salario.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos))
+            if comp_pl.height > 0:
+                max_yr_comp = comp_pl["anno_corte"].max()
+                agg_comp = comp_pl.filter(pl.col("anno_corte") == max_yr_comp).group_by("rango_salario").agg(
+                    pl.col("graduados_cotizantes_dependientes").sum().alias("cantidad")
+                ).to_pandas()
+                tot_comp = agg_comp["cantidad"].sum()
+                agg_comp["porcentaje"] = agg_comp["cantidad"] / tot_comp if tot_comp > 0 else 0
+                agg_comp["grupo"] = "Grupo Comparable"
+                df_comp = agg_comp
+                
+        res = pd.concat([df_base, df_comp], ignore_index=True)
+        if not res.empty:
+            res["rango_salario"] = pd.Categorical(res["rango_salario"], categories=RANGO_SALARIO_ORDER, ordered=True)
+            res = res.sort_values(["rango_salario", "grupo"])
+        return res
+
+    @reactive.calc
+    def calc_plot_comp_salario_dist():
+        import plotly.graph_objects as go
+        df = calc_comp_salario_dist_data()
+        if df.empty: return go.Figure()
+        
+        fig = px.bar(df, x="porcentaje", y="rango_salario", color="grupo", orientation='h', barmode='group', 
+                     color_discrete_map={"Programa Seleccionado": "#31497e", "Grupo Comparable": "#674f95"}, 
+                     text_auto='.1%')
+        fig.update_traces(marker_line_width=1.5, marker_line_color="white")
+        fig.update_layout(
+            legend_title_text="",
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title="Participación de Graduados (%)", tickformat=".0%", gridcolor='#EEEEEE'),
+            yaxis=dict(title="", tickfont=dict(size=13)),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        return fig
+
+    @render_widget
+    def plot_comp_salario_dist():
+        return calc_plot_comp_salario_dist()
+        
+    @render_widget
+    def plot_comp_salario_evolucion():
+        df_base, df_comp = calc_comp_salario_evolucion()
+        return build_comp_plot_salario(df_base, df_comp, "Salario Promedio de Enganche")
+
     # KPIs
+    @render.ui
+    def comp_kpi_base_pcurso():
+        df_base, _ = calc_comp_metric(df_pcurso, "primer_curso_sum")
+        if df_base.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_base["valor_base"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_base_matricula():
+        df_base, _ = calc_comp_metric(df_matricula, "matricula_sum")
+        if df_base.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_base["valor_base"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_base_graduados():
+        df_base, _ = calc_comp_metric(df_graduados, "graduados_sum")
+        if df_base.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_base["valor_base"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
     @render.ui
     def comp_kpi_universo():
         _, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
-        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>0 prog.</div>")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>0 prog.</div>")
         n = df_comp["n_programas"].iloc[-1]
-        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(n)} prog.</div>")
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_num_es(n)} prog.</div>")
 
     @render.ui
     def comp_kpi_neto_pcurso():
         _, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
-        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         val = df_comp["valor_comp_sum"].iloc[-1]
-        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_num_es(val)}</div>")
 
     @render.ui
     def comp_kpi_neto_matricula():
         _, df_comp = calc_comp_metric(df_matricula, "matricula_sum")
-        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         val = df_comp["valor_comp_sum"].iloc[-1]
-        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_num_es(val)}</div>")
 
     @render.ui
     def comp_kpi_neto_graduados():
         _, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
-        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         val = df_comp["valor_comp_sum"].iloc[-1]
-        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_num_es(val)}</div>")
 
     @render.ui
     def comp_kpi_pcurso():
         _, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
-        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
-        mean = df_comp["valor_comp_mean"].iloc[-1]
-        std = df_comp["valor_comp_std"].iloc[-1]
-        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(mean)} <span style='font-size: 18px; color: gray;'>±{format_num_es(std)}</span></div>")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        median = df_comp["valor_comp_median"].iloc[-1]
+        mad = df_comp["valor_comp_mad"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_num_es(median)} <span style='font-size: 18px; color: gray;'>±{format_num_es(mad)} (MAD)</span></div>")
 
     @render.ui
     def comp_kpi_matricula():
         _, df_comp = calc_comp_metric(df_matricula, "matricula_sum")
-        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
-        mean = df_comp["valor_comp_mean"].iloc[-1]
-        std = df_comp["valor_comp_std"].iloc[-1]
-        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(mean)} <span style='font-size: 18px; color: gray;'>±{format_num_es(std)}</span></div>")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        median = df_comp["valor_comp_median"].iloc[-1]
+        mad = df_comp["valor_comp_mad"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_num_es(median)} <span style='font-size: 18px; color: gray;'>±{format_num_es(mad)} (MAD)</span></div>")
 
     @render.ui
     def comp_kpi_graduados():
         _, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
-        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        median = df_comp["valor_comp_median"].iloc[-1]
+        mad = df_comp["valor_comp_mad"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_num_es(median)} <span style='font-size: 18px; color: gray;'>±{format_num_es(mad)} (MAD)</span></div>")
+
+    @render.ui
+    def comp_kpi_base_empleabilidad():
+        df_base, _ = calc_comp_ole_metric("graduados_que_cotizan", "graduados")
+        if df_base.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_base["valor_base"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_pct_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_empleabilidad():
+        _, df_comp = calc_comp_ole_metric("graduados_que_cotizan", "graduados")
+        if df_comp.empty: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         mean = df_comp["valor_comp_mean"].iloc[-1]
         std = df_comp["valor_comp_std"].iloc[-1]
-        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{format_num_es(mean)} <span style='font-size: 18px; color: gray;'>±{format_num_es(std)}</span></div>")
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_pct_es(mean)} <span style='font-size: 18px; color: gray;'>±{format_pct_es(std)} (SD)</span></div>")
+
+    @render.ui
+    def comp_kpi_base_salario():
+        df_base, _ = calc_comp_salario_evolucion()
+        if df_base.empty: return ui.HTML("<div style='font-size: 34px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_base["valor_base"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 34px; font-weight: bold; color: #31497e;'>${format_num_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_salario():
+        _, df_comp = calc_comp_salario_evolucion()
+        if df_comp.empty: return ui.HTML("<div style='font-size: 34px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        mean = df_comp["valor_comp_mean"].iloc[-1]
+        std = df_comp["valor_comp_std"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 34px; font-weight: bold; color: #674f95;'>${format_num_es(mean)} <span style='font-size: 18px; color: gray;'>±${format_num_es(std)} (SD)</span></div>")
 
     def _prepare_report_content(engine, p):
         # 1. Preparar Datos Generales
