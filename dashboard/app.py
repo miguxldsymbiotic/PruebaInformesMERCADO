@@ -953,6 +953,28 @@ app_ui = ui.page_sidebar(
                     full_screen=True, style="min-height: 450px;"
                 ),
                 class_="mb-5", col_widths=(6, 6)
+            ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
+            ui.h3("Deserción (SPADIES)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.layout_columns(
+                ui.value_box("Programa Seleccionado (Tasa Deserción Promedio)", ui.output_ui("comp_kpi_base_desercion"), showcase=fa.icon_svg("user-minus", "solid")),
+                ui.value_box("Media Comparable (Tasa Deserción Promedio)", ui.output_ui("comp_kpi_desercion"), showcase=fa.icon_svg("user-minus", "solid")),
+                fill=False, class_="mb-4", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #31497e;'>Deserción Anual</b>")), 
+                    output_widget("plot_comp_desercion_trend"), 
+                    ui.card_footer(ui.HTML("Fuente: SPADIES.<br>La línea central representa el promedio y la zona sombreada la dispersión muestral (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.output_ui("comp_dist_desercion_header")), 
+                    output_widget("plot_comp_dist_desercion"), 
+                    ui.card_footer(ui.HTML("Fuente: SPADIES.<br><b>El fondo gris</b> representa a todos los programas del mismo Nivel de Formación.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca la tasa del Programa Seleccionado."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 450px;"
+                ),
+                class_="mb-5", col_widths=(6, 6)
             )
         )
     ),
@@ -3924,6 +3946,144 @@ def server(input, output, session):
     def prev_demo_trabajo_trend(): return calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo")
     @render_widget
     def prev_demo_estrato_trend(): return calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato")
+
+    # --- TENDENCIA COMPARADA DESERCION ---
+    @reactive.calc
+    def calc_comp_desercion_metric():
+        import pandas as pd
+        attr = comp_profile_attr()
+        if not attr: 
+            return pd.DataFrame(), pd.DataFrame()
+            
+        # 1. SERIE BASE
+        df_base_filtered = df_desercion.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+        df_base_pd = df_base_filtered.select([pl.col("anno"), pl.col("desercion_anual_mean").alias("valor_base")]).sort("anno").to_pandas()
+        
+        # 2. SERIE COMPARABLE
+        comp_codigos = comparable_snies_codigos()
+        if len(comp_codigos) == 0:
+            return df_base_pd, pd.DataFrame()
+            
+        df_comp_filtered = df_desercion.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos))
+        
+        df_comp_agg = df_comp_filtered.group_by("anno").agg([
+            pl.col("desercion_anual_mean").mean().alias("valor_comp_mean"),
+            pl.col("desercion_anual_mean").std().alias("valor_comp_std"),
+            pl.col("desercion_anual_mean").count().alias("n_programas")
+        ]).sort("anno")
+        
+        df_comp_pd = df_comp_agg.to_pandas()
+        df_comp_pd["valor_comp_std"] = df_comp_pd["valor_comp_std"].fillna(0)
+        
+        return df_base_pd, df_comp_pd
+
+    @reactive.calc
+    def calc_plot_comp_desercion_trend():
+        df_base, df_comp = calc_comp_desercion_metric()
+        return build_comp_plot_ole(df_base, df_comp, "Deserción Anual")
+
+    @render_widget
+    def plot_comp_desercion_trend():
+        return calc_plot_comp_desercion_trend()
+
+    @render.ui
+    def comp_dist_desercion_header():
+        attr = comp_profile_attr()
+        yr = max_anno_desercion
+        if not attr: return ui.HTML(f"Distribución Total de la <b style='color: #31497e;'>Deserción</b> ({yr})")
+        return ui.HTML(f"Distribución vs Universo <b style='color: #31497e;'>{attr['nivel_de_formacion']}</b> ({yr})")
+
+    @reactive.calc
+    def calc_plot_comp_dist_desercion():
+        import pandas as pd
+        import plotly.graph_objects as go
+        attr = comp_profile_attr()
+        if not attr: return go.Figure()
+        
+        comp_codigos = comparable_snies_codigos()
+        if len(comp_codigos) == 0: return go.Figure()
+        
+        max_yr = max_anno_desercion
+        df_latest = df_desercion.filter(pl.col("anno") == max_yr)
+        
+        # Universo Base (Mismo Nivel de Formación)
+        df_snies_nivel = df_snies.filter((pl.col("nivel_de_formacion") == attr["nivel_de_formacion"]) & (pl.col("estado_programa") == "ACTIVO"))
+        codigos_nivel = df_snies_nivel["codigo_snies_del_programa"].unique()
+        df_universo = df_latest.filter(pl.col("codigo_snies_del_programa").is_in(codigos_nivel))
+        
+        # Grupo Comparable
+        df_grupo = df_latest.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos))
+        
+        # Programa Base
+        df_base = df_latest.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+        tasa_base = df_base["desercion_anual_mean"][0] if df_base.height > 0 else None
+        
+        # -- Plotly --
+        fig = go.Figure()
+        
+        if df_universo.height > 0:
+            fig.add_trace(go.Histogram(
+                x=df_universo["desercion_anual_mean"].to_pandas(), histnorm='percent', 
+                name="Mismo Nivel de Formación",
+                marker_color="#ced4da", opacity=0.8,
+                marker_line_width=1, marker_line_color="white",
+                xbins=dict(start=0.0, end=1.0, size=0.02)
+            ))
+            
+        if df_grupo.height > 0:
+            fig.add_trace(go.Histogram(
+                x=df_grupo["desercion_anual_mean"].to_pandas(), histnorm='percent', 
+                name="Grupo Comparable",
+                marker_color="#674f95", opacity=0.8,
+                marker_line_width=1, marker_line_color="white",
+                xbins=dict(start=0.0, end=1.0, size=0.02)
+            ))
+            
+        fig.update_layout(
+            barmode='overlay', plot_bgcolor='white', paper_bgcolor='white',
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title="Tasa de Deserción", tickformat=".0%", gridcolor='#EEEEEE'),
+            yaxis=dict(title="Participación de Programas (%)", gridcolor='#EEEEEE'),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        if tasa_base is not None:
+            fig.add_vline(x=tasa_base, line_dash="dash", line_color="#00B4D8", line_width=3,
+                          annotation_text=f"Prog. Base ({tasa_base:.1%})", annotation_position="top right",
+                          annotation_font_color="#00B4D8")
+                          
+        return fig
+
+    @render_widget
+    def plot_comp_dist_desercion():
+        return calc_plot_comp_dist_desercion()
+
+    @reactive.calc
+    def calc_comp_kpi_base_desercion():
+        attr = comp_profile_attr()
+        if not attr: return "Sin dato"
+        max_yr = max_anno_desercion
+        df = df_desercion.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("anno") == max_yr))
+        val = df["desercion_anual_mean"][0] if df.height > 0 else None
+        return format_pct_es(val) if val is not None else "Sin dato"
+
+    @render.ui
+    def comp_kpi_base_desercion():
+        return ui.HTML(f"<div style='font-size: 44px; font-weight: bold; color: #31497e;'>{calc_comp_kpi_base_desercion()}</div>")
+
+    @reactive.calc
+    def calc_comp_kpi_desercion():
+        comp_codigos = comparable_snies_codigos()
+        if len(comp_codigos) == 0: return "0%"
+        max_yr = max_anno_desercion
+        df = df_desercion.filter((pl.col("codigo_snies_del_programa").is_in(comp_codigos)) & (pl.col("anno") == max_yr))
+        if df.height == 0: return "Sin dato"
+        val = df["desercion_anual_mean"].mean()
+        return format_pct_es(val) if val is not None else "Sin dato"
+
+    @render.ui
+    def comp_kpi_desercion():
+        return ui.HTML(f"<div style='font-size: 44px; font-weight: bold; color: #31497e;'>{calc_comp_kpi_desercion()}</div>")
 
     @render.download(filename=lambda: f"Informe_Educacion_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
     def download_pdf():
