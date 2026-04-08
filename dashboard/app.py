@@ -1356,7 +1356,7 @@ def server(input, output, session):
     @reactive.calc
     def valid_divipolas():
         snies_filtered = filtered_snies()
-        if snies_filtered.height == 0:
+        if len(snies_filtered) == 0:
             return pl.Series(name="snies_divipola", dtype=pl.Utf8)
             
         valid_snies_codes = snies_filtered["codigo_snies_del_programa"].unique()
@@ -1380,10 +1380,10 @@ def server(input, output, session):
         if len(snies_codigos) == 0: return "Sin dato"
         max_anno_corte = df_ole_m0["anno_corte"].max()
         ole_filtered = df_ole_m0.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos) & (pl.col("anno_corte") == max_anno_corte))
-        if ole_filtered.height == 0: return "Sin dato"
+        if len(ole_filtered) == 0: return "Sin dato"
         df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([pl.col("graduados_que_cotizan").sum().alias("cotizan"), pl.col("graduados").sum().alias("total")])
         df_snies_agg = df_snies_agg.filter(pl.col("total") > 0)
-        if df_snies_agg.height == 0: return "0%"
+        if len(df_snies_agg) == 0: return "0%"
         df_snies_agg = df_snies_agg.with_columns((pl.col("cotizan") / pl.col("total")).alias("tasa_programa"))
         promedio_empleabilidad = df_snies_agg["tasa_programa"].mean()
         if promedio_empleabilidad is None: return "0,0%"
@@ -1400,10 +1400,10 @@ def server(input, output, session):
         if len(snies_codigos) == 0: return "0%"
         max_anno_corte = df_ole_m0["anno_corte"].max()
         ole_filtered = df_ole_m0.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos) & (pl.col("anno_corte") == max_anno_corte))
-        if ole_filtered.height == 0: return "0%"
+        if len(ole_filtered) == 0: return "0%"
         df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([pl.col("graduados_cotizantes_dependientes").sum().alias("dependientes"), pl.col("graduados_que_cotizan").sum().alias("total_cotizan")])
         df_snies_agg = df_snies_agg.filter(pl.col("total_cotizan") > 0)
-        if df_snies_agg.height == 0: return "0%"
+        if len(df_snies_agg) == 0: return "0%"
         df_snies_agg = df_snies_agg.with_columns((pl.col("dependientes") / pl.col("total_cotizan")).alias("tasa_programa"))
         promedio_dependientes = df_snies_agg["tasa_programa"].mean()
         if promedio_dependientes is None: return "0,0%"
@@ -1420,9 +1420,9 @@ def server(input, output, session):
         if len(snies_codigos) == 0: return "0%"
         max_anno_corte = df_ole_m0["anno_corte"].max()
         ole_filtered = df_ole_m0.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos) & (pl.col("anno_corte") == max_anno_corte))
-        if ole_filtered.height == 0: return "0%"
+        if len(ole_filtered) == 0: return "0%"
         df_snies_agg = ole_filtered.group_by("codigo_snies_del_programa").agg([pl.col("graduados_cotizantes_dependientes").sum().alias("dependientes"), pl.col("graduados").sum().alias("total_graduados")]).filter(pl.col("total_graduados") > 0)
-        if df_snies_agg.height == 0: return "0%"
+        if len(df_snies_agg) == 0: return "0%"
         df_snies_agg = df_snies_agg.with_columns((pl.col("dependientes") / pl.col("total_graduados")).alias("tasa"))
         promedio = df_snies_agg["tasa"].mean()
         return format_pct_es(promedio) if promedio is not None else "0,0%"
@@ -1607,7 +1607,7 @@ def server(input, output, session):
             pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)
         ).group_by(["anno", "sexo"]).agg(pl.col(col_name).sum())
         
-        if df_sexo.height == 0:
+        if len(df_sexo) == 0:
             return pd.DataFrame()
             
         df_total = df_sexo.group_by("anno").agg(pl.col(col_name).sum().alias("Total"))
@@ -1664,7 +1664,7 @@ def server(input, output, session):
             pl.col("codigo_snies_del_programa").is_in(snies_codigos) & 
             (pl.col("anno_corte") >= 2016)
         )
-        if ole_filtered.height == 0:
+        if len(ole_filtered) == 0:
             return pd.DataFrame()
             
         agg_df = ole_filtered.group_by(group_by_cols).agg([
@@ -1673,7 +1673,7 @@ def server(input, output, session):
         ])
         
         agg_df = agg_df.filter(pl.col("den") > 0)
-        if agg_df.height == 0:
+        if len(agg_df) == 0:
             return pd.DataFrame()
             
         agg_df = agg_df.with_columns((pl.col("num") / pl.col("den")).alias("tasa"))
@@ -1772,7 +1772,7 @@ def server(input, output, session):
             pl.col("codigo_snies_del_programa").is_in(snies_codigos) & 
             (pl.col("anno_corte") == max_anno_corte)
         )
-        if ole_filtered.height == 0:
+        if len(ole_filtered) == 0:
             return pd.DataFrame()
             
         agg_df = ole_filtered.group_by(group_by_cols).agg([
@@ -1781,7 +1781,7 @@ def server(input, output, session):
         ])
         
         agg_df = agg_df.filter(pl.col("den") > 0)
-        if agg_df.height == 0:
+        if len(agg_df) == 0:
             return pd.DataFrame()
             
         agg_df = agg_df.with_columns((pl.col("num") / pl.col("den")).alias("tasa"))
@@ -1994,7 +1994,7 @@ def server(input, output, session):
             (pl.col("anno_corte") >= 2016)
         )
         
-        if ole_all.height == 0: return pd.DataFrame()
+        if len(ole_all) == 0: return pd.DataFrame()
         
         # Agrupar por Año, Origen y Destino
         agg = ole_all.group_by(["anno_corte", col_orig, col_dest]).agg([
@@ -2135,7 +2135,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_kpi_salario_dependientes_sum():
         df = filtered_ole_salario()
-        if df.height == 0: return "0"
+        if len(df) == 0: return "0"
         max_yr = df["anno_corte"].max()
         total = df.filter(pl.col("anno_corte") == max_yr)["graduados_cotizantes_dependientes"].sum()
         return f"{total:,.0f}".replace(",", ".")
@@ -2162,7 +2162,7 @@ def server(input, output, session):
             div_codes = divis_num["divipola_mpio_oferta"].drop_nulls().unique()
             df_base = df_base.filter(pl.col("divipola_mpio_principal").is_in(div_codes))
             
-        if df_base.height == 0: return pd.DataFrame()
+        if len(df_base) == 0: return pd.DataFrame()
         
         # 3. Join y Midpoints
         df_base = df_base.join(df_smmlv_pl, on="anno_corte", how="inner")
@@ -2304,7 +2304,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_kpi_desercion_promedio():
         df = filtered_desercion()
-        if df.height == 0: return "0%"
+        if len(df) == 0: return "0%"
         max_yr = df["anno"].max()
         val = df.filter(pl.col("anno") == max_yr)["desercion_anual_mean"].mean()
         if val is None: return "0,0%"
@@ -2317,7 +2317,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_plot_dist_desercion():
         df = filtered_desercion()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         max_yr = df["anno"].max()
         df_plot = df.filter(pl.col("anno") == max_yr).to_pandas()
         fig = px.histogram(df_plot, x="desercion_anual_mean", nbins=50, histnorm='percent')
@@ -2336,7 +2336,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_plot_trend_desercion():
         df = filtered_desercion()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         df_plot = df.group_by("anno").agg(pl.col("desercion_anual_mean").mean()).sort("anno").to_pandas()
         fig = px.line(df_plot, x="anno", y="desercion_anual_mean", markers=True)
         fig.update_traces(line=dict(color="#31497e", width=3), marker=dict(size=10, color="white", line=dict(width=2, color="#31497e")))
@@ -2394,7 +2394,7 @@ def server(input, output, session):
     def calc_plot_salario_dist_total():
         import pandas as pd
         df = filtered_ole_salario()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         max_yr = df["anno_corte"].max()
         agg = df.filter(pl.col("anno_corte") == max_yr).group_by("rango_salario").agg(
             pl.col("graduados_cotizantes_dependientes").sum().alias("cantidad")
@@ -2423,7 +2423,7 @@ def server(input, output, session):
     def calc_plot_salario_dist_sexo():
         import pandas as pd
         df = filtered_ole_salario()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         max_yr = df["anno_corte"].max()
         agg = df.filter(pl.col("anno_corte") == max_yr).group_by(["rango_salario", "sexo"]).agg(
             pl.col("graduados_cotizantes_dependientes").sum().alias("cantidad")
@@ -2494,7 +2494,7 @@ def server(input, output, session):
                 normalize_pl(pl.col("departamento_destino")).is_in(dept_norm)
             )
 
-        if ole_filtered.height == 0:
+        if len(ole_filtered) == 0:
             return pd.DataFrame(), "", "", ""
             
         # Acumular volumen de estudiantes en la matriz de cruce usando datos absolutos
@@ -2651,7 +2651,7 @@ def server(input, output, session):
         divipolas = valid_divipolas()
         if len(divipolas) == 0: return go.Figure()
         df_filtered = df_pcurso.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("primer_curso_sum").sum()).sort("anno")
-        if df_filtered.height == 0: return go.Figure()
+        if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="primer_curso_sum", markers=True)
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
@@ -2671,7 +2671,7 @@ def server(input, output, session):
         divipolas = valid_divipolas()
         if len(divipolas) == 0: return go.Figure()
         df_filtered = df_pcurso.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("primer_curso_sum").sum()).sort(["sexo", "anno"])
-        if df_filtered.height == 0: return go.Figure()
+        if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="primer_curso_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
@@ -2695,7 +2695,7 @@ def server(input, output, session):
         divipolas = valid_divipolas()
         if len(divipolas) == 0: return go.Figure()
         df_filtered = df_matricula.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("matricula_sum").sum()).sort("anno")
-        if df_filtered.height == 0: return go.Figure()
+        if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="matricula_sum", markers=True)
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
@@ -2715,7 +2715,7 @@ def server(input, output, session):
         divipolas = valid_divipolas()
         if len(divipolas) == 0: return go.Figure()
         df_filtered = df_matricula.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("matricula_sum").sum()).sort(["sexo", "anno"])
-        if df_filtered.height == 0: return go.Figure()
+        if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="matricula_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
@@ -2739,7 +2739,7 @@ def server(input, output, session):
         divipolas = valid_divipolas()
         if len(divipolas) == 0: return go.Figure()
         df_filtered = df_graduados.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("graduados_sum").sum()).sort("anno")
-        if df_filtered.height == 0: return go.Figure()
+        if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="graduados_sum", markers=True)
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
@@ -2759,7 +2759,7 @@ def server(input, output, session):
         divipolas = valid_divipolas()
         if len(divipolas) == 0: return go.Figure()
         df_filtered = df_graduados.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("graduados_sum").sum()).sort(["sexo", "anno"])
-        if df_filtered.height == 0: return go.Figure()
+        if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="graduados_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
@@ -2792,12 +2792,12 @@ def server(input, output, session):
     @reactive.calc
     def filtered_saber_latest():
         df = filtered_saber()
-        if df.height == 0: return pl.DataFrame()
+        if len(df) == 0: return pl.DataFrame()
         return df.filter(pl.col("anno") == max_anno_saber)
 
     def calc_saber_score(column):
         df = filtered_saber_latest()
-        if df.height == 0: return "Sin dato"
+        if len(df) == 0: return "Sin dato"
         agg = df.group_by("codigo_snies_del_programa").agg(pl.col(column).mean())
         val = agg[column].mean()
         return format_num_es(val, decimals=1) if val is not None else "Sin dato"
@@ -2829,7 +2829,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_plot_saber_trend():
         df = filtered_saber()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         
         cols_map = {
             "pro_gen_punt_global": "Puntaje Global",
@@ -2873,7 +2873,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_plot_saber_dist():
         df = filtered_saber_latest()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         
         # Agregación por programa académico
         agg = df.group_by("codigo_snies_del_programa").agg(pl.col("pro_gen_punt_global").mean())
@@ -2897,7 +2897,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_plot_saber_count_sexo():
         df = filtered_saber()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         trend = df.group_by(["anno", "sexo"]).len().sort(["anno", "sexo"])
         fig = px.line(trend.to_pandas(), x="anno", y="len", color="sexo", markers=True)
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
@@ -2914,7 +2914,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_plot_saber_count_edad():
         df = filtered_saber()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         trend = df.group_by(["anno", "grupo_edad"]).len().sort(["anno", "grupo_edad"])
         fig = px.line(trend.to_pandas(), x="anno", y="len", color="grupo_edad", markers=True)
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
@@ -2931,7 +2931,7 @@ def server(input, output, session):
     # --- Ayudante de Tendencias Detalladas ---
     def calc_plot_saber_trend_dim(column, dim):
         df = filtered_saber()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         
         # Agregación por año, programa y dimensión
         agg = df.group_by(["anno", "codigo_snies_del_programa", dim]).agg(pl.col(column).mean())
@@ -2985,7 +2985,7 @@ def server(input, output, session):
     # --- Socio-demografía (SaberPRO) ---
     def calc_plot_saber_categorical(column, label, sort_vals=False):
         df = filtered_saber_latest()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         
         # Limpieza básica
         df_clean = df.with_columns(
@@ -3030,7 +3030,7 @@ def server(input, output, session):
     # Tendencias Socio-demográficas
     def calc_plot_saber_categorical_trend(column, label):
         df = filtered_saber()
-        if df.height == 0: return go.Figure()
+        if len(df) == 0: return go.Figure()
         
         # Limpieza básica
         df_clean = df.with_columns(
@@ -3078,7 +3078,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_total_evaluados_saber():
         df = filtered_saber_latest()
-        return df.height
+        return len(df)
 
     @render.ui
     def kpi_demo_evaluados():
@@ -3088,7 +3088,7 @@ def server(input, output, session):
     @reactive.calc
     def calc_total_programas_saber():
         df = filtered_saber_latest()
-        if df.height == 0: return 0
+        if len(df) == 0: return 0
         return df["codigo_snies_del_programa"].n_unique()
 
     @render.ui
@@ -3112,7 +3112,7 @@ def server(input, output, session):
             return None
             
         df_base = df_snies.filter(pl.col("codigo_snies_del_programa") == snies_code)
-        if df_base.height == 0: return None
+        if len(df_base) == 0: return None
         
         # Unir también con cobertura para tener el departamento
         df_cob = df_cobertura.filter(pl.col("codigo_snies_del_programa") == snies_code)
@@ -3126,7 +3126,7 @@ def server(input, output, session):
             "sector": df_base["sector"][0] if df_base["sector"].len() > 0 else None,
             "area_de_conocimiento": df_base["area_de_conocimiento"][0] if df_base["area_de_conocimiento"].len() > 0 else None,
             "nucleo_basico_del_conocimiento": df_base["nucleo_basico_del_conocimiento"][0] if df_base["nucleo_basico_del_conocimiento"].len() > 0 else None,
-            "departamento_oferta": df_cob["departamento_oferta"][0] if df_cob.height > 0 else None
+            "departamento_oferta": df_cob["departamento_oferta"][0] if len(df_cob) > 0 else None
         }
 
     @render.ui
@@ -3666,7 +3666,7 @@ def server(input, output, session):
                 (pl.col("anno_corte") == max_anno_corte)
             )
             
-            if ole_nivel.height > 0:
+            if len(ole_nivel) > 0:
                 agg_total = ole_nivel.group_by(["codigo_snies_del_programa"]).agg([
                     pl.col("graduados_que_cotizan").sum().alias("num"),
                     pl.col("graduados").sum().alias("den")
@@ -3681,7 +3681,7 @@ def server(input, output, session):
                 pl.col("codigo_snies_del_programa").is_in(comp_codigos) & 
                 (pl.col("anno_corte") == max_anno_corte)
             )
-            if ole_comp.height > 0:
+            if len(ole_comp) > 0:
                 agg_comp = ole_comp.group_by(["codigo_snies_del_programa"]).agg([
                     pl.col("graduados_que_cotizan").sum().alias("num"),
                     pl.col("graduados").sum().alias("den")
@@ -3766,7 +3766,7 @@ def server(input, output, session):
             df_comp = df_ole_salario.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos))
             
         def process_salary_df(df_in):
-            if df_in.height == 0: return pl.DataFrame()
+            if len(df_in) == 0: return pl.DataFrame()
             d = df_in.join(df_smmlv_pl, on="anno_corte", how="inner")
             
             # Pesos constantes basados en el último año de datos salariales reales
@@ -3795,7 +3795,7 @@ def server(input, output, session):
             return agg_prog
 
         base_prog = process_salary_df(df_base)
-        if base_prog.height > 0:
+        if len(base_prog) > 0:
             df_base_pd = base_prog.group_by("anno_corte").agg([
                 pl.col("sal_prog").mean().alias("valor_base"),
                 pl.col("graduados_cotizantes_dependientes").sum().alias("cotizantes_base")
@@ -3805,7 +3805,7 @@ def server(input, output, session):
             df_base_pd = pd.DataFrame()
 
         comp_prog = process_salary_df(df_comp)
-        if comp_prog.height > 0:
+        if len(comp_prog) > 0:
             df_comp_pd = comp_prog.group_by("anno_corte").agg([
                 pl.col("sal_prog").mean().alias("valor_comp_mean"),
                 pl.col("sal_prog").std().alias("valor_comp_std"),
@@ -3828,7 +3828,7 @@ def server(input, output, session):
         
         if attr:
             base_pl = df_ole_salario.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
-            if base_pl.height > 0:
+            if len(base_pl) > 0:
                 max_yr = base_pl["anno_corte"].max()
                 agg_base = base_pl.filter(pl.col("anno_corte") == max_yr).group_by("rango_salario").agg(
                     pl.col("graduados_cotizantes_dependientes").sum().alias("cantidad")
@@ -3841,7 +3841,7 @@ def server(input, output, session):
         comp_codigos = comparable_snies_codigos()
         if len(comp_codigos) > 0:
             comp_pl = df_ole_salario.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos))
-            if comp_pl.height > 0:
+            if len(comp_pl) > 0:
                 max_yr_comp = comp_pl["anno_corte"].max()
                 agg_comp = comp_pl.filter(pl.col("anno_corte") == max_yr_comp).group_by("rango_salario").agg(
                     pl.col("graduados_cotizantes_dependientes").sum().alias("cantidad")
@@ -3892,7 +3892,7 @@ def server(input, output, session):
         if not attr: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
         
         df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("costo_matricula_estud_nuevos") > 0))
-        if df_base.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        if len(df_base) == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
         
         val = df_base["costo_matricula_estud_nuevos"][0]
         return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>${format_num_es(val)}</div>")
@@ -3903,7 +3903,7 @@ def server(input, output, session):
         if not snies_list: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         
         df_comp = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("sector") == "PRIVADO") & (pl.col("costo_matricula_estud_nuevos") > 0))
-        if df_comp.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        if len(df_comp) == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         
         data = df_comp["costo_matricula_estud_nuevos"].to_list()
         import numpy as np
@@ -3920,7 +3920,7 @@ def server(input, output, session):
         if not snies_list: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         
         df_comp = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("sector") == "PRIVADO") & (pl.col("costo_matricula_estud_nuevos") > 0))
-        if df_comp.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        if len(df_comp) == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         
         data = df_comp["costo_matricula_estud_nuevos"].to_list()
         import numpy as np
@@ -3936,7 +3936,7 @@ def server(input, output, session):
         attr = comp_profile_attr()
         if not attr: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
         df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("numero_creditos") > 0))
-        if df_base.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        if len(df_base) == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
         val = df_base["numero_creditos"][0]
         return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{val:.1f}</div>")
 
@@ -3946,7 +3946,7 @@ def server(input, output, session):
         if not snies_list: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         
         df_comp = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("numero_creditos") > 0))
-        if df_comp.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        if len(df_comp) == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
         
         data = df_comp["numero_creditos"].to_list()
         import numpy as np
@@ -3967,7 +3967,7 @@ def server(input, output, session):
         
         fig = go.Figure()
         
-        if df_universe.height > 0:
+        if len(df_universe) > 0:
             fig.add_trace(go.Histogram(
                 x=df_universe["costo_matricula_estud_nuevos"].to_list(),
                 histnorm='percent',
@@ -3977,7 +3977,7 @@ def server(input, output, session):
                 opacity=0.6
             ))
             
-        if df_comp.height > 0:
+        if len(df_comp) > 0:
             fig.add_trace(go.Histogram(
                 x=df_comp["costo_matricula_estud_nuevos"].to_list(),
                 histnorm='percent',
@@ -3998,7 +3998,7 @@ def server(input, output, session):
         
         if attr:
             df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("costo_matricula_estud_nuevos") > 0))
-            if df_base.height > 0:
+            if len(df_base) > 0:
                 val = df_base["costo_matricula_estud_nuevos"][0]
                 fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Base", annotation_position="top right", annotation_font_color="#31497e")
                 
@@ -4014,7 +4014,7 @@ def server(input, output, session):
         
         fig = go.Figure()
         
-        if df_universe.height > 0:
+        if len(df_universe) > 0:
             fig.add_trace(go.Histogram(
                 x=df_universe["numero_creditos"].to_list(),
                 histnorm='percent',
@@ -4023,7 +4023,7 @@ def server(input, output, session):
                 opacity=0.6
             ))
             
-        if df_comp.height > 0:
+        if len(df_comp) > 0:
             fig.add_trace(go.Histogram(
                 x=df_comp["numero_creditos"].to_list(),
                 histnorm='percent',
@@ -4043,7 +4043,7 @@ def server(input, output, session):
         
         if attr:
             df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("numero_creditos") > 0))
-            if df_base.height > 0:
+            if len(df_base) > 0:
                 val = df_base["numero_creditos"][0]
                 fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Base", annotation_position="top right", annotation_font_color="#31497e")
                 
@@ -4582,12 +4582,12 @@ def server(input, output, session):
         
         # Programa Base
         df_base = df_latest.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
-        tasa_base = df_base["desercion_anual_mean"][0] if df_base.height > 0 else None
+        tasa_base = df_base["desercion_anual_mean"][0] if len(df_base) > 0 else None
         
         # -- Plotly --
         fig = go.Figure()
         
-        if df_universo.height > 0:
+        if len(df_universo) > 0:
             fig.add_trace(go.Histogram(
                 x=df_universo["desercion_anual_mean"].to_pandas(), histnorm='percent', 
                 name="Mismo Nivel de Formación",
@@ -4596,7 +4596,7 @@ def server(input, output, session):
                 xbins=dict(start=0.0, end=1.0, size=0.02)
             ))
             
-        if df_grupo.height > 0:
+        if len(df_grupo) > 0:
             fig.add_trace(go.Histogram(
                 x=df_grupo["desercion_anual_mean"].to_pandas(), histnorm='percent', 
                 name="Grupo Comparable",
@@ -4630,7 +4630,7 @@ def server(input, output, session):
         if not attr: return "Sin dato"
         max_yr = max_anno_desercion
         df = df_desercion.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("anno") == max_yr))
-        val = df["desercion_anual_mean"][0] if df.height > 0 else None
+        val = df["desercion_anual_mean"][0] if len(df) > 0 else None
         return format_pct_es(val) if val is not None else "Sin dato"
 
     @render.ui
@@ -4643,7 +4643,7 @@ def server(input, output, session):
         if len(comp_codigos) == 0: return "0%"
         max_yr = max_anno_desercion
         df = df_desercion.filter((pl.col("codigo_snies_del_programa").is_in(comp_codigos)) & (pl.col("anno") == max_yr))
-        if df.height == 0: return "Sin dato"
+        if len(df) == 0: return "Sin dato"
         val = df["desercion_anual_mean"].mean()
         return format_pct_es(val) if val is not None else "Sin dato"
 
@@ -4670,7 +4670,7 @@ def server(input, output, session):
         df_comp = _df_saber_filt_comp()
         
         # Base
-        if df_base is None or df_base.height == 0:
+        if df_base is None or len(df_base) == 0:
             pd_base = pd.DataFrame()
         else:
             pd_base = df_base.group_by("anno").agg([
@@ -4678,7 +4678,7 @@ def server(input, output, session):
             ]).drop_nulls().sort("anno").to_pandas()
             
         # Comp
-        if df_comp is None or df_comp.height == 0:
+        if df_comp is None or len(df_comp) == 0:
             pd_comp = pd.DataFrame()
         else:
             pd_comp = df_comp.group_by("anno").agg([
@@ -4827,7 +4827,7 @@ def server(input, output, session):
         df_comp_raw = df_saber.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos) & (pl.col("anno") == max_yr)) if comp_codigos else pl.DataFrame()
         
         def process_cat(df_raw, grupo_name):
-            if df_raw.height == 0: return pl.DataFrame()
+            if len(df_raw) == 0: return pl.DataFrame()
             d_clean = df_raw.with_columns(
                 pl.col(column_id).cast(pl.Utf8).fill_null("Sin Registro")
             ).with_columns(
@@ -4845,12 +4845,12 @@ def server(input, output, session):
         df_b = process_cat(df_base_raw, "Programa Seleccionado")
         df_c = process_cat(df_comp_raw, "Grupo Comparable")
         
-        if df_b.height == 0 and df_c.height == 0:
+        if len(df_b) == 0 and len(df_c) == 0:
             return go.Figure()
             
         dfs_to_concat = []
-        if df_b.height > 0: dfs_to_concat.append(df_b)
-        if df_c.height > 0: dfs_to_concat.append(df_c)
+        if len(df_b) > 0: dfs_to_concat.append(df_b)
+        if len(df_c) > 0: dfs_to_concat.append(df_c)
         df_comb = pl.concat(dfs_to_concat)
         
         df_pd = df_comb.to_pandas()
