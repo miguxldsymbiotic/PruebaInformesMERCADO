@@ -309,8 +309,30 @@ app_ui = ui.page_sidebar(
     ui.layout_columns(
         ui.card(ui.card_header("Información Básica de Programas"), ui.output_data_frame("table"), full_screen=True),
         class_="mb-4"
-    )
+    ),
+    ui.h3("2. Características de los Programas (Costo y Créditos)", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 30px;"),
+    ui.layout_columns(
+        ui.value_box("Costo Promedio (Matrícula)", ui.output_ui("kpi_costo_matricula"), showcase=fa.icon_svg("money-check-dollar", "solid")),
+        ui.value_box("Mediana Robusta (Matrícula)", ui.output_ui("kpi_mediana_matricula"), showcase=fa.icon_svg("shield-halved", "solid")),
+        ui.value_box("Promedio Créditos", ui.output_ui("kpi_promedio_creditos"), showcase=fa.icon_svg("list-check", "solid")),
+        fill=False, class_="mb-4"
+    ),
+    ui.layout_columns(
+        ui.card(
+            ui.card_header(ui.HTML("Distribución de <b style='color: #31497e;'>Costo de Matrícula</b> (Solo Privados)")), 
+            output_widget("plot_dist_costo_matricula"), 
+            ui.card_footer(ui.HTML("Fuente: SNIES.<br>Se calculan promedios para programas del sector privado con valores mayores a cero.<br><i>Nota técnica: El costo de matrícula solo aplica para programas de instituciones privadas regulados por el SNIES.</i>"), style="font-size: 0.85em; color: gray;"),
+            full_screen=True, style="min-height: 450px;"
         ),
+        ui.card(
+            ui.card_header(ui.HTML("Distribución de <b style='color: #31497e;'>Número de Créditos</b>")), 
+            output_widget("plot_dist_creditos"), 
+            ui.card_footer(ui.HTML("Fuente: SNIES.<br>Se calculan promedios para todos los programas que reportan créditos académicos mayores a cero."), style="font-size: 0.85em; color: gray;"),
+            full_screen=True, style="min-height: 450px;"
+        ),
+        class_="mb-5"
+    )
+    ),
         ui.nav_panel(
             "Observatorio Laboral",
             ui.layout_columns(
@@ -950,6 +972,34 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
+            ui.h3("Costos y Créditos", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.layout_columns(
+                ui.value_box("Programa Seleccionado (Costo de Matrícula)", ui.output_ui("comp_kpi_base_promedio_matricula"), showcase=fa.icon_svg("money-check-dollar", "solid")),
+                ui.value_box("Media Comparable (Costo Promedio)", ui.output_ui("comp_kpi_promedio_matricula"), showcase=fa.icon_svg("money-check-dollar", "solid"), class_="card-comparable"),
+                ui.value_box("Media Comparable (Mediana Matrícula)", ui.output_ui("comp_kpi_mediana_matricula"), showcase=fa.icon_svg("shield-halved", "solid"), class_="card-comparable"),
+                fill=False, class_="mb-4", col_widths=(4, 4, 4)
+            ),
+            ui.layout_columns(
+                ui.value_box("Programa Seleccionado (Promedio Créditos)", ui.output_ui("comp_kpi_base_promedio_creditos"), showcase=fa.icon_svg("list-check", "solid")),
+                ui.value_box("Media Comparable (Promedio Créditos)", ui.output_ui("comp_kpi_promedio_creditos"), showcase=fa.icon_svg("list-check", "solid"), class_="card-comparable"),
+                fill=False, class_="mb-4", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Distribución de <b style='color: #31497e;'>Costo de Matrícula</b> (Solo Privados)")), 
+                    output_widget("plot_comp_dist_costo_matricula"), 
+                    ui.card_footer(ui.HTML("Fuente: SNIES.<br><b>El fondo gris</b> representa a la oferta total de programas privados que reportan costo.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca el costo del Programa Seleccionado."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Distribución de <b style='color: #31497e;'>Número de Créditos</b>")), 
+                    output_widget("plot_comp_dist_creditos"), 
+                    ui.card_footer(ui.HTML("Fuente: SNIES.<br><b>El fondo gris</b> representa a la oferta total de programas.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca los créditos del Programa Seleccionado."), style="font-size: 0.85em; color: gray;"), 
+                    full_screen=True, style="min-height: 500px;"
+                ),
+                class_="mb-5"
+            ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
             ui.h3("Observatorio Laboral y Calidad", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Programa Seleccionado (Tasa Empleabilidad)", ui.output_ui("comp_kpi_base_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid")),
@@ -1400,6 +1450,93 @@ def server(input, output, session):
     @render.ui
     def total_programas():
         return calc_total_programas()
+
+    @reactive.calc
+    def calc_costo_matricula_data():
+        snies_filtered = filtered_snies()
+        # Solo sector PRIVADO y costo > 0
+        df = snies_filtered.filter((pl.col("sector") == "PRIVADO") & (pl.col("costo_matricula_estud_nuevos") > 0))
+        return df["costo_matricula_estud_nuevos"].to_list()
+
+    @reactive.calc
+    def calc_promedio_creditos_data():
+        snies_filtered = filtered_snies()
+        # Todos los programas y creditos > 0
+        df = snies_filtered.filter(pl.col("numero_creditos") > 0)
+        return df["numero_creditos"].to_list()
+
+    @render.ui
+    def kpi_costo_matricula():
+        data = calc_costo_matricula_data()
+        if not data: return ui.HTML("<span style='color: gray;'>Sin datos</span>")
+        import numpy as np
+        avg = np.mean(data)
+        std = np.std(data)
+        return ui.HTML(f"""
+            <div style='font-size: 38px; font-weight: bold; color: #31497e; line-height: 1;'>${format_num_es(avg)}</div>
+            <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {format_num_es(std)} (SD)</div>
+        """)
+
+    @render.ui
+    def kpi_mediana_matricula():
+        data = calc_costo_matricula_data()
+        if not data: return ui.HTML("<span style='color: gray;'>Sin datos</span>")
+        import numpy as np
+        median = np.median(data)
+        # MAD (Median Absolute Deviation) escalado por 1.4826
+        mad = np.median([abs(x - median) for x in data]) * 1.4826
+        return ui.HTML(f"""
+            <div style='font-size: 38px; font-weight: bold; color: #31497e; line-height: 1;'>${format_num_es(median)}</div>
+            <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {format_num_es(mad)} (MAD)</div>
+        """)
+
+    @render.ui
+    def kpi_promedio_creditos():
+        data = calc_promedio_creditos_data()
+        if not data: return ui.HTML("<span style='color: gray;'>Sin datos</span>")
+        import numpy as np
+        avg = np.mean(data)
+        std = np.std(data)
+        return ui.HTML(f"""
+            <div style='font-size: 38px; font-weight: bold; color: #31497e; line-height: 1;'>{avg:.1f}</div>
+            <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {std:.1f} (SD)</div>
+        """)
+
+    @render_widget
+    def plot_dist_costo_matricula():
+        data = calc_costo_matricula_data()
+        if not data: return go.Figure()
+        import pandas as pd
+        df_pd = pd.DataFrame({"costo": data})
+        fig = px.histogram(df_pd, x="costo", histnorm='percent')
+        fig.update_traces(
+            marker=dict(color="#31497e"), 
+            marker_line_width=1, 
+            marker_line_color="white",
+            xbins=dict(size=200000) # Bin de 200 mil
+        )
+        fig.update_layout(
+            showlegend=False, plot_bgcolor='white', paper_bgcolor='white', separators=",.",
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis_title="Costo de Matrícula ($)", yaxis_title="Porcentaje (%)",
+            xaxis=dict(tickformat="$,.0f")
+        )
+        return fig
+
+    @render_widget
+    def plot_dist_creditos():
+        data = calc_promedio_creditos_data()
+        if not data: return go.Figure()
+        import pandas as pd
+        df_pd = pd.DataFrame({"creditos": data})
+        fig = px.histogram(df_pd, x="creditos", histnorm='percent')
+        fig.update_traces(marker=dict(color="#674f95"), marker_line_width=1, marker_line_color="white")
+        fig.update_layout(
+            showlegend=False, plot_bgcolor='white', paper_bgcolor='white', separators=",.",
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis_title="Número de Créditos", yaxis_title="Porcentaje (%)"
+        )
+        return fig
 
     @reactive.calc
     def calc_total_primer_curso():
@@ -3748,7 +3885,171 @@ def server(input, output, session):
         df_base, df_comp = calc_comp_salario_evolucion()
         return build_comp_plot_salario(df_base, df_comp, "Salario Promedio de Enganche")
 
-    # KPIs
+    # Costos y Créditos KPIs (Comparativo)
+    @render.ui
+    def comp_kpi_base_promedio_matricula():
+        attr = comp_profile_attr()
+        if not attr: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        
+        df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("costo_matricula_estud_nuevos") > 0))
+        if df_base.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        
+        val = df_base["costo_matricula_estud_nuevos"][0]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>${format_num_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_promedio_matricula():
+        snies_list = comparable_snies_codigos()
+        if not snies_list: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        
+        df_comp = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("sector") == "PRIVADO") & (pl.col("costo_matricula_estud_nuevos") > 0))
+        if df_comp.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        
+        data = df_comp["costo_matricula_estud_nuevos"].to_list()
+        import numpy as np
+        avg = np.mean(data)
+        std = np.std(data)
+        return ui.HTML(f"""
+            <div style='font-size: 40px; font-weight: bold; color: #674f95; line-height: 1;'>${format_num_es(avg)}</div>
+            <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {format_num_es(std)} (SD)</div>
+        """)
+
+    @render.ui
+    def comp_kpi_mediana_matricula():
+        snies_list = comparable_snies_codigos()
+        if not snies_list: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        
+        df_comp = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("sector") == "PRIVADO") & (pl.col("costo_matricula_estud_nuevos") > 0))
+        if df_comp.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        
+        data = df_comp["costo_matricula_estud_nuevos"].to_list()
+        import numpy as np
+        median = np.median(data)
+        mad = np.median([abs(x - median) for x in data]) * 1.4826
+        return ui.HTML(f"""
+            <div style='font-size: 40px; font-weight: bold; color: #674f95; line-height: 1;'>${format_num_es(median)}</div>
+            <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {format_num_es(mad)} (MAD)</div>
+        """)
+
+    @render.ui
+    def comp_kpi_base_promedio_creditos():
+        attr = comp_profile_attr()
+        if not attr: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("numero_creditos") > 0))
+        if df_base.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_base["numero_creditos"][0]
+        return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #31497e;'>{val:.1f}</div>")
+
+    @render.ui
+    def comp_kpi_promedio_creditos():
+        snies_list = comparable_snies_codigos()
+        if not snies_list: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        
+        df_comp = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("numero_creditos") > 0))
+        if df_comp.height == 0: return ui.HTML("<div style='font-size: 40px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        
+        data = df_comp["numero_creditos"].to_list()
+        import numpy as np
+        avg = np.mean(data)
+        std = np.std(data)
+        return ui.HTML(f"""
+            <div style='font-size: 40px; font-weight: bold; color: #674f95; line-height: 1;'>{avg:.1f}</div>
+            <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {std:.1f} (SD)</div>
+        """)
+
+    @render_widget
+    def plot_comp_dist_costo_matricula():
+        attr = comp_profile_attr()
+        snies_list = comparable_snies_codigos()
+        
+        df_universe = df_snies.filter((pl.col("estado_programa") == "ACTIVO") & (pl.col("sector") == "PRIVADO") & (pl.col("costo_matricula_estud_nuevos") > 0))
+        df_comp = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("sector") == "PRIVADO") & (pl.col("costo_matricula_estud_nuevos") > 0))
+        
+        fig = go.Figure()
+        
+        if df_universe.height > 0:
+            fig.add_trace(go.Histogram(
+                x=df_universe["costo_matricula_estud_nuevos"].to_list(),
+                histnorm='percent',
+                name='Universo (Todos Activos)',
+                marker_color='lightgray',
+                xbins=dict(size=200000),
+                opacity=0.6
+            ))
+            
+        if df_comp.height > 0:
+            fig.add_trace(go.Histogram(
+                x=df_comp["costo_matricula_estud_nuevos"].to_list(),
+                histnorm='percent',
+                name='Grupo Comparable',
+                marker_color='#674f95',
+                xbins=dict(size=200000),
+                opacity=0.9
+            ))
+            
+        fig.update_layout(
+            barmode='overlay',
+            plot_bgcolor='white', paper_bgcolor='white', separators=",.",
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title="Costo de Matrícula ($)", tickformat="$,.0f"),
+            yaxis=dict(title="Porcentaje (%)"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        if attr:
+            df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("costo_matricula_estud_nuevos") > 0))
+            if df_base.height > 0:
+                val = df_base["costo_matricula_estud_nuevos"][0]
+                fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Base", annotation_position="top right", annotation_font_color="#31497e")
+                
+        return fig
+
+    @render_widget
+    def plot_comp_dist_creditos():
+        attr = comp_profile_attr()
+        snies_list = comparable_snies_codigos()
+        
+        df_universe = df_snies.filter((pl.col("estado_programa") == "ACTIVO") & (pl.col("numero_creditos") > 0))
+        df_comp = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("numero_creditos") > 0))
+        
+        fig = go.Figure()
+        
+        if df_universe.height > 0:
+            fig.add_trace(go.Histogram(
+                x=df_universe["numero_creditos"].to_list(),
+                histnorm='percent',
+                name='Universo (Todos Activos)',
+                marker_color='lightgray',
+                opacity=0.6
+            ))
+            
+        if df_comp.height > 0:
+            fig.add_trace(go.Histogram(
+                x=df_comp["numero_creditos"].to_list(),
+                histnorm='percent',
+                name='Grupo Comparable',
+                marker_color='#674f95',
+                opacity=0.9
+            ))
+            
+        fig.update_layout(
+            barmode='overlay',
+            plot_bgcolor='white', paper_bgcolor='white', separators=",.",
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title="Número de Créditos"),
+            yaxis=dict(title="Porcentaje (%)"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        if attr:
+            df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("numero_creditos") > 0))
+            if df_base.height > 0:
+                val = df_base["numero_creditos"][0]
+                fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Base", annotation_position="top right", annotation_font_color="#31497e")
+                
+        return fig
+
+    # KPIs Empleabilidad
     @render.ui
     def comp_kpi_base_pcurso():
         df_base, _ = calc_comp_metric(df_pcurso, "primer_curso_sum")
