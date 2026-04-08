@@ -432,15 +432,15 @@ app_ui = ui.page_sidebar(
             ),
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(ui.HTML(f"Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), 
+                    ui.card_header(ui.HTML(f"Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos constantes - SMMLV {max_anno_ole:.0f})")), 
                     output_widget("plot_salario_evolucion_total_constante"), 
-                    ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_smmlv:.0f}"), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_ole:.0f}"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
-                    ui.card_header(ui.HTML(f"Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), 
+                    ui.card_header(ui.HTML(f"Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos constantes - SMMLV {max_anno_ole:.0f})")), 
                     output_widget("plot_salario_evolucion_sexo_constante"), 
-                    ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_smmlv:.0f}"), style="font-size: 0.85em; color: gray;"), 
+                    ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_ole:.0f}"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 class_="mb-5"
@@ -935,8 +935,8 @@ app_ui = ui.page_sidebar(
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
             ui.h3("Salario de Enganche (Estimado)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
-                ui.value_box("Programa Seleccionado (Salario)", ui.output_ui("comp_kpi_base_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid")),
-                ui.value_box("Media Comparable (Salario)", ui.output_ui("comp_kpi_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid")),
+                ui.value_box("Salario Promedio Estimado", ui.output_ui("comp_kpi_base_salario"), showcase=fa.icon_svg("hand-holding-dollar", "solid")),
+                ui.value_box("Promedio Estimado (Grupo)", ui.output_ui("comp_kpi_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid")),
                 fill=False, class_="mb-4", col_widths=(6, 6)
             ),
             ui.layout_columns(
@@ -2066,9 +2066,10 @@ def server(input, output, session):
 
     @reactive.calc
     def calc_kpi_salario_promedio_total():
-        df_pd = get_salary_trend_data()
+        df_pd = get_salary_trend_data_constant()
         if df_pd.empty: return "$ 0"
-        val = df_pd[(df_pd["label"] == "TOTAL") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
+        max_yr = df_ole_salario["anno_corte"].max()
+        val = df_pd[(df_pd["label"] == "TOTAL") & (df_pd["anno_corte"] == max_yr)]["salario_pesos"]
         s = val.iloc[0] if not val.empty else 0
         return f"$ {format_num_es(s)}"
 
@@ -2078,9 +2079,10 @@ def server(input, output, session):
 
     @reactive.calc
     def calc_kpi_salario_promedio_fem():
-        df_pd = get_salary_trend_data()
+        df_pd = get_salary_trend_data_constant()
         if df_pd.empty: return "$ 0"
-        val = df_pd[(df_pd["label"] == "FEMENINO") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
+        max_yr = df_ole_salario["anno_corte"].max()
+        val = df_pd[(df_pd["label"] == "FEMENINO") & (df_pd["anno_corte"] == max_yr)]["salario_pesos"]
         s = val.iloc[0] if not val.empty else 0
         return f"$ {format_num_es(s)}"
 
@@ -2090,9 +2092,10 @@ def server(input, output, session):
 
     @reactive.calc
     def calc_kpi_salario_promedio_masc():
-        df_pd = get_salary_trend_data()
+        df_pd = get_salary_trend_data_constant()
         if df_pd.empty: return "$ 0"
-        val = df_pd[(df_pd["label"] == "MASCULINO") & (df_pd["anno_corte"] == 2022)]["salario_pesos"]
+        max_yr = df_ole_salario["anno_corte"].max()
+        val = df_pd[(df_pd["label"] == "MASCULINO") & (df_pd["anno_corte"] == max_yr)]["salario_pesos"]
         s = val.iloc[0] if not val.empty else 0
         return f"$ {format_num_es(s)}"
 
@@ -2140,11 +2143,11 @@ def server(input, output, session):
         ).to_pandas()
         agg["rango_salario"] = pd.Categorical(agg["rango_salario"], categories=RANGO_SALARIO_ORDER, ordered=True)
         agg = agg.sort_values(["rango_salario", "sexo"])
-        total_global = agg["cantidad"].sum()
-        if total_global > 0:
-            agg["porcentaje"] = agg["cantidad"] / total_global
-        else:
-            agg["porcentaje"] = 0
+        
+        # Calcular porcentajes relativos a cada sexo (intra-grupo)
+        totals_sexo = agg.groupby("sexo")["cantidad"].transform("sum")
+        agg["porcentaje"] = agg["cantidad"] / totals_sexo.replace(0, 1)
+        
         fig = px.bar(agg, x="porcentaje", y="rango_salario", color="sexo", orientation='h', barmode='group', color_discrete_map=COLOR_SEXO, text_auto='.1%')
         fig.update_layout(
             legend_title_text="Sexo", plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
@@ -2929,10 +2932,6 @@ def server(input, output, session):
             df_cob_comp = df_cob_comp.filter(pl.col("departamento_oferta") == attr["departamento_oferta"])
             
         return df_cob_comp["codigo_snies_del_programa"].unique().to_list()
-        # De esta forma, si configuras un grupo idéntico a lo que harías en el sidebar,
-        # la masa total y los elementos cuadran de manera exacta.
-        # Retornamos los códigos Divipola unicos para el filtro de dfs (pcurso, matriculados)
-        return df_cob_comp["snies_divipola"].unique().to_list()
 
     def calc_comp_metric(df_source, metric_col):
         import pandas as pd
@@ -3318,7 +3317,23 @@ def server(input, output, session):
         if not attr: 
             return pd.DataFrame(), pd.DataFrame()
         
+        # Sincronización de Filtros Geográficos del Sidebar (para coherencia con pestaña original)
+        dept = input.departamento()
+        mpio = input.municipio()
+        
         df_base = df_ole_salario.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+        
+        if is_filtered(dept) or is_filtered(mpio):
+            # Obtener divis válidos para este programa específico bajo el filtro geo actual
+            df_cob_geo = df_cobertura.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+            if is_filtered(dept):
+                df_cob_geo = df_cob_geo.filter(pl.col("departamento_oferta").is_in(dept))
+            if is_filtered(mpio):
+                df_cob_geo = df_cob_geo.filter(pl.col("municipio_oferta").is_in(mpio))
+            
+            divis_num = df_cob_geo["divipola_mpio_oferta"].drop_nulls().unique()
+            df_base = df_base.filter(pl.col("divipola_mpio_principal").is_in(divis_num))
+
         comp_codigos = comparable_snies_codigos()
         
         if len(comp_codigos) == 0:
@@ -3343,15 +3358,24 @@ def server(input, output, session):
             d = d.with_columns(
                 pl.col("rango_salario").replace(SALARIO_MIDPOINTS, default=1.0).cast(pl.Float64).alias("midpoint")
             )
-            agg_prog = d.group_by(["anno_corte", "codigo_snies_del_programa"]).agg([
+            agg_prog_sexo = d.group_by(["anno_corte", "codigo_snies_del_programa", "sexo"]).agg([
                 ((pl.col("midpoint") * pl.col("graduados_cotizantes_dependientes")).sum() / 
-                 pl.col("graduados_cotizantes_dependientes").sum() * pl.col("smmlv_calc").first()).alias("sal_prog")
+                 pl.col("graduados_cotizantes_dependientes").sum() * pl.col("smmlv_calc").first()).alias("sal_prog_sexo"),
+                pl.col("graduados_cotizantes_dependientes").sum().alias("grad_sexo")
+            ])
+            
+            agg_prog = agg_prog_sexo.group_by(["anno_corte", "codigo_snies_del_programa"]).agg([
+                pl.col("sal_prog_sexo").mean().alias("sal_prog"),
+                pl.col("grad_sexo").sum().alias("graduados_cotizantes_dependientes")
             ]).filter(pl.col("sal_prog").is_not_null())
             return agg_prog
 
         base_prog = process_salary_df(df_base)
         if base_prog.height > 0:
-            df_base_pd = base_prog.group_by("anno_corte").agg(pl.col("sal_prog").mean().alias("valor_base")).sort("anno_corte").to_pandas()
+            df_base_pd = base_prog.group_by("anno_corte").agg([
+                pl.col("sal_prog").mean().alias("valor_base"),
+                pl.col("graduados_cotizantes_dependientes").sum().alias("cotizantes_base")
+            ]).sort("anno_corte").to_pandas()
             df_base_pd["anno"] = df_base_pd["anno_corte"]
         else:
             df_base_pd = pd.DataFrame()
@@ -3361,6 +3385,7 @@ def server(input, output, session):
             df_comp_pd = comp_prog.group_by("anno_corte").agg([
                 pl.col("sal_prog").mean().alias("valor_comp_mean"),
                 pl.col("sal_prog").std().alias("valor_comp_std"),
+                pl.col("graduados_cotizantes_dependientes").sum().alias("cotizantes_sum"),
                 pl.col("sal_prog").count().alias("n_programas")
             ]).sort("anno_corte").to_pandas()
             df_comp_pd["valor_comp_std"] = df_comp_pd["valor_comp_std"].fillna(0)
@@ -3524,6 +3549,20 @@ def server(input, output, session):
         mean = df_comp["valor_comp_mean"].iloc[-1]
         std = df_comp["valor_comp_std"].iloc[-1]
         return ui.HTML(f"<div style='font-size: 40px; font-weight: bold; color: #674f95;'>{format_pct_es(mean)} <span style='font-size: 18px; color: gray;'>±{format_pct_es(std)} (SD)</span></div>")
+
+    @render.ui
+    def comp_kpi_base_cotizantes():
+        df_base, _ = calc_comp_salario_evolucion()
+        if df_base.empty: return ui.HTML("<div style='font-size: 34px; font-weight: bold; color: #31497e;'>Sin dato</div>")
+        val = df_base["cotizantes_base"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 34px; font-weight: bold; color: #31497e;'>{format_num_es(val)}</div>")
+
+    @render.ui
+    def comp_kpi_cotizantes():
+        _, df_comp = calc_comp_salario_evolucion()
+        if df_comp.empty: return ui.HTML("<div style='font-size: 34px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        val = df_comp["cotizantes_sum"].iloc[-1]
+        return ui.HTML(f"<div style='font-size: 34px; font-weight: bold; color: #674f95;'>{format_num_es(val)}</div>")
 
     @render.ui
     def comp_kpi_base_salario():
