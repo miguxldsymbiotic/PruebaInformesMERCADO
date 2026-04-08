@@ -864,6 +864,10 @@ app_ui = ui.page_sidebar(
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("<b style='color: #31497e;'>2. Definir Grupo Comparable</b>")),
+                    ui.div(
+                        ui.input_switch("switch_modo_manual", ui.HTML("<b>Fijar Lista Manual (Ignorar Atributos)</b>"), value=False),
+                        style="padding-bottom: 5px; border-bottom: 1px solid #ddd; margin-bottom: 10px;"
+                    ),
                     ui.input_checkbox_group(
                         "comp_criterios",
                         "Seleccione los atributos que deben coincidir para formar el grupo de comparación:",
@@ -886,8 +890,16 @@ app_ui = ui.page_sidebar(
                         style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-top: 10px;"
                     ),
                     ui.div(
-                        ui.HTML("<b>Nota Técnica (Estadística Robusta):</b> Se utiliza la <b>Mediana</b> y el <b>MAD</b> (Desviación Absoluta de la Mediana) porque los datos de matrícula presentan una distribución tipo Pareto (varios programas pequeños y pocos con volúmenes masivos). En estos casos, el promedio y la desviación estándar se ven fuertemente sesgados por los valores extremos. La mediana representa mejor al 'programa típico' del grupo, y el MAD escalado por 1.4826 ofrece una medida de dispersión equivalente a la desviación estándar pero protegida contra anomalías."),
+                        ui.HTML("<b>Nota Técnica (Estadística Robusta):</b> Para las <i>Tendencias de Matrícula</i> se utiliza la <b>Mediana</b> y el <b>MAD</b> (Desviación Absoluta de la Mediana) porque presentan una distribución asimétrica tipo Pareto fuertemente sesgada por valores extremos. <br><br><b>Nota:</b> Para los demás indicadores comparativos (Salarios, Deserción, Saber PRO y Empleabilidad) se emplea el <b>Promedio</b> y la <b>Desviación Estándar (SD)</b> tradicional para definir tanto la tendencia central poblacional como la banda sombreada de dispersión."),
                         style="font-size: 0.85em; color: #555; background-color: #fef9e7; padding: 12px; border-radius: 8px; border-left: 4px solid #ffa600; margin-top: 10px;"
+                    ),
+                    ui.div(
+                        ui.input_action_button("btn_abrir_modal", "Personalizar Grupo...", icon=fa.icon_svg("sliders"), class_="btn-secondary w-100"),
+                        ui.div(
+                            ui.HTML("<b>Nota Informativa:</b> Solo se incluirán programas con registros históricos válidos. La cantidad de programas en el grupo puede diferir si la selección manual incluye códigos sin datos o de programas actualmente inactivos."),
+                            style="font-size: 0.8em; color: #666; margin-top: 8px; line-height: 1.2;"
+                        ),
+                        style="padding-top: 15px;"
                     ),
                     class_="mb-3"
                 ),
@@ -902,6 +914,7 @@ app_ui = ui.page_sidebar(
                 ui.value_box("Total Neto Graduados", ui.output_ui("comp_kpi_neto_graduados"), showcase=fa.icon_svg("graduation-cap", "solid"), class_="card-comparable"),
                 fill=False, class_="mb-5"
             ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
             ui.h3("Tendencias de Matrícula", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Programa Seleccionado (Primer Curso)", ui.output_ui("comp_kpi_base_pcurso"), showcase=ICONS["student"]),
@@ -3003,19 +3016,29 @@ def server(input, output, session):
             </div>
         """)
 
-    @reactive.calc
-    def comparable_snies_list():
-        """Devuelve la lista de divipolas/snies que forman el grupo comparable."""
+    comp_modo_manual = reactive.Value(False)
+    
+    @reactive.effect
+    @reactive.event(input.switch_modo_manual)
+    def trigger_manual_switch():
+        comp_modo_manual.set(input.switch_modo_manual())
+
+    reactive_lista_comp_snies = reactive.Value([])
+    
+    @reactive.effect
+    @reactive.event(input.comp_criterios, input.comp_snies_base, input.switch_modo_manual)
+    def auto_update_lista_snies():
+        if input.switch_modo_manual():
+            return
+            
         attr = comp_profile_attr()
-        if not attr: return []
-        
+        if not attr: 
+            reactive_lista_comp_snies.set([])
+            return
+            
         criterios = input.comp_criterios() or []
-        
-        # Empezamos con todos los SNIES (sin aplicar los filtros globales del sidebar)
         df_comp = df_snies
-        df_cob_comp = df_cobertura
         
-        # Aplicamos los filtros locales basados en checkboxes marcados
         if "nivel_de_formacion" in criterios and attr.get("nivel_de_formacion"):
             df_comp = df_comp.filter(pl.col("nivel_de_formacion") == attr["nivel_de_formacion"])
         if "modalidad" in criterios and attr.get("modalidad"):
@@ -3027,48 +3050,175 @@ def server(input, output, session):
         if "nucleo_basico_del_conocimiento" in criterios and attr.get("nucleo_basico_del_conocimiento"):
             df_comp = df_comp.filter(pl.col("nucleo_basico_del_conocimiento") == attr["nucleo_basico_del_conocimiento"])
             
-        # Filtrar por defecto solo por programas en estado ACTIVO
         df_comp = df_comp.filter(pl.col("estado_programa") == "ACTIVO")
 
-        # Filtro de Cobertura (Depto) para Divipolas
-        valid_snies = df_comp["codigo_snies_del_programa"].unique()
-        df_cob_comp = df_cob_comp.filter(pl.col("codigo_snies_del_programa").is_in(valid_snies))
+        valid_snies = df_comp["codigo_snies_del_programa"].unique().to_list()
         
         if "departamento_oferta" in criterios and attr.get("departamento_oferta"):
+            df_cob_comp = df_cobertura.filter(
+                (pl.col("codigo_snies_del_programa").is_in(valid_snies)) &
+                (pl.col("departamento_oferta") == attr["departamento_oferta"])
+            )
+            valid_snies = df_cob_comp["codigo_snies_del_programa"].unique().to_list()
+            
+        reactive_lista_comp_snies.set(valid_snies)
+
+    @reactive.calc
+    def comparable_snies_list():
+        """Devuelve la lista de divipolas que forman el grupo comparable (para datasets de estudiantes)."""
+        snies_list = reactive_lista_comp_snies.get()
+        if not snies_list: return []
+        
+        criterios = input.comp_criterios() or []
+        attr = comp_profile_attr()
+        df_cob_comp = df_cobertura.filter(pl.col("codigo_snies_del_programa").is_in(snies_list))
+        
+        if "departamento_oferta" in criterios and attr and attr.get("departamento_oferta"):
             df_cob_comp = df_cob_comp.filter(pl.col("departamento_oferta") == attr["departamento_oferta"])
             
         return df_cob_comp["snies_divipola"].unique().to_list()
 
     @reactive.calc
     def comparable_snies_codigos():
-        """Devuelve la lista de codigos SNIES que forman el grupo comparable (para OLE)."""
-        attr = comp_profile_attr()
-        if not attr: return []
-        
-        criterios = input.comp_criterios() or []
-        df_comp = df_snies
-        df_cob_comp = df_cobertura
-        
-        if "nivel_de_formacion" in criterios and attr.get("nivel_de_formacion"):
-            df_comp = df_comp.filter(pl.col("nivel_de_formacion") == attr["nivel_de_formacion"])
-        if "modalidad" in criterios and attr.get("modalidad"):
-            df_comp = df_comp.filter(pl.col("modalidad") == attr["modalidad"])
-        if "sector" in criterios and attr.get("sector"):
-            df_comp = df_comp.filter(pl.col("sector") == attr["sector"])
-        if "area_de_conocimiento" in criterios and attr.get("area_de_conocimiento"):
-            df_comp = df_comp.filter(pl.col("area_de_conocimiento") == attr["area_de_conocimiento"])
-        if "nucleo_basico_del_conocimiento" in criterios and attr.get("nucleo_basico_del_conocimiento"):
-            df_comp = df_comp.filter(pl.col("nucleo_basico_del_conocimiento") == attr["nucleo_basico_del_conocimiento"])
-            
-        df_comp = df_comp.filter(pl.col("estado_programa") == "ACTIVO")
+        """Devuelve la lista de codigos SNIES base que forman el grupo comparable (para OLE y SaberPRO)."""
+        return reactive_lista_comp_snies.get() or []
 
-        valid_snies = df_comp["codigo_snies_del_programa"].unique()
-        df_cob_comp = df_cob_comp.filter(pl.col("codigo_snies_del_programa").is_in(valid_snies))
+    # --- Lógica del Modal de Selección SNIES ---
+    modal_snies_activados = reactive.Value([])
+    
+    @reactive.effect
+    @reactive.event(input.btn_abrir_modal)
+    def show_modal():
+        import pandas as pd
+        current_list = reactive_lista_comp_snies.get()
+        clean_list = [str(int(c)) for c in current_list if pd.notna(c)]
+        current_str = " ".join(clean_list) if clean_list else ""
+        modal_snies_activados.set(current_list)
         
-        if "departamento_oferta" in criterios and attr.get("departamento_oferta"):
-            df_cob_comp = df_cob_comp.filter(pl.col("departamento_oferta") == attr["departamento_oferta"])
+        m = ui.modal(
+            ui.tags.style(".modal-xl { max-width: 95vw !important; }"),
+            ui.h4("Personalizar Grupo Comparable", style="color: #31497e; font-weight: bold;"),
+            ui.p("Pegue los códigos SNIES de los programas con los cuales desea comparar el programa base. Al guardar, los filtros de atributos automáticos serán deshabilitados en favor de esta lista.", style="margin-bottom: 15px;"),
+            ui.layout_columns(
+                ui.div(
+                    ui.h5("1. Lista Manual de SNIES"),
+                    ui.input_text_area(
+                        "txt_snies_manual", 
+                        "Pegue los códigos separados por coma, espacio o tabulador", 
+                        value=current_str,
+                        width="100%", 
+                        height="250px"
+                    ),
+                    ui.input_action_button("btn_aplicar_txt", "🔎 Previsualizar Selección", class_="btn-primary w-100 mb-3"),
+                    ui.h5("2. Descargar Catálogo Base"),
+                    ui.p("Si necesita buscar qué códigos SNIES incluir, descargue aquí el catálogo completo nacional y filtre manualmente en Excel para armar su grupo.", style="font-size: 0.8em; color: gray; margin-bottom: 5px;"),
+                    ui.download_button("btn_descargar_snies", "⬇ Descargar Base Filtrada (.xlsx)", class_="btn-outline-secondary w-100")
+                ),
+                ui.div(
+                    ui.h5("Programas Seleccionados"),
+                    ui.p("Esta tabla valida si los códigos SNIES ingresados existen y cuáles son sus nombres.", style="font-size: 0.8em; color: gray; margin-bottom: 5px;"),
+                    ui.output_data_frame("tabla_modal_snies")
+                ),
+                col_widths=(4, 8)
+            ),
+            title="Refinar Grupo Manualmente",
+            easy_close=False,
+            footer=ui.div(
+                ui.input_action_button("btn_guardar_modal", "Cargar y Finalizar", class_="btn-success"),
+                ui.modal_button("Cancelar")
+            ),
+            size="xl"
+        )
+        ui.modal_show(m)
+
+    @render.download(filename="Catalogo_SNIES_Filtrado.xlsx")
+    def btn_descargar_snies():
+        attr = comp_profile_attr()
+        criterios = input.comp_criterios() or []
+        df_export = df_snies.filter(pl.col("estado_programa") == "ACTIVO")
+        
+        if attr:
+            if "nivel_de_formacion" in criterios and attr.get("nivel_de_formacion"):
+                df_export = df_export.filter(pl.col("nivel_de_formacion") == attr["nivel_de_formacion"])
+            if "modalidad" in criterios and attr.get("modalidad"):
+                df_export = df_export.filter(pl.col("modalidad") == attr["modalidad"])
+            if "sector" in criterios and attr.get("sector"):
+                df_export = df_export.filter(pl.col("sector") == attr["sector"])
+            if "area_de_conocimiento" in criterios and attr.get("area_de_conocimiento"):
+                df_export = df_export.filter(pl.col("area_de_conocimiento") == attr["area_de_conocimiento"])
+            if "nucleo_basico_del_conocimiento" in criterios and attr.get("nucleo_basico_del_conocimiento"):
+                df_export = df_export.filter(pl.col("nucleo_basico_del_conocimiento") == attr["nucleo_basico_del_conocimiento"])
+                
+            if "departamento_oferta" in criterios and attr.get("departamento_oferta"):
+                df_cob_match = df_cobertura.filter(pl.col("departamento_oferta") == attr["departamento_oferta"])
+                valid_snies_dept = df_cob_match["codigo_snies_del_programa"].unique()
+                df_export = df_export.filter(pl.col("codigo_snies_del_programa").is_in(valid_snies_dept))
+                
+        df_export = df_export.select([
+            "codigo_snies_del_programa", 
+            "programa_academico", 
+            "nombre_institucion", 
+            "departamento_principal",
+            "nivel_de_formacion",
+            "modalidad",
+            "sector",
+            "area_de_conocimiento",
+            "nucleo_basico_del_conocimiento"
+        ])
+        
+        import io
+        import pandas as pd
+        output = io.BytesIO()
+        df_pd = df_export.to_pandas()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_pd.to_excel(writer, index=False)
+        yield output.getvalue()
+
+    @reactive.effect
+    @reactive.event(input.btn_aplicar_txt)
+    def update_from_txt():
+        import re
+        raw_text = input.txt_snies_manual() or ""
+        codes = re.findall(r'\d+', raw_text)
+        codes = list(set([int(c) for c in codes]))
+        modal_snies_activados.set(codes)
+
+    @render.data_frame
+    def tabla_modal_snies():
+        activados = set(modal_snies_activados.get())
+        if not activados:
+            import pandas as pd
+            return render.DataGrid(pd.DataFrame(), filters=False, width="100%", selection_mode="none")
             
-        return df_cob_comp["codigo_snies_del_programa"].unique().to_list()
+        df_view = df_snies.filter(
+            (pl.col("estado_programa") == "ACTIVO") & 
+            (pl.col("codigo_snies_del_programa").is_in(list(activados)))
+        ).select([
+            "codigo_snies_del_programa", 
+            "programa_academico", 
+            "nombre_institucion", 
+            "departamento_principal",
+            "nivel_de_formacion",
+            "modalidad",
+            "sector",
+            "area_de_conocimiento",
+            "nucleo_basico_del_conocimiento"
+        ])
+        
+        import pandas as pd
+        return render.DataGrid(df_view.to_pandas(), filters=True, width="100%", selection_mode="none")
+
+    @reactive.effect
+    @reactive.event(input.btn_guardar_modal)
+    def save_modal():
+        import re
+        raw_text = input.txt_snies_manual() or ""
+        codes = re.findall(r'\d+', raw_text)
+        codes = list(set([int(c) for c in codes]))
+        
+        reactive_lista_comp_snies.set(codes)
+        ui.update_switch("switch_modo_manual", value=True)
+        ui.modal_remove()
 
     def calc_comp_metric(df_source, metric_col):
         import pandas as pd
