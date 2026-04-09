@@ -4,7 +4,7 @@ import polars as pl
 from shiny import App, reactive, render, ui, session
 import plotly.express as px
 import plotly.graph_objects as go
-from shinywidgets import output_widget, render_widget
+import plotly.io as pio
 from report_engine import ReportEngine
 import datetime
 import base64
@@ -246,19 +246,19 @@ app_ui = ui.page_sidebar(
     ui.layout_columns(
         ui.card(
             ui.card_header(ui.HTML("Tendencia Total de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
-            output_widget("plot_primer_curso_total"), 
+            ui.output_ui("plot_primer_curso_total"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
             ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
-            output_widget("plot_matriculados_total"), 
+            ui.output_ui("plot_matriculados_total"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
             ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
-            output_widget("plot_graduados_total"), 
+            ui.output_ui("plot_graduados_total"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
@@ -267,19 +267,19 @@ app_ui = ui.page_sidebar(
     ui.layout_columns(
         ui.card(
             ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
-            output_widget("plot_primer_curso"), 
+            ui.output_ui("plot_primer_curso"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
             ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
-            output_widget("plot_matriculados"), 
+            ui.output_ui("plot_matriculados"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
             ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
-            output_widget("plot_graduados"), 
+            ui.output_ui("plot_graduados"), 
             ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
@@ -320,13 +320,13 @@ app_ui = ui.page_sidebar(
     ui.layout_columns(
         ui.card(
             ui.card_header(ui.HTML("Distribución de <b style='color: #31497e;'>Costo de Matrícula</b> (Solo Privados)")), 
-            output_widget("plot_dist_costo_matricula"), 
+            ui.output_ui("plot_dist_costo_matricula"), 
             ui.card_footer(ui.HTML("Fuente: SNIES.<br>Se calculan promedios para programas del sector privado con valores mayores a cero.<br><i>Nota técnica: El costo de matrícula solo aplica para programas de instituciones privadas regulados por el SNIES.</i>"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 450px;"
         ),
         ui.card(
             ui.card_header(ui.HTML("Distribución de <b style='color: #31497e;'>Número de Créditos</b>")), 
-            output_widget("plot_dist_creditos"), 
+            ui.output_ui("plot_dist_creditos"), 
             ui.card_footer(ui.HTML("Fuente: SNIES.<br>Se calculan promedios para todos los programas que reportan créditos académicos mayores a cero."), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 450px;"
         ),
@@ -371,30 +371,30 @@ app_ui = ui.page_sidebar(
                 fill=False
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), output_widget("plot_empleabilidad_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), output_widget("plot_dependientes_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), ui.output_ui("plot_empleabilidad_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), ui.output_ui("plot_dependientes_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Empleabilidad por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_empleabilidad_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
-                ui.card(ui.card_header(ui.HTML("Relación Dependientes sobre Graduados por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_dependientes_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Empleabilidad por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("plot_empleabilidad_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Relación Dependientes sobre Graduados por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("plot_dependientes_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), output_widget("plot_dist_empleabilidad"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), output_widget("plot_dist_dependientes"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución Total de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), ui.output_ui("plot_dist_empleabilidad"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), ui.output_ui("plot_dist_dependientes"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución de <b style='color: #31497e;'>Empleabilidad</b> por Sexo ({max_anno_ole})")), output_widget("plot_dist_empleabilidad_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML(f"Distribución de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> por Sexo ({max_anno_ole})")), output_widget("plot_dist_dependientes_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de <b style='color: #31497e;'>Empleabilidad</b> por Sexo ({max_anno_ole})")), ui.output_ui("plot_dist_empleabilidad_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> por Sexo ({max_anno_ole})")), ui.output_ui("plot_dist_dependientes_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-4"
             ),
 
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML(f"Matriz de <b style='color: #31497e;'>Graduados que Cotizan</b> (Origen vs Destino) - {max_anno_ole}")), 
-                    output_widget("plot_mobility_matrix"), 
+                    ui.output_ui("plot_mobility_matrix"), 
                     ui.card_footer(
                         ui.HTML("Sumatoria de Graduados que Cotizan según zona de estudio (Origen) vs zona de cotización laboral (Destino). Fuente: Observatorio Laboral para la Educación (OLE)<br>"),
                         ui.HTML("<small><i>Nota técnica: La matriz se construye exclusivamente sobre graduados con registro de cotización laboral. Se aplican filtros de cobertura estrictos del SNIES; registros sin sede operativa validada son excluidos.</i></small>"),
@@ -407,19 +407,19 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Dependientes sobre Cotizantes</b>")), 
-                    output_widget("plot_dependientes_trend"), 
+                    ui.output_ui("plot_dependientes_trend"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Evolución de la <b style='color: #31497e;'>Tasa de Retención Local</b>")), 
-                    output_widget("plot_retencion_trend"), 
+                    ui.output_ui("plot_retencion_trend"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Ratio Salen / Entran</b>")), 
-                    output_widget("plot_ratio_trend"), 
+                    ui.output_ui("plot_ratio_trend"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -461,13 +461,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML(f"Distribución Total por <b style='color: #31497e;'>Rango Salarial</b> ({max_anno_ole:.0f})")), 
-                    output_widget("plot_salario_dist_total"), 
+                    ui.output_ui("plot_salario_dist_total"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML(f"Distribución Salarial por <b style='color: #31497e;'>Sexo</b> ({max_anno_ole:.0f})")), 
-                    output_widget("plot_salario_dist_sexo"), 
+                    ui.output_ui("plot_salario_dist_sexo"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
@@ -476,13 +476,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos corrientes)")), 
-                    output_widget("plot_salario_evolucion_total"), 
+                    ui.output_ui("plot_salario_evolucion_total"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia con base en SMMLV histórico"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos corrientes)")), 
-                    output_widget("plot_salario_evolucion_sexo"), 
+                    ui.output_ui("plot_salario_evolucion_sexo"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia con base en SMMLV histórico"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -491,13 +491,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML(f"Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos constantes - SMMLV {max_anno_ole:.0f})")), 
-                    output_widget("plot_salario_evolucion_total_constante"), 
+                    ui.output_ui("plot_salario_evolucion_total_constante"), 
                     ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_ole:.0f}"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML(f"Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos constantes - SMMLV {max_anno_ole:.0f})")), 
-                    output_widget("plot_salario_evolucion_sexo_constante"), 
+                    ui.output_ui("plot_salario_evolucion_sexo_constante"), 
                     ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_ole:.0f}"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -517,13 +517,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Distribución de la <b style='color: #31497e;'>Tasa de Deserción</b> (Último Año)")), 
-                    output_widget("plot_dist_desercion"), 
+                    ui.output_ui("plot_dist_desercion"), 
                     ui.card_footer(ui.HTML("Fuente: SPADIES - Ministerio de Educación Nacional<br>Distribución por programa en pasos de 2%.<br><i>Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})</i>"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #31497e;'>Deserción Anual</b>")), 
-                    output_widget("plot_trend_desercion"), 
+                    ui.output_ui("plot_trend_desercion"), 
                     ui.card_footer(ui.HTML("Fuente: SPADIES - Ministerio de Educación Nacional<br>Evolución promedio de los programas seleccionados.<br><i>Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})</i>"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -571,13 +571,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Competencias Genéricas</b> (Promedio por Programa)")), 
-                    output_widget("plot_saber_trend"), 
+                    ui.output_ui("plot_saber_trend"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución del puntaje promedio de los programas capturados por los filtros activos."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML(f"Distribución del <b style='color: #31497e;'>Puntaje Global</b> ({max_anno_saber:.0f})")), 
-                    output_widget("plot_saber_dist"), 
+                    ui.output_ui("plot_saber_dist"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Frecuencia relativa de los programas académicos según su puntaje promedio."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
@@ -586,13 +586,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Sexo</b>")), 
-                    output_widget("plot_saber_count_sexo"), 
+                    ui.output_ui("plot_saber_count_sexo"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución del conteo de estudiantes que presentaron la prueba."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Edad</b>")), 
-                    output_widget("plot_saber_count_edad"), 
+                    ui.output_ui("plot_saber_count_edad"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución del conteo de estudiantes que presentaron la prueba."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -602,33 +602,33 @@ app_ui = ui.page_sidebar(
             
             # FILA 1: PUNTAJE GLOBAL
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_global_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_global_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("plot_saber_trend_global_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("plot_saber_trend_global_edad"), full_screen=True),
             ),
             # FILA 2: RAZONAMIENTO CUANTITATIVO
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_razona_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_razona_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("plot_saber_trend_razona_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("plot_saber_trend_razona_edad"), full_screen=True),
             ),
             # FILA 3: LECTURA CRÍTICA
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_lectura_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_lectura_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("plot_saber_trend_lectura_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("plot_saber_trend_lectura_edad"), full_screen=True),
             ),
             # FILA 4: COMPETENCIAS CIUDADANAS
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_ciuda_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_ciuda_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("plot_saber_trend_ciuda_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("plot_saber_trend_ciuda_edad"), full_screen=True),
             ),
             # FILA 5: INGLÉS
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_ingles_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_ingles_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("plot_saber_trend_ingles_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("plot_saber_trend_ingles_edad"), full_screen=True),
             ),
             # FILA 6: COMUNICACIÓN ESCRITA
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Sexo</b>")), output_widget("plot_saber_trend_escrita_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Edad</b>")), output_widget("plot_saber_trend_escrita_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("plot_saber_trend_escrita_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("plot_saber_trend_escrita_edad"), full_screen=True),
                 class_="mb-5"
             ),
         ),
@@ -650,13 +650,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Sexo</b> ({max_anno_saber:.0f})")), 
-                    output_widget("plot_saber_demo_sexo"), 
+                    ui.output_ui("plot_saber_demo_sexo"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución porcentual por sexo de los evaluados en el último año."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Grupo de Edad</b> ({max_anno_saber:.0f})")), 
-                    output_widget("plot_saber_demo_edad"), 
+                    ui.output_ui("plot_saber_demo_edad"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución porcentual por rangos de edad en el último año."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -665,13 +665,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Horas de Trabajo</b> ({max_anno_saber:.0f})")), 
-                    output_widget("plot_saber_demo_trabajo"), 
+                    ui.output_ui("plot_saber_demo_trabajo"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución porcentual de la carga laboral reportada por los estudiantes."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Estrato Social</b> ({max_anno_saber:.0f})")), 
-                    output_widget("plot_saber_demo_estrato"), 
+                    ui.output_ui("plot_saber_demo_estrato"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución porcentual por estrato socioeconómico de la vivienda."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -681,13 +681,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Sexo</b>")), 
-                    output_widget("plot_saber_demo_sexo_trend"), 
+                    ui.output_ui("plot_saber_demo_sexo_trend"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición por género."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Grupo de Edad</b>")), 
-                    output_widget("plot_saber_demo_edad_trend"), 
+                    ui.output_ui("plot_saber_demo_edad_trend"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición por rangos de edad."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -696,13 +696,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Horas de Trabajo</b>")), 
-                    output_widget("plot_saber_demo_trabajo_trend"), 
+                    ui.output_ui("plot_saber_demo_trabajo_trend"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la participación según carga laboral."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Estrato Social</b>")), 
-                    output_widget("plot_saber_demo_estrato_trend"), 
+                    ui.output_ui("plot_saber_demo_estrato_trend"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición socioeconómica."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -721,15 +721,15 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), output_widget("prev_pcurso_total"), ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), output_widget("prev_matricula_total"), ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Graduados</b>")), output_widget("prev_graduados_total"), ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), ui.output_ui("prev_pcurso_total"), ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), ui.output_ui("prev_matricula_total"), ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Graduados</b>")), ui.output_ui("prev_graduados_total"), ui.card_footer(ui.HTML("Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), output_widget("prev_pcurso_sexo"), ui.output_ui("prev_caption_pcurso"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), output_widget("prev_matricula_sexo"), ui.output_ui("prev_caption_matricula"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #31497e;'>Graduados</b>")), output_widget("prev_graduados_sexo"), ui.output_ui("prev_caption_graduados"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), ui.output_ui("prev_pcurso_sexo"), ui.output_ui("prev_caption_pcurso"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), ui.output_ui("prev_matricula_sexo"), ui.output_ui("prev_caption_matricula"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia por Sexo de Estudiantes <b style='color: #31497e;'>Graduados</b>")), ui.output_ui("prev_graduados_sexo"), ui.output_ui("prev_caption_graduados"), full_screen=True),
                 class_="mb-5"
             ),
 
@@ -741,33 +741,33 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), output_widget("prev_ole_emp_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), output_widget("prev_ole_dep_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), ui.output_ui("prev_ole_emp_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), ui.output_ui("prev_ole_dep_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Empleabilidad por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_ole_emp_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Relación Dependientes sobre Graduados por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_ole_dep_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Empleabilidad por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_ole_emp_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Relación Dependientes sobre Graduados por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_ole_dep_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-5"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), output_widget("prev_ole_dist_emp"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), output_widget("prev_ole_dist_dep"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución Total de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), ui.output_ui("prev_ole_dist_emp"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), ui.output_ui("prev_ole_dist_dep"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución de <b style='color: #31497e;'>Empleabilidad</b> por Sexo ({max_anno_ole})")), output_widget("prev_ole_dist_emp_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML(f"Distribución de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> por Sexo ({max_anno_ole})")), output_widget("prev_ole_dist_dep_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de <b style='color: #31497e;'>Empleabilidad</b> por Sexo ({max_anno_ole})")), ui.output_ui("prev_ole_dist_emp_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> por Sexo ({max_anno_ole})")), ui.output_ui("prev_ole_dist_dep_sexo"), ui.card_footer(ui.HTML("Frecuencia relativa de sub-grupos por programa y sexo. Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Matriz de <b style='color: #31497e;'>Graduados que Cotizan</b> (Origen vs Destino) - {max_anno_ole}")), output_widget("prev_ole_mobility"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br><small><i>Nota técnica: La matriz se construye exclusivamente sobre graduados con registro de cotización laboral.</i></small>"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML(f"Matriz de <b style='color: #31497e;'>Graduados que Cotizan</b> (Origen vs Destino) - {max_anno_ole}")), ui.output_ui("prev_ole_mobility"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br><small><i>Nota técnica: La matriz se construye exclusivamente sobre graduados con registro de cotización laboral.</i></small>"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Dependientes sobre Cotizantes</b>")), output_widget("prev_ole_trend_dep"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
-                ui.card(ui.card_header(ui.HTML("Evolución de la <b style='color: #31497e;'>Tasa de Retención Local</b>")), output_widget("prev_ole_trend_ret"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
-                ui.card(ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Ratio Salen / Entran</b>")), output_widget("prev_ole_trend_ratio"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Dependientes sobre Cotizantes</b>")), ui.output_ui("prev_ole_trend_dep"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución de la <b style='color: #31497e;'>Tasa de Retención Local</b>")), ui.output_ui("prev_ole_trend_ret"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Ratio Salen / Entran</b>")), ui.output_ui("prev_ole_trend_ratio"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
                 class_="mb-5"
             ),
 
@@ -779,18 +779,18 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total por <b style='color: #31497e;'>Rango Salarial</b> ({max_anno_ole:.0f})")), output_widget("prev_sal_dist_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML(f"Distribución Salarial por <b style='color: #31497e;'>Sexo</b> ({max_anno_ole:.0f})")), output_widget("prev_sal_dist_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Distribución Total por <b style='color: #31497e;'>Rango Salarial</b> ({max_anno_ole:.0f})")), ui.output_ui("prev_sal_dist_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Distribución Salarial por <b style='color: #31497e;'>Sexo</b> ({max_anno_ole:.0f})")), ui.output_ui("prev_sal_dist_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos corrientes)")), output_widget("prev_sal_evol_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia con base en SMMLV histórico"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos corrientes)")), output_widget("prev_sal_evol_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia con base en SMMLV histórico"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos corrientes)")), ui.output_ui("prev_sal_evol_total"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia con base en SMMLV histórico"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos corrientes)")), ui.output_ui("prev_sal_evol_sexo"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia con base en SMMLV histórico"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), output_widget("prev_sal_evol_constante"), ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_smmlv:.0f}"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML(f"Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), output_widget("prev_sal_evol_sexo_constante"), ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_smmlv:.0f}"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Evolución del <b style='color: #31497e;'>Salario Promedio Estimado</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), ui.output_ui("prev_sal_evol_constante"), ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_smmlv:.0f}"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Evolución Salarial por <b style='color: #31497e;'>Sexo</b> (Pesos constantes - SMMLV {max_anno_smmlv:.0f})")), ui.output_ui("prev_sal_evol_sexo_constante"), ui.card_footer(ui.HTML(f"Fuente: Observatorio Laboral para la Educación (OLE)<br>Ajustado a SMMLV de {max_anno_smmlv:.0f}"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-5"
             ),
 
@@ -800,8 +800,8 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Distribución de la <b style='color: #31497e;'>Tasa de Deserción</b> (Último Año)")), output_widget("prev_des_dist"), ui.card_footer(ui.HTML("Fuente: SPADIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #31497e;'>Deserción Anual</b>")), output_widget("prev_des_trend"), ui.card_footer(ui.HTML("Fuente: SPADIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Distribución de la <b style='color: #31497e;'>Tasa de Deserción</b> (Último Año)")), ui.output_ui("prev_des_dist"), ui.card_footer(ui.HTML("Fuente: SPADIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #31497e;'>Deserción Anual</b>")), ui.output_ui("prev_des_trend"), ui.card_footer(ui.HTML("Fuente: SPADIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-5"
             ),
 
@@ -811,39 +811,39 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Competencias Genéricas</b> (Promedio por Programa)")), output_widget("prev_saber_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML(f"Distribución del <b style='color: #31497e;'>Puntaje Global</b> ({max_anno_saber:.0f})")), output_widget("prev_saber_dist"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Competencias Genéricas</b> (Promedio por Programa)")), ui.output_ui("prev_saber_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Distribución del <b style='color: #31497e;'>Puntaje Global</b> ({max_anno_saber:.0f})")), ui.output_ui("prev_saber_dist"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_saber_count_sexo"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Edad</b>")), output_widget("prev_saber_count_edad"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_saber_count_sexo"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_count_edad"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-5"
             ),
             ui.h4("Evolución Detallada por Perfil Sociodemográfico", class_="mt-4 mb-3", style="color: #31497e;"),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_saber_trend_global_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Edad</b>")), output_widget("prev_saber_trend_global_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_saber_trend_global_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_trend_global_edad"), full_screen=True),
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_saber_trend_razona_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Edad</b>")), output_widget("prev_saber_trend_razona_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_saber_trend_razona_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Razonamiento Cuantitativo por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_trend_razona_edad"), full_screen=True),
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_saber_trend_lectura_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Edad</b>")), output_widget("prev_saber_trend_lectura_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_saber_trend_lectura_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Lectura Crítica por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_trend_lectura_edad"), full_screen=True),
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_saber_trend_ciuda_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Edad</b>")), output_widget("prev_saber_trend_ciuda_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_saber_trend_ciuda_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Competencias Ciudadanas por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_trend_ciuda_edad"), full_screen=True),
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_saber_trend_ingles_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Edad</b>")), output_widget("prev_saber_trend_ingles_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_saber_trend_ingles_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Inglés por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_trend_ingles_edad"), full_screen=True),
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_saber_trend_escrita_sexo"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Edad</b>")), output_widget("prev_saber_trend_escrita_edad"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_saber_trend_escrita_sexo"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Comunicación Escrita por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_trend_escrita_edad"), full_screen=True),
                 class_="mb-5"
             ),
 
@@ -854,23 +854,23 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Sexo</b> ({max_anno_saber:.0f})")), output_widget("prev_demo_sexo"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Caracterización demográfica de los estudiantes evaluados."), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Grupo de Edad</b> ({max_anno_saber:.0f})")), output_widget("prev_demo_edad"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Composición por rangos de edad."), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Sexo</b> ({max_anno_saber:.0f})")), ui.output_ui("prev_demo_sexo"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Caracterización demográfica de los estudiantes evaluados."), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Grupo de Edad</b> ({max_anno_saber:.0f})")), ui.output_ui("prev_demo_edad"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Composición por rangos de edad."), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Horas de Trabajo</b> ({max_anno_saber:.0f})")), output_widget("prev_demo_trabajo"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución según carga laboral."), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Estrato Social</b> ({max_anno_saber:.0f})")), output_widget("prev_demo_estrato"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Composición socioeconómica de los evaluados."), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Horas de Trabajo</b> ({max_anno_saber:.0f})")), ui.output_ui("prev_demo_trabajo"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Distribución según carga laboral."), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Estrato Social</b> ({max_anno_saber:.0f})")), ui.output_ui("prev_demo_estrato"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Composición socioeconómica de los evaluados."), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Sexo</b>")), output_widget("prev_demo_sexo_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición por sexo."), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Grupo de Edad</b>")), output_widget("prev_demo_edad_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición por rangos de edad."), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_demo_sexo_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición por sexo."), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Grupo de Edad</b>")), ui.output_ui("prev_demo_edad_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición por rangos de edad."), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Horas de Trabajo</b>")), output_widget("prev_demo_trabajo_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la participación según carga laboral."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
-                ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Estrato Social</b>")), output_widget("prev_demo_estrato_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición socioeconómica."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Horas de Trabajo</b>")), ui.output_ui("prev_demo_trabajo_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la participación según carga laboral."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Estrato Social</b>")), ui.output_ui("prev_demo_estrato_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición socioeconómica."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
                 class_="mb-5"
             )
         ),
@@ -953,19 +953,19 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
-                    output_widget("plot_comp_pcurso"), 
+                    ui.output_ui("plot_comp_pcurso"), 
                     ui.card_footer(ui.HTML("Fuente: SNIES.<br>La línea central representa la mediana y la zona sombreada el intervalo de dispersión basado en la Mediana (±1.48 MAD)."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
-                    output_widget("plot_comp_matricula"), 
+                    ui.output_ui("plot_comp_matricula"), 
                     ui.card_footer(ui.HTML("Fuente: SNIES.<br>La línea central representa la mediana y la zona sombreada el intervalo de dispersión basado en la Mediana (±1.48 MAD)."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
-                    output_widget("plot_comp_graduados"), 
+                    ui.output_ui("plot_comp_graduados"), 
                     ui.card_footer(ui.HTML("Fuente: SNIES.<br>La línea central representa la mediana y la zona sombreada el intervalo de dispersión basado en la Mediana (±1.48 MAD)."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
@@ -987,13 +987,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Distribución de <b style='color: #31497e;'>Costo de Matrícula</b> (Solo Privados)")), 
-                    output_widget("plot_comp_dist_costo_matricula"), 
+                    ui.output_ui("plot_comp_dist_costo_matricula"), 
                     ui.card_footer(ui.HTML("Fuente: SNIES.<br><b>El fondo gris</b> representa a la oferta total de programas privados que reportan costo.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca el costo del Programa Seleccionado."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Distribución de <b style='color: #31497e;'>Número de Créditos</b>")), 
-                    output_widget("plot_comp_dist_creditos"), 
+                    ui.output_ui("plot_comp_dist_creditos"), 
                     ui.card_footer(ui.HTML("Fuente: SNIES.<br><b>El fondo gris</b> representa a la oferta total de programas.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca los créditos del Programa Seleccionado."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
@@ -1009,13 +1009,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), 
-                    output_widget("plot_comp_ole_empleabilidad"), 
+                    ui.output_ui("plot_comp_ole_empleabilidad"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación.<br>La línea central representa el promedio y la zona sombreada la dispersión muestral (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Dependientes sobre Cotizantes</b>")), 
-                    output_widget("plot_comp_ole_dependientes"), 
+                    ui.output_ui("plot_comp_ole_dependientes"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación.<br>La línea central representa el promedio y la zona sombreada la dispersión muestral (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
                 ),
@@ -1024,7 +1024,7 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.output_ui("comp_dist_empleabilidad_header")), 
-                    output_widget("plot_comp_dist_empleabilidad"), 
+                    ui.output_ui("plot_comp_dist_empleabilidad"), 
                     ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación.<br><b>El fondo gris</b> representa a todos los programas del mismo Nivel de Formación.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca la tasa del Programa Seleccionado."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -1041,13 +1041,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.output_ui("comp_salario_evolucion_header")), 
-                    output_widget("plot_comp_salario_evolucion"), 
+                    ui.output_ui("plot_comp_salario_evolucion"), 
                     ui.card_footer(ui.HTML("Fuente: OLE.<br>Salario estimado en pesos constantes. El grupo comparable presenta la media ±1 Desviación Estándar."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Rango Salarial</b> (Últ. Año)")), 
-                    output_widget("plot_comp_salario_dist"), 
+                    ui.output_ui("plot_comp_salario_dist"), 
                     ui.card_footer(ui.HTML("Fuente: OLE.<br>Frecuencia de graduados por rangos salariales comparando el programa con su grupo."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -1063,13 +1063,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Tendencia Histórica de <b style='color: #31497e;'>Deserción Anual</b>")), 
-                    output_widget("plot_comp_desercion_trend"), 
+                    ui.output_ui("plot_comp_desercion_trend"), 
                     ui.card_footer(ui.HTML("Fuente: SPADIES.<br>La línea central representa el promedio y la zona sombreada la dispersión muestral (±1 Desviación Estándar).<br><i>Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})</i>"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.card(
                     ui.card_header(ui.output_ui("comp_dist_desercion_header")), 
-                    output_widget("plot_comp_dist_desercion"), 
+                    ui.output_ui("plot_comp_dist_desercion"), 
                     ui.card_footer(ui.HTML("Fuente: SPADIES.<br><b>El fondo gris</b> representa a todos los programas del mismo Nivel de Formación.<br><b>La distribución púrpura</b> es el Grupo Comparable.<br><b>La línea azul punteada</b> marca la tasa del Programa Seleccionado.<br><i>Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})</i>"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 450px;"
                 ),
@@ -1103,18 +1103,18 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4", col_widths=(3, 3, 3, 3)
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Puntaje Global</b>")), output_widget("plot_comp_saber_trend_global"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Razonamiento Cuantitativo</b>")), output_widget("plot_comp_saber_trend_razona"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Puntaje Global</b>")), ui.output_ui("plot_comp_saber_trend_global"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Razonamiento Cuantitativo</b>")), ui.output_ui("plot_comp_saber_trend_razona"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-3", col_widths=(6, 6)
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Lectura Crítica</b>")), output_widget("plot_comp_saber_trend_lectura"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Competencias Ciudadanas</b>")), output_widget("plot_comp_saber_trend_ciuda"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Lectura Crítica</b>")), ui.output_ui("plot_comp_saber_trend_lectura"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Competencias Ciudadanas</b>")), ui.output_ui("plot_comp_saber_trend_ciuda"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-3", col_widths=(6, 6)
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Inglés</b>")), output_widget("plot_comp_saber_trend_ingles"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Comunicación Escrita</b>")), output_widget("plot_comp_saber_trend_escrita"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Inglés</b>")), ui.output_ui("plot_comp_saber_trend_ingles"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML("Evolución - <b style='color: #31497e;'>Comunicación Escrita</b>")), ui.output_ui("plot_comp_saber_trend_escrita"), ui.card_footer(ui.HTML("Fuente: ICFES.<br>La línea central representa el promedio y la zona sombreada la dispersión (±1 Desviación Estándar)."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-5", col_widths=(6, 6)
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
@@ -1126,13 +1126,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Sexo</b>")), 
-                    output_widget("plot_comp_saber_demo_sexo"), 
+                    ui.output_ui("plot_comp_saber_demo_sexo"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 400px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Grupo de Edad</b>")), 
-                    output_widget("plot_comp_saber_demo_edad"), 
+                    ui.output_ui("plot_comp_saber_demo_edad"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 400px;"
                 ),
@@ -1141,13 +1141,13 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Horas de Trabajo</b>")), 
-                    output_widget("plot_comp_saber_demo_trabajo"), 
+                    ui.output_ui("plot_comp_saber_demo_trabajo"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 400px;"
                 ),
                 ui.card(
                     ui.card_header(ui.HTML("Distribución por <b style='color: #31497e;'>Estrato Social</b>")), 
-                    output_widget("plot_comp_saber_demo_estrato"), 
+                    ui.output_ui("plot_comp_saber_demo_estrato"), 
                     ui.card_footer(ui.HTML("Fuente: ICFES."), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 400px;"
                 ),
@@ -1502,10 +1502,10 @@ def server(input, output, session):
             <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {std:.1f} (SD)</div>
         """)
 
-    @render_widget
+    @render.ui
     def plot_dist_costo_matricula():
         data = calc_costo_matricula_data()
-        if not data: return go.Figure()
+        if not data: return ui.HTML(pio.to_html(go.Figure(), full_html=False, include_plotlyjs="cdn"))
         import pandas as pd
         df_pd = pd.DataFrame({"costo": data})
         fig = px.histogram(df_pd, x="costo", histnorm='percent')
@@ -1521,12 +1521,12 @@ def server(input, output, session):
             xaxis_title="Costo de Matrícula ($)", yaxis_title="Porcentaje (%)",
             xaxis=dict(tickformat="$,.0f")
         )
-        return fig
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_dist_creditos():
         data = calc_promedio_creditos_data()
-        if not data: return go.Figure()
+        if not data: return ui.HTML(pio.to_html(go.Figure(), full_html=False, include_plotlyjs="cdn"))
         import pandas as pd
         df_pd = pd.DataFrame({"creditos": data})
         fig = px.histogram(df_pd, x="creditos", histnorm='percent')
@@ -1536,7 +1536,7 @@ def server(input, output, session):
             margin=dict(l=20, r=20, t=20, b=20),
             xaxis_title="Número de Créditos", yaxis_title="Porcentaje (%)"
         )
-        return fig
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_total_primer_curso():
@@ -1697,9 +1697,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_empleabilidad_total():
-        return calc_plot_empleabilidad_total()
+        return ui.HTML(pio.to_html(calc_plot_empleabilidad_total(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_dependientes_total():
@@ -1715,9 +1715,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_dependientes_total():
-        return calc_plot_dependientes_total()
+        return ui.HTML(pio.to_html(calc_plot_dependientes_total(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_empleabilidad_sexo():
@@ -1735,9 +1735,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_empleabilidad_sexo():
-        return calc_plot_empleabilidad_sexo()
+        return ui.HTML(pio.to_html(calc_plot_empleabilidad_sexo(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_dependientes_sexo():
@@ -1755,9 +1755,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_dependientes_sexo():
-        return calc_plot_dependientes_sexo()
+        return ui.HTML(pio.to_html(calc_plot_dependientes_sexo(), full_html=False, include_plotlyjs="cdn"))
 
     def get_ole_distribution_df(measure_numerator, measure_denominator, group_by_cols=["codigo_snies_del_programa"]):
         import pandas as pd
@@ -1818,9 +1818,9 @@ def server(input, output, session):
         fig.update_traces(hovertemplate='Tasa: %{x}<br>Frecuencia: %{y:.1f}% de programas<extra></extra>')
         return fig
 
-    @render_widget
+    @render.ui
     def plot_dist_empleabilidad():
-        return calc_plot_dist_empleabilidad()
+        return ui.HTML(pio.to_html(calc_plot_dist_empleabilidad(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_dist_dependientes():
@@ -1852,9 +1852,9 @@ def server(input, output, session):
         fig.update_traces(hovertemplate='Tasa: %{x}<br>Frecuencia: %{y:.1f}% de programas<extra></extra>')
         return fig
 
-    @render_widget
+    @render.ui
     def plot_dist_dependientes():
-        return calc_plot_dist_dependientes()
+        return ui.HTML(pio.to_html(calc_plot_dist_dependientes(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_dist_empleabilidad_sexo():
@@ -1887,9 +1887,9 @@ def server(input, output, session):
         fig.update_traces(hovertemplate='Tasa: %{x}<br>Frecuencia: %{y:.1f}% de sub-grupos<extra></extra>')
         return fig
 
-    @render_widget
+    @render.ui
     def plot_dist_empleabilidad_sexo():
-        return calc_plot_dist_empleabilidad_sexo()
+        return ui.HTML(pio.to_html(calc_plot_dist_empleabilidad_sexo(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_dist_dependientes_sexo():
@@ -1921,9 +1921,9 @@ def server(input, output, session):
         fig.update_traces(hovertemplate='Tasa: %{x}<br>Frecuencia: %{y:.1f}% de sub-grupos<extra></extra>')
         return fig
 
-    @render_widget
+    @render.ui
     def plot_dist_dependientes_sexo():
-        return calc_plot_dist_dependientes_sexo()
+        return ui.HTML(pio.to_html(calc_plot_dist_dependientes_sexo(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_mobility_kpis():
@@ -2041,9 +2041,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_retencion_trend():
-        return calc_plot_retencion_trend()
+        return ui.HTML(pio.to_html(calc_plot_retencion_trend(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_ratio_trend():
@@ -2058,9 +2058,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_ratio_trend():
-        return calc_plot_ratio_trend()
+        return ui.HTML(pio.to_html(calc_plot_ratio_trend(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_dependientes_trend():
@@ -2076,9 +2076,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_dependientes_trend():
-        return calc_plot_dependientes_trend()
+        return ui.HTML(pio.to_html(calc_plot_dependientes_trend(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_kpi_retencion():
@@ -2223,9 +2223,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_salario_evolucion_total():
-        return calc_plot_salario_evolucion_total()
+        return ui.HTML(pio.to_html(calc_plot_salario_evolucion_total(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_salario_evolucion_sexo():
@@ -2246,9 +2246,9 @@ def server(input, output, session):
         )
         return fig
         
-    @render_widget
+    @render.ui
     def plot_salario_evolucion_sexo():
-        return calc_plot_salario_evolucion_sexo()
+        return ui.HTML(pio.to_html(calc_plot_salario_evolucion_sexo(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_salario_evolucion_total_constante():
@@ -2265,9 +2265,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_salario_evolucion_total_constante():
-        return calc_plot_salario_evolucion_total_constante()
+        return ui.HTML(pio.to_html(calc_plot_salario_evolucion_total_constante(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_salario_evolucion_sexo_constante():
@@ -2288,11 +2288,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_salario_evolucion_sexo_constante():
-        return calc_plot_salario_evolucion_sexo_constante()
-
-    # --- SECCIÓN DESERCIÓN (SPADIES) ---
+        return ui.HTML(pio.to_html(calc_plot_salario_evolucion_sexo_constante(), full_html=False, include_plotlyjs="cdn"))
     @reactive.calc
     def filtered_desercion():
         fs = filtered_snies()
@@ -2329,9 +2327,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_dist_desercion():
-        return calc_plot_dist_desercion()
+        return ui.HTML(pio.to_html(calc_plot_dist_desercion(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_trend_desercion():
@@ -2347,9 +2345,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_trend_desercion():
-        return calc_plot_trend_desercion()
+        return ui.HTML(pio.to_html(calc_plot_trend_desercion(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_kpi_salario_promedio_total():
@@ -2415,9 +2413,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_salario_dist_total():
-        return calc_plot_salario_dist_total()
+        return ui.HTML(pio.to_html(calc_plot_salario_dist_total(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_salario_dist_sexo():
@@ -2443,9 +2441,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_salario_dist_sexo():
-        return calc_plot_salario_dist_sexo()
+        return ui.HTML(pio.to_html(calc_plot_salario_dist_sexo(), full_html=False, include_plotlyjs="cdn"))
 
     def get_ole_mobility_df():
         import pandas as pd
@@ -2632,9 +2630,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_mobility_matrix():
-        return calc_plot_mobility_matrix()
+        return ui.HTML(pio.to_html(calc_plot_mobility_matrix(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_table_graduados():
@@ -2662,9 +2660,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_primer_curso_total():
-        return calc_plot_primer_curso_total()
+        return ui.HTML(pio.to_html(calc_plot_primer_curso_total(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_primer_curso():
@@ -2686,9 +2684,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_primer_curso():
-        return calc_plot_primer_curso()
+        return ui.HTML(pio.to_html(calc_plot_primer_curso(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_matriculados_total():
@@ -2706,9 +2704,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_matriculados_total():
-        return calc_plot_matriculados_total()
+        return ui.HTML(pio.to_html(calc_plot_matriculados_total(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_matriculados():
@@ -2730,9 +2728,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_matriculados():
-        return calc_plot_matriculados()
+        return ui.HTML(pio.to_html(calc_plot_matriculados(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_graduados_total():
@@ -2750,9 +2748,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_graduados_total():
-        return calc_plot_graduados_total()
+        return ui.HTML(pio.to_html(calc_plot_graduados_total(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_graduados():
@@ -2774,9 +2772,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_graduados():
-        return calc_plot_graduados()
+        return ui.HTML(pio.to_html(calc_plot_graduados(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def filtered_saber():
@@ -2866,9 +2864,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_saber_trend():
-        return calc_plot_saber_trend()
+        return ui.HTML(pio.to_html(calc_plot_saber_trend(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_saber_dist():
@@ -2889,11 +2887,9 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_saber_dist():
-        return calc_plot_saber_dist()
-
-    # --- Conteos Demográficos ---
+        return ui.HTML(pio.to_html(calc_plot_saber_dist(), full_html=False, include_plotlyjs="cdn"))
     @reactive.calc
     def calc_plot_saber_count_sexo():
         df = filtered_saber()
@@ -2908,8 +2904,8 @@ def server(input, output, session):
                         xaxis=dict(title="Año", tickmode="linear"), yaxis=dict(title="Número de Evaluados", gridcolor='#EEEEEE'))
         return fig
 
-    @render_widget
-    def plot_saber_count_sexo(): return calc_plot_saber_count_sexo()
+    @render.ui
+    def plot_saber_count_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_count_sexo(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_plot_saber_count_edad():
@@ -2925,15 +2921,11 @@ def server(input, output, session):
                         xaxis=dict(title="Año", tickmode="linear"), yaxis=dict(title="Número de Evaluados", gridcolor='#EEEEEE'))
         return fig
 
-    @render_widget
-    def plot_saber_count_edad(): return calc_plot_saber_count_edad()
-
-    # --- Ayudante de Tendencias Detalladas ---
+    @render.ui
+    def plot_saber_count_edad(): return ui.HTML(pio.to_html(calc_plot_saber_count_edad(), full_html=False, include_plotlyjs="cdn"))
     def calc_plot_saber_trend_dim(column, dim):
         df = filtered_saber()
         if len(df) == 0: return go.Figure()
-        
-        # Agregación por año, programa y dimensión
         agg = df.group_by(["anno", "codigo_snies_del_programa", dim]).agg(pl.col(column).mean())
         # Tendencia final de promedios
         trend = agg.group_by(["anno", dim]).agg(pl.col(column).mean()).sort(["anno", dim])
@@ -2950,44 +2942,33 @@ def server(input, output, session):
             legend_title=dim.capitalize()
         )
         return fig
-
-    # Global
-    @render_widget
-    def plot_saber_trend_global_sexo(): return calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo")
-    @render_widget
-    def plot_saber_trend_global_edad(): return calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad")
-    # Razonamiento
-    @render_widget
-    def plot_saber_trend_razona_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo")
-    @render_widget
-    def plot_saber_trend_razona_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad")
-    # Lectura
-    @render_widget
-    def plot_saber_trend_lectura_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo")
-    @render_widget
-    def plot_saber_trend_lectura_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad")
-    # Ciudadanas
-    @render_widget
-    def plot_saber_trend_ciuda_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo")
-    @render_widget
-    def plot_saber_trend_ciuda_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad")
-    # Inglés
-    @render_widget
-    def plot_saber_trend_ingles_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo")
-    @render_widget
-    def plot_saber_trend_ingles_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad")
-    # Escrita
-    @render_widget
-    def plot_saber_trend_escrita_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo")
-    @render_widget
-    def plot_saber_trend_escrita_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad")
-
-    # --- Socio-demografía (SaberPRO) ---
+    @render.ui
+    def plot_saber_trend_global_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_global_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_razona_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_razona_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_lectura_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_lectura_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_ciuda_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_ciuda_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_ingles_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_ingles_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_escrita_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_trend_escrita_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
     def calc_plot_saber_categorical(column, label, sort_vals=False):
         df = filtered_saber_latest()
         if len(df) == 0: return go.Figure()
-        
-        # Limpieza básica
         df_clean = df.with_columns(
             pl.col(column).cast(pl.Utf8).fill_null("Sin Registro")
         ).with_columns(
@@ -3018,21 +2999,19 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
-    def plot_saber_demo_sexo(): return calc_plot_saber_categorical("sexo", "Sexo")
-    @render_widget
-    def plot_saber_demo_edad(): return calc_plot_saber_categorical("grupo_edad", "Grupo de Edad")
-    @render_widget
-    def plot_saber_demo_trabajo(): return calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Horas de Trabajo")
-    @render_widget
+    @render.ui
+    def plot_saber_demo_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_categorical("sexo", "Sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_demo_edad(): return ui.HTML(pio.to_html(calc_plot_saber_categorical("grupo_edad", "Grupo de Edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_demo_trabajo(): return ui.HTML(pio.to_html(calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Horas de Trabajo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
     def plot_saber_demo_estrato(): return calc_plot_saber_categorical("pro_gen_fami_estratovivienda", "Estrato Vivienda", sort_vals=True)
 
     # Tendencias Socio-demográficas
     def calc_plot_saber_categorical_trend(column, label):
         df = filtered_saber()
         if len(df) == 0: return go.Figure()
-        
-        # Limpieza básica
         df_clean = df.with_columns(
             pl.col(column).cast(pl.Utf8).fill_null("Sin Registro")
         ).with_columns(
@@ -3065,16 +3044,14 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
-    def plot_saber_demo_sexo_trend(): return calc_plot_saber_categorical_trend("sexo", "Sexo")
-    @render_widget
-    def plot_saber_demo_edad_trend(): return calc_plot_saber_categorical_trend("grupo_edad", "Grupo Edad")
-    @render_widget
-    def plot_saber_demo_trabajo_trend(): return calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo")
-    @render_widget
-    def plot_saber_demo_estrato_trend(): return calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato")
-
-    # KPIs Socio-demográficos
+    @render.ui
+    def plot_saber_demo_sexo_trend(): return ui.HTML(pio.to_html(calc_plot_saber_categorical_trend("sexo", "Sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_demo_edad_trend(): return ui.HTML(pio.to_html(calc_plot_saber_categorical_trend("grupo_edad", "Grupo Edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_demo_trabajo_trend(): return ui.HTML(pio.to_html(calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def plot_saber_demo_estrato_trend(): return ui.HTML(pio.to_html(calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato"), full_html=False, include_plotlyjs="cdn"))
     @reactive.calc
     def calc_total_evaluados_saber():
         df = filtered_saber_latest()
@@ -3478,20 +3455,20 @@ def server(input, output, session):
         return fig
 
     # Gráficas
-    @render_widget
+    @render.ui
     def plot_comp_pcurso():
         df_base, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
-        return build_comp_plot(df_base, df_comp, "Primer Curso")
+        return ui.HTML(pio.to_html(build_comp_plot(df_base, df_comp, "Primer Curso"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_matricula():
         df_base, df_comp = calc_comp_metric(df_matricula, "matricula_sum")
-        return build_comp_plot(df_base, df_comp, "Matriculados")
+        return ui.HTML(pio.to_html(build_comp_plot(df_base, df_comp, "Matriculados"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_graduados():
         df_base, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
-        return build_comp_plot(df_base, df_comp, "Graduados")
+        return ui.HTML(pio.to_html(build_comp_plot(df_base, df_comp, "Graduados"), full_html=False, include_plotlyjs="cdn"))
 
     def calc_comp_ole_metric(num_col, den_col):
         import pandas as pd
@@ -3635,15 +3612,15 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_comp_ole_empleabilidad():
         df_base, df_comp = calc_comp_ole_metric("graduados_que_cotizan", "graduados")
-        return build_comp_plot_ole(df_base, df_comp, "Tasa de Empleabilidad")
+        return ui.HTML(pio.to_html(build_comp_plot_ole(df_base, df_comp, "Tasa de Empleabilidad"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_ole_dependientes():
         df_base, df_comp = calc_comp_ole_metric("graduados_cotizantes_dependientes", "graduados_que_cotizan")
-        return build_comp_plot_ole(df_base, df_comp, "Dependientes sobre Cotizantes")
+        return ui.HTML(pio.to_html(build_comp_plot_ole(df_base, df_comp, "Dependientes sobre Cotizantes"), full_html=False, include_plotlyjs="cdn"))
 
     @render.ui
     def comp_dist_empleabilidad_header():
@@ -3725,9 +3702,9 @@ def server(input, output, session):
         fig.update_traces(hovertemplate='Tasa: %{x}<br>Frecuencia: %{y:.1f}%<extra></extra>')
         return fig
 
-    @render_widget
+    @render.ui
     def plot_comp_dist_empleabilidad():
-        return calc_plot_comp_dist_empleabilidad()
+        return ui.HTML(pio.to_html(calc_plot_comp_dist_empleabilidad(), full_html=False, include_plotlyjs="cdn"))
 
     @render.ui
     def comp_salario_evolucion_header():
@@ -3876,14 +3853,14 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_comp_salario_dist():
-        return calc_plot_comp_salario_dist()
+        return ui.HTML(pio.to_html(calc_plot_comp_salario_dist(), full_html=False, include_plotlyjs="cdn"))
         
-    @render_widget
+    @render.ui
     def plot_comp_salario_evolucion():
         df_base, df_comp = calc_comp_salario_evolucion()
-        return build_comp_plot_salario(df_base, df_comp, "Salario Promedio de Enganche")
+        return ui.HTML(pio.to_html(build_comp_plot_salario(df_base, df_comp, "Salario Promedio de Enganche"), full_html=False, include_plotlyjs="cdn"))
 
     # Costos y Créditos KPIs (Comparativo)
     @render.ui
@@ -3957,7 +3934,7 @@ def server(input, output, session):
             <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {std:.1f} (SD)</div>
         """)
 
-    @render_widget
+    @render.ui
     def plot_comp_dist_costo_matricula():
         attr = comp_profile_attr()
         snies_list = comparable_snies_codigos()
@@ -4002,9 +3979,9 @@ def server(input, output, session):
                 val = df_base["costo_matricula_estud_nuevos"][0]
                 fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Base", annotation_position="top right", annotation_font_color="#31497e")
                 
-        return fig
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_dist_creditos():
         attr = comp_profile_attr()
         snies_list = comparable_snies_codigos()
@@ -4047,9 +4024,7 @@ def server(input, output, session):
                 val = df_base["numero_creditos"][0]
                 fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Base", annotation_position="top right", annotation_font_color="#31497e")
                 
-        return fig
-
-    # KPIs Empleabilidad
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
     @render.ui
     def comp_kpi_base_pcurso():
         df_base, _ = calc_comp_metric(df_pcurso, "primer_curso_sum")
@@ -4342,38 +4317,38 @@ def server(input, output, session):
         return ui.HTML(f"<div style='font-size: 32px; font-weight: bold; color: #31497e;'>{val}</div>")
 
     @render.ui
-    def prev_kpi_pcurso(): return wrap_kpi(calc_total_primer_curso())
+    def prev_kpi_pcurso(): return ui.HTML(pio.to_html(wrap_kpi(calc_total_primer_curso()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_matriculados(): return wrap_kpi(calc_total_matriculados())
+    def prev_kpi_matriculados(): return ui.HTML(pio.to_html(wrap_kpi(calc_total_matriculados()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_graduados(): return wrap_kpi(calc_total_graduados())
+    def prev_kpi_graduados(): return ui.HTML(pio.to_html(wrap_kpi(calc_total_graduados()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_emp(): return wrap_kpi(calc_kpi_empleabilidad())
+    def prev_kpi_emp(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_empleabilidad()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_ret(): return wrap_kpi(calc_kpi_retencion())
+    def prev_kpi_ret(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_retencion()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_ratio(): return wrap_kpi(calc_kpi_ratio())
+    def prev_kpi_ratio(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_ratio()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_sal(): return wrap_kpi(calc_kpi_salario_promedio_total())
+    def prev_kpi_sal(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_salario_promedio_total()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_sal_f(): return wrap_kpi(calc_kpi_salario_promedio_fem())
+    def prev_kpi_sal_f(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_salario_promedio_fem()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_sal_m(): return wrap_kpi(calc_kpi_salario_promedio_masc())
+    def prev_kpi_sal_m(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_salario_promedio_masc()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_des(): return wrap_kpi(calc_kpi_desercion_promedio())
+    def prev_kpi_des(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_desercion_promedio()), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_saber(): return wrap_kpi(calc_saber_score("pro_gen_punt_global"))
+    def prev_kpi_saber(): return ui.HTML(pio.to_html(wrap_kpi(calc_saber_score("pro_gen_punt_global")), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_evaluados(): return wrap_kpi(format_num_es(calc_total_evaluados_saber()))
+    def prev_kpi_evaluados(): return ui.HTML(pio.to_html(wrap_kpi(format_num_es(calc_total_evaluados_saber())), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_kpi_progs_saber(): return wrap_kpi(format_num_es(calc_total_programas_saber()))
+    def prev_kpi_progs_saber(): return ui.HTML(pio.to_html(wrap_kpi(format_num_es(calc_total_programas_saber())), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
-    def prev_pcurso_total(): return calc_plot_primer_curso_total()
-    @render_widget
-    def prev_matricula_total(): return calc_plot_matriculados_total()
-    @render_widget
-    def prev_graduados_total(): return calc_plot_graduados_total()
+    @render.ui
+    def prev_pcurso_total(): return ui.HTML(pio.to_html(calc_plot_primer_curso_total(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_matricula_total(): return ui.HTML(pio.to_html(calc_plot_matriculados_total(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_graduados_total(): return ui.HTML(pio.to_html(calc_plot_graduados_total(), full_html=False, include_plotlyjs="cdn"))
 
     def __get_sexo_counts(df_source, col_name, max_anno):
         divipolas = valid_divipolas()
@@ -4394,126 +4369,122 @@ def server(input, output, session):
         return ui.HTML(f"Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia<br>Para el último año se reportan {nb} No binarios y {tr} trans, pero no se muestran en la gráfica.")
 
     @render.ui
-    def prev_caption_pcurso(): return dynamic_caption_sexo(df_pcurso, "primer_curso_sum")
+    def prev_caption_pcurso(): return ui.HTML(pio.to_html(dynamic_caption_sexo(df_pcurso, "primer_curso_sum"), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_caption_matricula(): return dynamic_caption_sexo(df_matricula, "matricula_sum")
+    def prev_caption_matricula(): return ui.HTML(pio.to_html(dynamic_caption_sexo(df_matricula, "matricula_sum"), full_html=False, include_plotlyjs="cdn"))
     @render.ui
-    def prev_caption_graduados(): return dynamic_caption_sexo(df_graduados, "graduados_sum")
+    def prev_caption_graduados(): return ui.HTML(pio.to_html(dynamic_caption_sexo(df_graduados, "graduados_sum"), full_html=False, include_plotlyjs="cdn"))
 
     def __filter_gender_fig(fig):
         new_data = [trace for trace in fig.data if str(trace.name).upper() in ['FEMENINO', 'MASCULINO']]
         fig.data = tuple(new_data)
-        return fig
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
-    def prev_pcurso_sexo(): return __filter_gender_fig(calc_plot_primer_curso())
-    @render_widget
-    def prev_matricula_sexo(): return __filter_gender_fig(calc_plot_matriculados())
-    @render_widget
-    def prev_graduados_sexo(): return __filter_gender_fig(calc_plot_graduados())
-    @render_widget
-    def prev_ole_emp_total(): return calc_plot_empleabilidad_total()
-    @render_widget
-    def prev_ole_dep_total(): return calc_plot_dependientes_total()
-    @render_widget
-    def prev_ole_emp_sexo(): return calc_plot_empleabilidad_sexo()
-    @render_widget
-    def prev_ole_dep_sexo(): return calc_plot_dependientes_sexo()
-    @render_widget
-    def prev_ole_dist_emp(): return calc_plot_dist_empleabilidad()
-    @render_widget
-    def prev_ole_dist_dep(): return calc_plot_dist_dependientes()
-    @render_widget
-    def prev_ole_dist_emp_sexo(): return calc_plot_dist_empleabilidad_sexo()
-    @render_widget
-    def prev_ole_dist_dep_sexo(): return calc_plot_dist_dependientes_sexo()
-    @render_widget
-    def prev_ole_mobility(): return calc_plot_mobility_matrix()
-    @render_widget
-    def prev_sal_dist_total(): return calc_plot_salario_dist_total()
-    @render_widget
-    def prev_sal_dist_sexo(): return calc_plot_salario_dist_sexo()
-    @render_widget
-    def prev_sal_evol_total(): return calc_plot_salario_evolucion_total()
-    @render_widget
-    def prev_des_dist(): return calc_plot_dist_desercion()
-    @render_widget
-    def prev_des_trend(): return calc_plot_trend_desercion()
-    @render_widget
-    def prev_saber_trend(): return calc_plot_saber_trend()
-    @render_widget
-    def prev_saber_dist(): return calc_plot_saber_dist()
-    @render_widget
-    def prev_saber_count_sexo(): return calc_plot_saber_count_sexo()
-    @render_widget
-    def prev_saber_count_edad(): return calc_plot_saber_count_edad()
-    @render_widget
-    def prev_demo_sexo(): return calc_plot_saber_categorical("sexo", "Sexo")
-    @render_widget
-    def prev_demo_edad(): return calc_plot_saber_categorical("grupo_edad", "Edad")
-    @render_widget
-    def prev_demo_trabajo(): return calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Trabajo")
-    @render_widget
-    def prev_demo_estrato(): return calc_plot_saber_categorical("pro_gen_fami_estratovivienda", "Estrato")
-    @render_widget
-    def prev_demo_sexo_trend(): return calc_plot_saber_categorical_trend("sexo", "Sexo")
-    @render_widget
-    def prev_demo_edad_trend(): return calc_plot_saber_categorical_trend("grupo_edad", "Edad")
+    @render.ui
+    def prev_pcurso_sexo(): return ui.HTML(pio.to_html(__filter_gender_fig(calc_plot_primer_curso()), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_matricula_sexo(): return ui.HTML(pio.to_html(__filter_gender_fig(calc_plot_matriculados()), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_graduados_sexo(): return ui.HTML(pio.to_html(__filter_gender_fig(calc_plot_graduados()), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_emp_total(): return ui.HTML(pio.to_html(calc_plot_empleabilidad_total(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dep_total(): return ui.HTML(pio.to_html(calc_plot_dependientes_total(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_emp_sexo(): return ui.HTML(pio.to_html(calc_plot_empleabilidad_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dep_sexo(): return ui.HTML(pio.to_html(calc_plot_dependientes_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dist_emp(): return ui.HTML(pio.to_html(calc_plot_dist_empleabilidad(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dist_dep(): return ui.HTML(pio.to_html(calc_plot_dist_dependientes(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dist_emp_sexo(): return ui.HTML(pio.to_html(calc_plot_dist_empleabilidad_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dist_dep_sexo(): return ui.HTML(pio.to_html(calc_plot_dist_dependientes_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_mobility(): return ui.HTML(pio.to_html(calc_plot_mobility_matrix(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_sal_dist_total(): return ui.HTML(pio.to_html(calc_plot_salario_dist_total(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_sal_dist_sexo(): return ui.HTML(pio.to_html(calc_plot_salario_dist_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_sal_evol_total(): return ui.HTML(pio.to_html(calc_plot_salario_evolucion_total(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_des_dist(): return ui.HTML(pio.to_html(calc_plot_dist_desercion(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_des_trend(): return ui.HTML(pio.to_html(calc_plot_trend_desercion(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend(): return ui.HTML(pio.to_html(calc_plot_saber_trend(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_dist(): return ui.HTML(pio.to_html(calc_plot_saber_dist(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_count_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_count_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_count_edad(): return ui.HTML(pio.to_html(calc_plot_saber_count_edad(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_demo_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_categorical("sexo", "Sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_demo_edad(): return ui.HTML(pio.to_html(calc_plot_saber_categorical("grupo_edad", "Edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_demo_trabajo(): return ui.HTML(pio.to_html(calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Trabajo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_demo_estrato(): return ui.HTML(pio.to_html(calc_plot_saber_categorical("pro_gen_fami_estratovivienda", "Estrato"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_demo_sexo_trend(): return ui.HTML(pio.to_html(calc_plot_saber_categorical_trend("sexo", "Sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_demo_edad_trend(): return ui.HTML(pio.to_html(calc_plot_saber_categorical_trend("grupo_edad", "Edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dist_emp(): return ui.HTML(pio.to_html(calc_plot_dist_empleabilidad(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dist_dep(): return ui.HTML(pio.to_html(calc_plot_dist_dependientes(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dist_emp_sexo(): return ui.HTML(pio.to_html(calc_plot_dist_empleabilidad_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_dist_dep_sexo(): return ui.HTML(pio.to_html(calc_plot_dist_dependientes_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_trend_dep(): return ui.HTML(pio.to_html(calc_plot_dependientes_trend(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_trend_ret(): return ui.HTML(pio.to_html(calc_plot_retencion_trend(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_ole_trend_ratio(): return ui.HTML(pio.to_html(calc_plot_ratio_trend(), full_html=False, include_plotlyjs="cdn"))
 
-    # Missing render functions mapping
-    @render_widget
-    def prev_ole_dist_emp(): return calc_plot_dist_empleabilidad()
-    @render_widget
-    def prev_ole_dist_dep(): return calc_plot_dist_dependientes()
-    @render_widget
-    def prev_ole_dist_emp_sexo(): return calc_plot_dist_empleabilidad_sexo()
-    @render_widget
-    def prev_ole_dist_dep_sexo(): return calc_plot_dist_dependientes_sexo()
-    @render_widget
-    def prev_ole_trend_dep(): return calc_plot_dependientes_trend()
-    @render_widget
-    def prev_ole_trend_ret(): return calc_plot_retencion_trend()
-    @render_widget
-    def prev_ole_trend_ratio(): return calc_plot_ratio_trend()
+    @render.ui
+    def prev_sal_evol_sexo(): return ui.HTML(pio.to_html(calc_plot_salario_evolucion_sexo(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_sal_evol_constante(): return ui.HTML(pio.to_html(calc_plot_salario_evolucion_total_constante(), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_sal_evol_sexo_constante(): return ui.HTML(pio.to_html(calc_plot_salario_evolucion_sexo_constante(), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
-    def prev_sal_evol_sexo(): return calc_plot_salario_evolucion_sexo()
-    @render_widget
-    def prev_sal_evol_constante(): return calc_plot_salario_evolucion_total_constante()
-    @render_widget
-    def prev_sal_evol_sexo_constante(): return calc_plot_salario_evolucion_sexo_constante()
+    @render.ui
+    def prev_saber_trend_global_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_global_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_razona_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_razona_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_lectura_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_lectura_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_ciuda_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_ciuda_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_ingles_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_ingles_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_escrita_sexo(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_saber_trend_escrita_edad(): return ui.HTML(pio.to_html(calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
-    def prev_saber_trend_global_sexo(): return calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo")
-    @render_widget
-    def prev_saber_trend_global_edad(): return calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad")
-    @render_widget
-    def prev_saber_trend_razona_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo")
-    @render_widget
-    def prev_saber_trend_razona_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad")
-    @render_widget
-    def prev_saber_trend_lectura_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo")
-    @render_widget
-    def prev_saber_trend_lectura_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad")
-    @render_widget
-    def prev_saber_trend_ciuda_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo")
-    @render_widget
-    def prev_saber_trend_ciuda_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad")
-    @render_widget
-    def prev_saber_trend_ingles_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo")
-    @render_widget
-    def prev_saber_trend_ingles_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad")
-    @render_widget
-    def prev_saber_trend_escrita_sexo(): return calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo")
-    @render_widget
-    def prev_saber_trend_escrita_edad(): return calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad")
-
-    @render_widget
-    def prev_demo_trabajo_trend(): return calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo")
-    @render_widget
-    def prev_demo_estrato_trend(): return calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato")
-
-    # --- TENDENCIA COMPARADA DESERCION ---
+    @render.ui
+    def prev_demo_trabajo_trend(): return ui.HTML(pio.to_html(calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo"), full_html=False, include_plotlyjs="cdn"))
+    @render.ui
+    def prev_demo_estrato_trend(): return ui.HTML(pio.to_html(calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato"), full_html=False, include_plotlyjs="cdn"))
     @reactive.calc
     def calc_comp_desercion_metric():
         import pandas as pd
@@ -4548,9 +4519,9 @@ def server(input, output, session):
         df_base, df_comp = calc_comp_desercion_metric()
         return build_comp_plot_ole(df_base, df_comp, "Deserción Anual")
 
-    @render_widget
+    @render.ui
     def plot_comp_desercion_trend():
-        return calc_plot_comp_desercion_trend()
+        return ui.HTML(pio.to_html(calc_plot_comp_desercion_trend(), full_html=False, include_plotlyjs="cdn"))
 
     @render.ui
     def comp_dist_desercion_header():
@@ -4620,9 +4591,9 @@ def server(input, output, session):
                           
         return fig
 
-    @render_widget
+    @render.ui
     def plot_comp_dist_desercion():
-        return calc_plot_comp_dist_desercion()
+        return ui.HTML(pio.to_html(calc_plot_comp_dist_desercion(), full_html=False, include_plotlyjs="cdn"))
 
     @reactive.calc
     def calc_comp_kpi_base_desercion():
@@ -4782,35 +4753,35 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_trend_global():
         df_base, df_comp = get_comp_saber_series('pro_gen_punt_global')
-        return build_comp_plot_saber(df_base, df_comp, "Puntaje Global")
+        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Puntaje Global"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_trend_razona():
         df_base, df_comp = get_comp_saber_series('pro_gen_mod_razona_cuantitat_punt')
-        return build_comp_plot_saber(df_base, df_comp, "Razonamiento Cuantitativo")
+        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Razonamiento Cuantitativo"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_trend_lectura():
         df_base, df_comp = get_comp_saber_series('pro_gen_mod_lectura_critica_punt')
-        return build_comp_plot_saber(df_base, df_comp, "Lectura Crítica")
+        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Lectura Crítica"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_trend_ciuda():
         df_base, df_comp = get_comp_saber_series('pro_gen_mod_competen_ciudada_punt')
-        return build_comp_plot_saber(df_base, df_comp, "Competencias Ciudadanas")
+        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Competencias Ciudadanas"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_trend_ingles():
         df_base, df_comp = get_comp_saber_series('pro_gen_mod_ingles_punt')
-        return build_comp_plot_saber(df_base, df_comp, "Inglés")
+        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Inglés"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_trend_escrita():
         df_base, df_comp = get_comp_saber_series('pro_gen_mod_comuni_escrita_punt')
-        return build_comp_plot_saber(df_base, df_comp, "Comunicación Escrita")
+        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Comunicación Escrita"), full_html=False, include_plotlyjs="cdn"))
 
     def build_comp_saber_categorical(column_id):
         import pandas as pd
@@ -4827,7 +4798,7 @@ def server(input, output, session):
         df_comp_raw = df_saber.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos) & (pl.col("anno") == max_yr)) if comp_codigos else pl.DataFrame()
         
         def process_cat(df_raw, grupo_name):
-            if len(df_raw) == 0: return pl.DataFrame()
+            if len(df_raw) == 0: return go.Figure()
             d_clean = df_raw.with_columns(
                 pl.col(column_id).cast(pl.Utf8).fill_null("Sin Registro")
             ).with_columns(
@@ -4846,7 +4817,7 @@ def server(input, output, session):
         df_c = process_cat(df_comp_raw, "Grupo Comparable")
         
         if len(df_b) == 0 and len(df_c) == 0:
-            return go.Figure()
+            return ui.HTML(pio.to_html(go.Figure(), full_html=False, include_plotlyjs="cdn"))
             
         dfs_to_concat = []
         if len(df_b) > 0: dfs_to_concat.append(df_b)
@@ -4855,7 +4826,7 @@ def server(input, output, session):
         
         df_pd = df_comb.to_pandas()
         
-        if df_pd.empty: return go.Figure()
+        if df_pd.empty: return ui.HTML(pio.to_html(go.Figure(), full_html=False, include_plotlyjs="cdn"))
         
         fig = px.bar(df_pd, x="porcentaje", y=column_id, color="grupo", orientation='h', barmode='group', 
                      color_discrete_map={"Programa Seleccionado": "#31497e", "Grupo Comparable": "#674f95"}, 
@@ -4870,21 +4841,21 @@ def server(input, output, session):
         )
         return fig
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_demo_sexo():
-        return build_comp_saber_categorical("sexo")
+        return ui.HTML(pio.to_html(build_comp_saber_categorical("sexo"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_demo_edad():
-        return build_comp_saber_categorical("grupo_edad")
+        return ui.HTML(pio.to_html(build_comp_saber_categorical("grupo_edad"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_demo_trabajo():
-        return build_comp_saber_categorical("pro_gen_estu_horassemanatrabaja")
+        return ui.HTML(pio.to_html(build_comp_saber_categorical("pro_gen_estu_horassemanatrabaja"), full_html=False, include_plotlyjs="cdn"))
 
-    @render_widget
+    @render.ui
     def plot_comp_saber_demo_estrato():
-        return build_comp_saber_categorical("pro_gen_fami_estratovivienda")
+        return ui.HTML(pio.to_html(build_comp_saber_categorical("pro_gen_fami_estratovivienda"), full_html=False, include_plotlyjs="cdn"))
 
     @render.download(filename=lambda: f"Informe_Educacion_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
     def download_pdf():
