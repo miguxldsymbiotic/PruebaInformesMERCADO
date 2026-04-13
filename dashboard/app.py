@@ -1952,7 +1952,8 @@ def server(input, output, session):
         def normalize_str(s):
             return str(s).upper().replace(".", "").replace(",", "").replace("  ", " ").strip()
 
-        seleccionados = list(input.municipio() or []) if label_ejes == "Municipio" else list(input.departamento() or [])
+        f_vals = isolated_filters()
+        seleccionados = list(f_vals["municipio"] or []) if label_ejes == "Municipio" else list(f_vals["departamento"] or [])
         sel_norm = [normalize_str(x) for x in seleccionados]
         
         # Para los KPIs de Movilidad, la base son los que COTIZAN (no los graduados totales)
@@ -1996,7 +1997,8 @@ def server(input, output, session):
         if len(snies_codigos) == 0: return pd.DataFrame()
         
         # Detección de nivel geográfico
-        mpio_filtro = input.municipio()
+        f_vals = isolated_filters()
+        mpio_filtro = f_vals["municipio"]
         if hasattr(mpio_filtro, '__iter__') and len(mpio_filtro) > 0 and mpio_filtro[0]:
             col_orig, col_dest, label_ejes = "municipio_origen", "municipio_destino", "Municipio"
         else:
@@ -2005,7 +2007,7 @@ def server(input, output, session):
         def normalize_str(s):
             return str(s).upper().replace(".", "").replace(",", "").replace("  ", " ").strip()
 
-        seleccionados = list(input.municipio() or []) if label_ejes == "Municipio" else list(input.departamento() or [])
+        seleccionados = list(f_vals["municipio"] or []) if label_ejes == "Municipio" else list(f_vals["departamento"] or [])
         sel_norm = [normalize_str(x) for x in seleccionados]
         
         ole_all = df_ole_m0.filter(
@@ -2135,8 +2137,9 @@ def server(input, output, session):
         df = df_ole_salario.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos))
         
         # Filtro geográfico (Origen)
-        dept = input.departamento()
-        mpio = input.municipio()
+        f_vals = isolated_filters()
+        dept = f_vals["departamento"]
+        mpio = f_vals["municipio"]
         if is_filtered(dept) or is_filtered(mpio):
             # Obtenemos los códigos DIVIPOLA numéricos de los municipios/departamentos seleccionados
             df_cob_geo = df_cobertura.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos))
@@ -2172,8 +2175,9 @@ def server(input, output, session):
         df_base = df_ole_salario.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos))
         
         # 2. Filtro Geográfico
-        dept = input.departamento()
-        mpio = input.municipio()
+        f_vals = isolated_filters()
+        dept = f_vals["departamento"]
+        mpio = f_vals["municipio"]
         if is_filtered(dept) or is_filtered(mpio):
             divis_num = df_cobertura.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos))
             if is_filtered(dept): divis_num = divis_num.filter(pl.col("departamento_oferta").is_in(dept))
@@ -3754,8 +3758,9 @@ def server(input, output, session):
             return pd.DataFrame(), pd.DataFrame()
         
         # Sincronización de Filtros Geográficos del Sidebar (para coherencia con pestaña original)
-        dept = input.departamento()
-        mpio = input.municipio()
+        f_vals = isolated_filters()
+        dept = f_vals["departamento"]
+        mpio = f_vals["municipio"]
         
         df_base = df_ole_salario.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
         
