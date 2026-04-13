@@ -4929,8 +4929,8 @@ def server(input, output, session):
             
             p.set(7, detail="Observatorio Laboral y Salarios")
             
-            val_empleabilidad = int(calc_kpi_empleabilidad() * 100) if calc_kpi_empleabilidad() else 0
-            val_retencion = int(calc_kpi_retencion() * 100) if calc_kpi_retencion() else 0
+            val_empleabilidad = calc_kpi_empleabilidad() or "0%"
+            val_retencion = calc_kpi_retencion() or "0%"
             
             salarios_sum = calc_kpi_salario_dependientes_sum()
             cotizantes = calc_kpi_cotizantes_dependientes()
@@ -4959,14 +4959,14 @@ def server(input, output, session):
                 "kpi_graduados_total": f"{val_graduados:,.0f}".replace(",", "."),
                 "kpi_instituciones_evaluadas": f"{val_instituciones:,.0f}".replace(",", "."),
                 "img_trend_snies": b64_trend,
-                "kpi_pct_masculino": "45.2",
+                "kpi_pct_masculino": "45,2",
                 "img_gender_snies": b64_gender,
                 "kpi_empleabilidad": str(val_empleabilidad),
                 "kpi_retencion": str(val_retencion),
                 "kpi_salario_promedio": f"{salario_prom:,.0f}".replace(",", "."),
                 "img_salary_bar": b64_salary,
                 "img_gauge_dropout": b64_gauge_dropout,
-                "kpi_desercion": str(desercion_num),
+                "kpi_desercion": str(desercion_val),
                 "kpi_saber_global": str(saber_score),
                 "img_saber_radar": b64_saber_radar
             }
