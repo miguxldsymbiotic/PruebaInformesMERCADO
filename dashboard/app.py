@@ -1332,6 +1332,17 @@ def server(input, output, session):
         }
 
     @reactive.calc
+    def filtered_snies_no_geo():
+        df = df_snies
+        f_vals = isolated_filters()
+        
+        for col in filtros_cols:
+            val = f_vals[col]
+            if is_filtered(val): 
+                df = df.filter(pl.col(col).is_in(val))
+        return df
+
+    @reactive.calc
     def filtered_snies():
         df = df_snies
         f_vals = isolated_filters()
@@ -2455,7 +2466,7 @@ def server(input, output, session):
 
     def get_ole_mobility_df():
         import pandas as pd
-        fs = filtered_snies()
+        fs = filtered_snies_no_geo()
         snies_codigos = fs["codigo_snies_del_programa"].unique()
         
         if len(snies_codigos) == 0:
@@ -2474,7 +2485,7 @@ def server(input, output, session):
             label_ejes = "Departamento"
             
         max_anno_corte = df_ole_m0["anno_corte"].max()
-        ole_filtered = df_ole_m0.filter(
+        ole_base = df_ole_m0.filter(
             pl.col("codigo_snies_del_programa").is_in(snies_codigos) & 
             (pl.col("anno_corte") == max_anno_corte)
         )
@@ -2490,16 +2501,37 @@ def server(input, output, session):
 
         if label_ejes == "Municipio" and len(mpio_vals) > 0:
             mpio_norm = [str(x).upper().replace(".", "").replace(",", "").replace("  ", " ").strip() for x in mpio_vals]
-            ole_filtered = ole_filtered.filter(
-                normalize_pl(pl.col("municipio_origen")).is_in(mpio_norm) | 
-                normalize_pl(pl.col("municipio_destino")).is_in(mpio_norm)
-            )
+            print(f"\n=== VALIDACION MOVILIDAD (MPIO) ===")
+            print(f"Total OLE Base (Graduados): {ole_base['graduados'].sum()}")
+            print(f"Total OLE Base (Cotizantes): {ole_base['graduados_que_cotizan'].sum()}")
+
+            df_origen = ole_base.filter(normalize_pl(pl.col("municipio_origen")).is_in(mpio_norm))
+            df_destino = ole_base.filter(normalize_pl(pl.col("municipio_destino")).is_in(mpio_norm))
+            
+            print(f"Filtro ORIGEN {mpio_norm} - Graduados: {df_origen['graduados'].sum()}, Cotizantes: {df_origen['graduados_que_cotizan'].sum()}")
+            print(f"Filtro DESTINO {mpio_norm} - Graduados: {df_destino['graduados'].sum()}, Cotizantes: {df_destino['graduados_que_cotizan'].sum()}")
+
+            ole_filtered = pl.concat([df_origen, df_destino]).unique()
+            print(f"Filtro UNION - Graduados: {ole_filtered['graduados'].sum()}, Cotizantes: {ole_filtered['graduados_que_cotizan'].sum()}")
+            print(f"===================================\n")
+            
         elif label_ejes == "Departamento" and len(dept_vals) > 0:
             dept_norm = [str(x).upper().replace(".", "").replace(",", "").replace("  ", " ").strip() for x in dept_vals]
-            ole_filtered = ole_filtered.filter(
-                normalize_pl(pl.col("departamento_origen")).is_in(dept_norm) | 
-                normalize_pl(pl.col("departamento_destino")).is_in(dept_norm)
-            )
+            print(f"\n=== VALIDACION MOVILIDAD (DEPTO) ===")
+            print(f"Total OLE Base (Graduados): {ole_base['graduados'].sum()}")
+            print(f"Total OLE Base (Cotizantes): {ole_base['graduados_que_cotizan'].sum()}")
+
+            df_origen = ole_base.filter(normalize_pl(pl.col("departamento_origen")).is_in(dept_norm))
+            df_destino = ole_base.filter(normalize_pl(pl.col("departamento_destino")).is_in(dept_norm))
+            
+            print(f"Filtro ORIGEN {dept_norm} - Graduados: {df_origen['graduados'].sum()}, Cotizantes: {df_origen['graduados_que_cotizan'].sum()}")
+            print(f"Filtro DESTINO {dept_norm} - Graduados: {df_destino['graduados'].sum()}, Cotizantes: {df_destino['graduados_que_cotizan'].sum()}")
+
+            ole_filtered = pl.concat([df_origen, df_destino]).unique()
+            print(f"Filtro UNION - Graduados: {ole_filtered['graduados'].sum()}, Cotizantes: {ole_filtered['graduados_que_cotizan'].sum()}")
+            print(f"====================================\n")
+        else:
+            ole_filtered = ole_base
 
         if len(ole_filtered) == 0:
             return pd.DataFrame(), "", "", ""
@@ -2560,10 +2592,12 @@ def server(input, output, session):
             [0.0, '#FFFFFF'], [0.1, '#D2D2F2'], [0.3, '#A096E1'], [0.6, '#6C5CE7'], [1.0, '#31497e']
         ]
         
+        text_matrix = [[f"{int(v):,}" if v > 0 else "" for v in row] for row in matriz.values]
+        
         fig = go.Figure(data=go.Heatmap(
             z=matriz.values, x=matriz.columns, y=matriz.index,
             zmax=zmax_interno, colorscale=custom_scale,
-            text=matriz.values, texttemplate="%{text:,.0f}",
+            text=text_matrix, texttemplate="%{text}",
             xgap=1, ygap=1
         ))
         
@@ -2575,9 +2609,9 @@ def server(input, output, session):
             row_idx = None
             col_idx = None
             for i, name in enumerate(matriz.index):
-                if s in str(name).upper(): row_idx = i
+                if s == str(name).upper().strip(): row_idx = i
             for i, name in enumerate(matriz.columns):
-                if s in str(name).upper(): col_idx = i
+                if s == str(name).upper().strip(): col_idx = i
             if row_idx is not None:
                 shapes.append(dict(
                     type="rect", xref="paper", yref="y",
@@ -2601,7 +2635,7 @@ def server(input, output, session):
                     continue
                 match = False
                 for s in seleccionados_upper:
-                    if s in str(lab).upper(): match = True
+                    if s == str(lab).upper().strip(): match = True
                 if match:
                     ticktext.append(f"<b><span style='color:#00B4D8'>{lab}</span></b>")
                 else:
@@ -2612,7 +2646,7 @@ def server(input, output, session):
         y_ticks = build_ticks(matriz.index)
         
         fig.update_layout(
-            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=10, r=10, t=20, b=10),
+            plot_bgcolor='rgba(200, 200, 200, 0.4)', paper_bgcolor='white', margin=dict(l=10, r=10, t=20, b=10),
             shapes=shapes,
             xaxis=dict(
                 title=dict(text=f"{label_ejes} de Destino Laboral (Donde Cotiza)", font=dict(size=17), standoff=20), 
@@ -2629,7 +2663,8 @@ def server(input, output, session):
 
     @render.ui
     def plot_mobility_matrix():
-        return ui.HTML(pio.to_html(calc_plot_mobility_matrix(), full_html=False, include_plotlyjs="cdn"))
+        html_code = pio.to_html(calc_plot_mobility_matrix(), full_html=False, include_plotlyjs="cdn", default_height="100%", default_width="100%")
+        return ui.HTML(f"<div style='height: 100%; min-height: 500px;'>{html_code}</div>")
 
     @reactive.calc
     def calc_table_graduados():
