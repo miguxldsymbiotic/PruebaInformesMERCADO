@@ -808,6 +808,14 @@ app_ui = ui.page_sidebar(
             ui.h3("5. Excelencia Académica (Prueba SABER PRO)", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px;"),
             ui.layout_columns(
                 ui.value_box("Puntaje Global Promedio", ui.output_ui("prev_kpi_saber"), showcase=fa.icon_svg("award", "solid")),
+                ui.value_box("Razonamiento Cuantitativo", ui.output_ui("prev_kpi_saber_razona"), showcase=fa.icon_svg("calculator", "solid")),
+                ui.value_box("Lectura Crítica", ui.output_ui("prev_kpi_saber_lectura"), showcase=fa.icon_svg("book-open", "solid")),
+                fill=False, class_="mb-4"
+            ),
+            ui.layout_columns(
+                ui.value_box("Competencias Ciudadanas", ui.output_ui("prev_kpi_saber_ciuda"), showcase=fa.icon_svg("users-line", "solid")),
+                ui.value_box("Inglés", ui.output_ui("prev_kpi_saber_ingles"), showcase=fa.icon_svg("language", "solid")),
+                ui.value_box("Comunicación Escrita", ui.output_ui("prev_kpi_saber_escrita"), showcase=fa.icon_svg("pen-nib", "solid")),
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
@@ -2454,7 +2462,8 @@ def server(input, output, session):
             return pd.DataFrame(), "", "", ""
             
         # Nivel de agregación dinámico basado en filtros frontend
-        mpio_filtro = input.municipio()
+        f_vals = isolated_filters()
+        mpio_filtro = f_vals["municipio"]
         if hasattr(mpio_filtro, '__iter__') and len(mpio_filtro) > 0 and mpio_filtro[0]:
             col_origen = "municipio_origen"
             col_destino = "municipio_destino"
@@ -2472,8 +2481,8 @@ def server(input, output, session):
         
         # Filtro estricto de matriz geospacial: Si el usuario selecciona Deptos o Mpios,
         # obligamos que la ruta de movilidad toque esa selección temporalmente o permanentemente (Origen O Destino).
-        dept_vals = list(input.departamento() or [])
-        mpio_vals = list(input.municipio() or [])
+        dept_vals = list(f_vals["departamento"] or [])
+        mpio_vals = list(mpio_filtro or [])
         
         def normalize_pl(col):
             # Eliminar puntos, comas y espacios dobles para match robusto
@@ -2514,21 +2523,9 @@ def server(input, output, session):
         df_pd[col_dest] = df_pd[col_dest].astype(str).str.replace(long_name_san_andres, "SAN ANDRES ISLAS").str.replace("ARCHIPIELAGO DE SAN ANDRES, PROVIDENCIA Y SANTA CATALINA", "SAN ANDRES ISLAS")
         
         # Detectar el elemento geográfico actualmente seleccionado para resaltarlo
-        seleccionados = list(input.municipio() or []) if label_ejes == "Municipio" else list(input.departamento() or [])
+        f_vals = isolated_filters()
+        seleccionados = list(f_vals["municipio"] or []) if label_ejes == "Municipio" else list(f_vals["departamento"] or [])
         seleccionados_upper = [str(x).upper().replace(long_name_san_andres, "SAN ANDRES ISLAS").replace("ARCHIPIELAGO DE SAN ANDRES, PROVIDENCIA Y SANTA CATALINA", "SAN ANDRES ISLAS") for x in seleccionados]
-        
-        # Poda logística para no atorar el render web (Top 40 orígenes y destinos con más flujo de cotizantes)
-        top_origenes = set(df_pd.groupby(col_orig)["cotizantes"].sum().nlargest(40).index)
-        top_destinos = set(df_pd.groupby(col_dest)["cotizantes"].sum().nlargest(40).index)
-        
-        # Forzar que la zona seleccionada SIEMPRE se muestre (independientemente del Top 40)
-        for s in seleccionados_upper:
-            for v in df_pd[col_orig].unique():
-                if s in str(v).upper(): top_origenes.add(v)
-            for v in df_pd[col_dest].unique():
-                if s in str(v).upper(): top_destinos.add(v)
-                
-        df_pd = df_pd[df_pd[col_orig].isin(top_origenes) & df_pd[col_dest].isin(top_destinos)]
         
         # Preprocesar códigos anómalos o faltantes
         df_pd[col_orig] = df_pd[col_orig].astype(str).replace({"1": "SIN INFORMACIÓN", "1.0": "SIN INFORMACIÓN"})
@@ -4283,7 +4280,12 @@ def server(input, output, session):
             "title": "Excelencia Académica (Prueba SABER PRO)",
             "intro": "Resultados de las pruebas de Estado que evalúan las competencias genéricas de los estudiantes de último año. El puntaje global es un indicador de la calidad educativa.",
             "kpis": [
-                ("Puntaje Global Promedio", calc_saber_score("pro_gen_punt_global"))
+                ("Puntaje Global Promedio", calc_saber_score("pro_gen_punt_global")),
+                ("Razonamiento Cuantitativo", calc_saber_score("pro_gen_mod_razona_cuantitat_punt")),
+                ("Lectura Crítica", calc_saber_score("pro_gen_mod_lectura_critica_punt")),
+                ("Competencias Ciudadanas", calc_saber_score("pro_gen_mod_competen_ciudada_punt")),
+                ("Inglés", calc_saber_score("pro_gen_mod_ingles_punt")),
+                ("Comunicación Escrita", calc_saber_score("pro_gen_mod_comuni_escrita_punt"))
             ],
             "plots": saber_plots
         })
@@ -4317,31 +4319,41 @@ def server(input, output, session):
         return ui.HTML(f"<div style='font-size: 32px; font-weight: bold; color: #31497e;'>{val}</div>")
 
     @render.ui
-    def prev_kpi_pcurso(): return ui.HTML(pio.to_html(wrap_kpi(calc_total_primer_curso()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_pcurso(): return wrap_kpi(calc_total_primer_curso())
     @render.ui
-    def prev_kpi_matriculados(): return ui.HTML(pio.to_html(wrap_kpi(calc_total_matriculados()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_matriculados(): return wrap_kpi(calc_total_matriculados())
     @render.ui
-    def prev_kpi_graduados(): return ui.HTML(pio.to_html(wrap_kpi(calc_total_graduados()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_graduados(): return wrap_kpi(calc_total_graduados())
     @render.ui
-    def prev_kpi_emp(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_empleabilidad()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_emp(): return wrap_kpi(calc_kpi_empleabilidad())
     @render.ui
-    def prev_kpi_ret(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_retencion()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_ret(): return wrap_kpi(calc_kpi_retencion())
     @render.ui
-    def prev_kpi_ratio(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_ratio()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_ratio(): return wrap_kpi(calc_kpi_ratio())
     @render.ui
-    def prev_kpi_sal(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_salario_promedio_total()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_sal(): return wrap_kpi(calc_kpi_salario_promedio_total())
     @render.ui
-    def prev_kpi_sal_f(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_salario_promedio_fem()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_sal_f(): return wrap_kpi(calc_kpi_salario_promedio_fem())
     @render.ui
-    def prev_kpi_sal_m(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_salario_promedio_masc()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_sal_m(): return wrap_kpi(calc_kpi_salario_promedio_masc())
     @render.ui
-    def prev_kpi_des(): return ui.HTML(pio.to_html(wrap_kpi(calc_kpi_desercion_promedio()), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_des(): return wrap_kpi(calc_kpi_desercion_promedio())
     @render.ui
-    def prev_kpi_saber(): return ui.HTML(pio.to_html(wrap_kpi(calc_saber_score("pro_gen_punt_global")), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_saber(): return wrap_kpi(calc_saber_score("pro_gen_punt_global"))
     @render.ui
-    def prev_kpi_evaluados(): return ui.HTML(pio.to_html(wrap_kpi(format_num_es(calc_total_evaluados_saber())), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_saber_razona(): return wrap_kpi(calc_saber_score("pro_gen_mod_razona_cuantitat_punt"))
     @render.ui
-    def prev_kpi_progs_saber(): return ui.HTML(pio.to_html(wrap_kpi(format_num_es(calc_total_programas_saber())), full_html=False, include_plotlyjs="cdn"))
+    def prev_kpi_saber_lectura(): return wrap_kpi(calc_saber_score("pro_gen_mod_lectura_critica_punt"))
+    @render.ui
+    def prev_kpi_saber_ciuda(): return wrap_kpi(calc_saber_score("pro_gen_mod_competen_ciudada_punt"))
+    @render.ui
+    def prev_kpi_saber_ingles(): return wrap_kpi(calc_saber_score("pro_gen_mod_ingles_punt"))
+    @render.ui
+    def prev_kpi_saber_escrita(): return wrap_kpi(calc_saber_score("pro_gen_mod_comuni_escrita_punt"))
+    @render.ui
+    def prev_kpi_evaluados(): return wrap_kpi(format_num_es(calc_total_evaluados_saber()))
+    @render.ui
+    def prev_kpi_progs_saber(): return wrap_kpi(format_num_es(calc_total_programas_saber()))
 
     @render.ui
     def prev_pcurso_total(): return ui.HTML(pio.to_html(calc_plot_primer_curso_total(), full_html=False, include_plotlyjs="cdn"))
@@ -4369,16 +4381,16 @@ def server(input, output, session):
         return ui.HTML(f"Fuente: Ministerio de Educación Nacional (SNIES)<br>Elaboración propia<br>Para el último año se reportan {nb} No binarios y {tr} trans, pero no se muestran en la gráfica.")
 
     @render.ui
-    def prev_caption_pcurso(): return ui.HTML(pio.to_html(dynamic_caption_sexo(df_pcurso, "primer_curso_sum"), full_html=False, include_plotlyjs="cdn"))
+    def prev_caption_pcurso(): return dynamic_caption_sexo(df_pcurso, "primer_curso_sum")
     @render.ui
-    def prev_caption_matricula(): return ui.HTML(pio.to_html(dynamic_caption_sexo(df_matricula, "matricula_sum"), full_html=False, include_plotlyjs="cdn"))
+    def prev_caption_matricula(): return dynamic_caption_sexo(df_matricula, "matricula_sum")
     @render.ui
-    def prev_caption_graduados(): return ui.HTML(pio.to_html(dynamic_caption_sexo(df_graduados, "graduados_sum"), full_html=False, include_plotlyjs="cdn"))
+    def prev_caption_graduados(): return dynamic_caption_sexo(df_graduados, "graduados_sum")
 
     def __filter_gender_fig(fig):
         new_data = [trace for trace in fig.data if str(trace.name).upper() in ['FEMENINO', 'MASCULINO']]
         fig.data = tuple(new_data)
-        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
+        return fig
 
     @render.ui
     def prev_pcurso_sexo(): return ui.HTML(pio.to_html(__filter_gender_fig(calc_plot_primer_curso()), full_html=False, include_plotlyjs="cdn"))
