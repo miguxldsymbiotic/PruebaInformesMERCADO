@@ -2505,35 +2505,19 @@ def server(input, output, session):
 
         if label_ejes == "Municipio" and len(mpio_vals) > 0:
             mpio_norm = [str(x).upper().replace(".", "").replace(",", "").replace("  ", " ").strip() for x in mpio_vals]
-            print(f"\n=== VALIDACION MOVILIDAD (MPIO) ===")
-            print(f"Total OLE Base (Graduados): {ole_base['graduados'].sum()}")
-            print(f"Total OLE Base (Cotizantes): {ole_base['graduados_que_cotizan'].sum()}")
 
             df_origen = ole_base.filter(normalize_pl(pl.col("municipio_origen")).is_in(mpio_norm))
             df_destino = ole_base.filter(normalize_pl(pl.col("municipio_destino")).is_in(mpio_norm))
-            
-            print(f"Filtro ORIGEN {mpio_norm} - Graduados: {df_origen['graduados'].sum()}, Cotizantes: {df_origen['graduados_que_cotizan'].sum()}")
-            print(f"Filtro DESTINO {mpio_norm} - Graduados: {df_destino['graduados'].sum()}, Cotizantes: {df_destino['graduados_que_cotizan'].sum()}")
 
             ole_filtered = pl.concat([df_origen, df_destino]).unique()
-            print(f"Filtro UNION - Graduados: {ole_filtered['graduados'].sum()}, Cotizantes: {ole_filtered['graduados_que_cotizan'].sum()}")
-            print(f"===================================\n")
             
         elif label_ejes == "Departamento" and len(dept_vals) > 0:
             dept_norm = [str(x).upper().replace(".", "").replace(",", "").replace("  ", " ").strip() for x in dept_vals]
-            print(f"\n=== VALIDACION MOVILIDAD (DEPTO) ===")
-            print(f"Total OLE Base (Graduados): {ole_base['graduados'].sum()}")
-            print(f"Total OLE Base (Cotizantes): {ole_base['graduados_que_cotizan'].sum()}")
 
             df_origen = ole_base.filter(normalize_pl(pl.col("departamento_origen")).is_in(dept_norm))
             df_destino = ole_base.filter(normalize_pl(pl.col("departamento_destino")).is_in(dept_norm))
-            
-            print(f"Filtro ORIGEN {dept_norm} - Graduados: {df_origen['graduados'].sum()}, Cotizantes: {df_origen['graduados_que_cotizan'].sum()}")
-            print(f"Filtro DESTINO {dept_norm} - Graduados: {df_destino['graduados'].sum()}, Cotizantes: {df_destino['graduados_que_cotizan'].sum()}")
 
             ole_filtered = pl.concat([df_origen, df_destino]).unique()
-            print(f"Filtro UNION - Graduados: {ole_filtered['graduados'].sum()}, Cotizantes: {ole_filtered['graduados_que_cotizan'].sum()}")
-            print(f"====================================\n")
         else:
             ole_filtered = ole_base
 
