@@ -4980,6 +4980,7 @@ def server(input, output, session):
             HTML(string=html_content).write_pdf(pdf_buffer)
             pdf_buffer.seek(0)
             
+            p.set(15, message="Reporte finalizado", detail="Enviando documento...")
             yield pdf_buffer.read()
 
 app = App(app_ui, server, static_assets={"/temp_report": app_dir / "temp_report"})
