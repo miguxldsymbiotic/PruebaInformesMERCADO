@@ -4932,9 +4932,7 @@ def server(input, output, session):
             val_empleabilidad = calc_kpi_empleabilidad() or "0%"
             val_retencion = calc_kpi_retencion() or "0%"
             
-            salarios_sum = calc_kpi_salario_dependientes_sum()
-            cotizantes = calc_kpi_cotizantes_dependientes()
-            salario_prom = (salarios_sum / cotizantes) if cotizantes and cotizantes > 0 else 0
+            salario_prom = calc_kpi_salario_promedio_total()
             
             fig_salary = calc_plot_dist_empleabilidad()
             b64_salary = fig_to_base64(fig_salary)
@@ -4963,7 +4961,7 @@ def server(input, output, session):
                 "img_gender_snies": b64_gender,
                 "kpi_empleabilidad": str(val_empleabilidad),
                 "kpi_retencion": str(val_retencion),
-                "kpi_salario_promedio": f"{salario_prom:,.0f}".replace(",", "."),
+                "kpi_salario_promedio": str(salario_prom),
                 "img_salary_bar": b64_salary,
                 "img_gauge_dropout": b64_gauge_dropout,
                 "kpi_desercion": str(desercion_val),
