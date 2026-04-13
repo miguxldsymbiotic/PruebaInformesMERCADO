@@ -2645,7 +2645,10 @@ def server(input, output, session):
         x_ticks = build_ticks(matriz.columns)
         y_ticks = build_ticks(matriz.index)
         
+        dynamic_h = max(450, len(matriz.index) * 25 + 150)
+        
         fig.update_layout(
+            height=dynamic_h,
             plot_bgcolor='rgba(200, 200, 200, 0.4)', paper_bgcolor='white', margin=dict(l=10, r=10, t=20, b=10),
             shapes=shapes,
             xaxis=dict(
@@ -2663,8 +2666,8 @@ def server(input, output, session):
 
     @render.ui
     def plot_mobility_matrix():
-        html_code = pio.to_html(calc_plot_mobility_matrix(), full_html=False, include_plotlyjs="cdn", default_height="100%", default_width="100%")
-        return ui.HTML(f"<div style='height: 100%; min-height: 500px;'>{html_code}</div>")
+        html_code = pio.to_html(calc_plot_mobility_matrix(), full_html=False, include_plotlyjs="cdn")
+        return ui.HTML(f"<div style='width: 100%; overflow: auto;'>{html_code}</div>")
 
     @reactive.calc
     def calc_table_graduados():
