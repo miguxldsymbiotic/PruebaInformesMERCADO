@@ -4953,9 +4953,9 @@ def server(input, output, session):
             p.set(12, message="Ensamblando reporte...", detail="Renderizando Plantilla Jinja2")
             
             context = {
-                "kpi_matricula_total": f"{val_matriculados:,.0f}".replace(",", "."),
-                "kpi_graduados_total": f"{val_graduados:,.0f}".replace(",", "."),
-                "kpi_instituciones_evaluadas": f"{val_instituciones:,.0f}".replace(",", "."),
+                "kpi_matricula_total": str(val_matriculados),
+                "kpi_graduados_total": str(val_graduados),
+                "kpi_instituciones_evaluadas": str(val_instituciones),
                 "img_trend_snies": b64_trend,
                 "kpi_pct_masculino": "45,2",
                 "img_gender_snies": b64_gender,
