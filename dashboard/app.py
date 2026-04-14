@@ -718,6 +718,11 @@ app_ui = ui.page_sidebar(
             
             ui.h3("1. Tendencias SNIES (Oferta y Demanda)", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px;"),
             ui.layout_columns(
+                ui.value_box("Total Instituciones", ui.output_ui("prev_kpi_instituciones"), showcase=fa.icon_svg("building-columns", "solid")),
+                ui.value_box("Programas Académicos", ui.output_ui("prev_kpi_programas"), showcase=fa.icon_svg("book-open-reader", "solid")),
+                fill=False, class_="mb-4", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
                 ui.value_box("Primer Curso", ui.output_ui("prev_kpi_pcurso"), showcase=fa.icon_svg("user-graduate", "solid")),
                 ui.value_box("Matriculados", ui.output_ui("prev_kpi_matriculados"), showcase=fa.icon_svg("users", "solid")),
                 ui.value_box("Graduados", ui.output_ui("prev_kpi_graduados"), showcase=fa.icon_svg("graduation-cap", "solid")),
@@ -1709,7 +1714,8 @@ def server(input, output, session):
     def calc_plot_empleabilidad_total():
         df_pd = create_ole_trend_df("graduados_que_cotizan", "graduados", ["anno_corte", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
-        fig = px.line(df_pd, x="anno_corte", y="tasa", markers=True)
+        fig = px.line(df_pd, x="anno_corte", y="tasa", text="tasa", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
@@ -1727,7 +1733,8 @@ def server(input, output, session):
     def calc_plot_dependientes_total():
         df_pd = create_ole_trend_df("graduados_cotizantes_dependientes", "graduados", ["anno_corte", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
-        fig = px.line(df_pd, x="anno_corte", y="tasa", markers=True)
+        fig = px.line(df_pd, x="anno_corte", y="tasa", text="tasa", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
@@ -1745,7 +1752,8 @@ def server(input, output, session):
     def calc_plot_empleabilidad_sexo():
         df_pd = create_ole_trend_df("graduados_que_cotizan", "graduados", ["anno_corte", "sexo", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
-        fig = px.line(df_pd, x="anno_corte", y="tasa", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
+        fig = px.line(df_pd, x="anno_corte", y="tasa", color="sexo", color_discrete_map=COLOR_SEXO, text="tasa", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
         for trace in fig.data:
             trace.marker = dict(size=9, color="white", line=dict(width=1.5, color=trace.line.color))
             trace.line.width = 2
@@ -1765,7 +1773,8 @@ def server(input, output, session):
     def calc_plot_dependientes_sexo():
         df_pd = create_ole_trend_df("graduados_cotizantes_dependientes", "graduados", ["anno_corte", "sexo", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
-        fig = px.line(df_pd, x="anno_corte", y="tasa", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
+        fig = px.line(df_pd, x="anno_corte", y="tasa", color="sexo", color_discrete_map=COLOR_SEXO, text="tasa", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
         for trace in fig.data:
             trace.marker = dict(size=9, color="white", line=dict(width=1.5, color=trace.line.color))
             trace.line.width = 2
@@ -2056,7 +2065,8 @@ def server(input, output, session):
     def calc_plot_retencion_trend():
         df_pd = calc_mobility_yoy_data()
         if df_pd.empty: return go.Figure()
-        fig = px.line(df_pd, x="anno_corte", y="retencion", markers=True)
+        fig = px.line(df_pd, x="anno_corte", y="retencion", text="retencion", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
@@ -2073,7 +2083,8 @@ def server(input, output, session):
     def calc_plot_ratio_trend():
         df_pd = calc_mobility_yoy_data()
         if df_pd.empty: return go.Figure()
-        fig = px.line(df_pd, x="anno_corte", y="ratio", markers=True)
+        fig = px.line(df_pd, x="anno_corte", y="ratio", text="ratio", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.2f}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
@@ -2091,7 +2102,8 @@ def server(input, output, session):
         # Reutilizamos el motor de tendencias pero con el nuevo nombre semántico
         df_pd = create_ole_trend_df("graduados_cotizantes_dependientes", "graduados_que_cotizan", ["anno_corte", "codigo_snies_del_programa"])
         if df_pd.empty: return go.Figure()
-        fig = px.line(df_pd, x="anno_corte", y="tasa", markers=True)
+        fig = px.line(df_pd, x="anno_corte", y="tasa", text="tasa", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
@@ -2240,7 +2252,8 @@ def server(input, output, session):
         df_pd = get_salary_trend_data()
         if df_pd.empty: return go.Figure()
         df_plot = df_pd[df_pd["label"] == "TOTAL"]
-        fig = px.line(df_plot, x="anno_corte", y="salario_pesos", markers=True)
+        fig = px.line(df_plot, x="anno_corte", y="salario_pesos", text="salario_pesos", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
@@ -2259,7 +2272,8 @@ def server(input, output, session):
         if df_pd.empty: return go.Figure()
         
         df_plot = df_pd[df_pd["label"] != "TOTAL"]
-        fig = px.line(df_plot, x="anno_corte", y="salario_pesos", color="label", color_discrete_map=COLOR_SEXO, markers=True)
+        fig = px.line(df_plot, x="anno_corte", y="salario_pesos", color="label", color_discrete_map=COLOR_SEXO, text="salario_pesos", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         for trace in fig.data:
             trace.marker = dict(size=9, color="white", line=dict(width=1.5, color=trace.line.color))
             trace.line.width = 2
@@ -2282,7 +2296,8 @@ def server(input, output, session):
         if df_pd.empty: return go.Figure()
         
         df_plot = df_pd[df_pd["label"] == "TOTAL"]
-        fig = px.line(df_plot, x="anno_corte", y="salario_pesos", markers=True)
+        fig = px.line(df_plot, x="anno_corte", y="salario_pesos", text="salario_pesos", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
@@ -2301,7 +2316,8 @@ def server(input, output, session):
         if df_pd.empty: return go.Figure()
         
         df_plot = df_pd[df_pd["label"] != "TOTAL"]
-        fig = px.line(df_plot, x="anno_corte", y="salario_pesos", color="label", color_discrete_map=COLOR_SEXO, markers=True)
+        fig = px.line(df_plot, x="anno_corte", y="salario_pesos", color="label", color_discrete_map=COLOR_SEXO, text="salario_pesos", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         for trace in fig.data:
             trace.marker = dict(size=9, color="white", line=dict(width=1.5, color=trace.line.color))
             trace.line.width = 2
@@ -2362,7 +2378,8 @@ def server(input, output, session):
         df = filtered_desercion()
         if len(df) == 0: return go.Figure()
         df_plot = df.group_by("anno").agg(pl.col("desercion_anual_mean").mean()).sort("anno").to_pandas()
-        fig = px.line(df_plot, x="anno", y="desercion_anual_mean", markers=True)
+        fig = px.line(df_plot, x="anno", y="desercion_anual_mean", text="desercion_anual_mean", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
         fig.update_traces(line=dict(color="#31497e", width=3), marker=dict(size=10, color="white", line=dict(width=2, color="#31497e")))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
@@ -2473,7 +2490,7 @@ def server(input, output, session):
 
     def get_ole_mobility_df():
         import pandas as pd
-        fs = filtered_snies_no_geo()
+        fs = filtered_snies()
         snies_codigos = fs["codigo_snies_del_programa"].unique()
         
         if len(snies_codigos) == 0:
@@ -2677,6 +2694,7 @@ def server(input, output, session):
         df_filtered = df_pcurso.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("primer_curso_sum").sum()).sort("anno")
         if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="primer_curso_sum", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
@@ -2697,6 +2715,7 @@ def server(input, output, session):
         df_filtered = df_pcurso.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("primer_curso_sum").sum()).sort(["sexo", "anno"])
         if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="primer_curso_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -2721,6 +2740,7 @@ def server(input, output, session):
         df_filtered = df_matricula.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("matricula_sum").sum()).sort("anno")
         if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="matricula_sum", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
@@ -2741,6 +2761,7 @@ def server(input, output, session):
         df_filtered = df_matricula.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("matricula_sum").sum()).sort(["sexo", "anno"])
         if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="matricula_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -2765,6 +2786,7 @@ def server(input, output, session):
         df_filtered = df_graduados.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by("anno").agg(pl.col("graduados_sum").sum()).sort("anno")
         if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="graduados_sum", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(marker=dict(size=9, color="white", line=dict(width=1.5, color="#31497e")), line=dict(width=2, color="#31497e"))
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', separators=",.",
@@ -2785,6 +2807,7 @@ def server(input, output, session):
         df_filtered = df_graduados.filter(pl.col("snies_divipola").is_in(divipolas) & (pl.col("anno") >= 2016)).group_by(["anno", "sexo"]).agg(pl.col("graduados_sum").sum()).sort(["sexo", "anno"])
         if len(df_filtered) == 0: return go.Figure()
         fig = px.line(df_filtered.to_pandas(), x="anno", y="graduados_sum", color="sexo", color_discrete_map=COLOR_SEXO, markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(marker=dict(size=9), line=dict(width=2))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -2878,7 +2901,8 @@ def server(input, output, session):
         # Convertir a formato largo para Plotly
         df_plot = df_pd.melt(id_vars="anno", var_name="Componente", value_name="Puntaje")
         
-        fig = px.line(df_plot, x="anno", y="Puntaje", color="Componente", markers=True)
+        fig = px.line(df_plot, x="anno", y="Puntaje", color="Componente", text="Puntaje", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -2922,6 +2946,7 @@ def server(input, output, session):
         if len(df) == 0: return go.Figure()
         trend = df.group_by(["anno", "sexo"]).len().sort(["anno", "sexo"])
         fig = px.line(trend.to_pandas(), x="anno", y="len", color="sexo", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -2939,6 +2964,7 @@ def server(input, output, session):
         if len(df) == 0: return go.Figure()
         trend = df.group_by(["anno", "grupo_edad"]).len().sort(["anno", "grupo_edad"])
         fig = px.line(trend.to_pandas(), x="anno", y="len", color="grupo_edad", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -2957,6 +2983,7 @@ def server(input, output, session):
         trend = agg.group_by(["anno", dim]).agg(pl.col(column).mean()).sort(["anno", dim])
         
         fig = px.line(trend.to_pandas(), x="anno", y=column, color=dim, markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -3056,7 +3083,8 @@ def server(input, output, session):
         ).sort(["anno", column])
         
         df_pd = df_plot.to_pandas()
-        fig = px.line(df_pd, x="anno", y="participacion", color=column, markers=True)
+        fig = px.line(df_pd, x="anno", y="participacion", color=column, text="participacion", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -3449,7 +3477,7 @@ def server(input, output, session):
             fig.add_trace(go.Scatter(
                 x=df_comp_pd["anno"],
                 y=df_comp_pd["valor_comp_median"],
-                mode='lines+markers',
+                mode='lines+markers+text', textposition='top center', textfont=dict(size=12, color='black'), texttemplate='%{y:,.0f}',
                 name='Mediana Comparable',
                 line=dict(color=color_comp, width=3, dash='dash'),
                 marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
@@ -3464,7 +3492,7 @@ def server(input, output, session):
             fig.add_trace(go.Scatter(
                 x=df_base_pd["anno"],
                 y=df_base_pd["valor_base"],
-                mode='lines+markers',
+                mode='lines+markers+text', textposition='top center', textfont=dict(size=12, color='black'), texttemplate='%{y:,.0f}',
                 name=prog_name,
                 line=dict(color=color_base, width=4),
                 marker=dict(size=9, color="white", line=dict(width=2.5, color=color_base)),
@@ -3549,21 +3577,24 @@ def server(input, output, session):
         color_comp = "#674f95"
         color_band = "rgba(103, 79, 149, 0.15)"
         
+        # Detectar columna de tiempo (anno o anno_corte)
+        col_x = "anno" if "anno" in df_base_pd.columns or "anno" in df_comp_pd.columns else "anno_corte"
+
         if not df_comp_pd.empty:
             y_lower = (df_comp_pd["valor_comp_mean"] - df_comp_pd["valor_comp_std"]).clip(lower=0) 
             y_upper = (df_comp_pd["valor_comp_mean"] + df_comp_pd["valor_comp_std"]).clip(upper=1)
             
-            fig.add_trace(go.Scatter(x=df_comp_pd["anno"], y=y_lower, marker=dict(color="#444"), line=dict(width=0), mode='lines', showlegend=False, hoverinfo='skip'))
-            fig.add_trace(go.Scatter(x=df_comp_pd["anno"], y=y_upper, marker=dict(color="#444"), line=dict(width=0), mode='lines', fillcolor=color_band, fill='tonexty', name='Dispersión (Media ± 1 Std. Dev)', hoverinfo='skip'))
+            fig.add_trace(go.Scatter(x=df_comp_pd[col_x], y=y_lower, marker=dict(color="#444"), line=dict(width=0), mode='lines', showlegend=False, hoverinfo='skip'))
+            fig.add_trace(go.Scatter(x=df_comp_pd[col_x], y=y_upper, marker=dict(color="#444"), line=dict(width=0), mode='lines', fillcolor=color_band, fill='tonexty', name='Dispersión (Media ± 1 Std. Dev)', hoverinfo='skip'))
             
             fig.add_trace(go.Scatter(
-                x=df_comp_pd["anno"],
+                x=df_comp_pd[col_x],
                 y=df_comp_pd["valor_comp_mean"],
-                mode='lines+markers',
+                mode='lines+markers+text', textposition='top center', textfont=dict(size=12, color='black'), texttemplate='%{y:.1%}',
                 name='Media Comparable',
                 line=dict(color=color_comp, width=3, dash='dash'),
                 marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
-                hovertemplate="Año: %{x}<br>Media: %{y:.1%}<br>N: %{customdata} prog.<extra></extra>",
+                hovertemplate="Año: %{x}<br>Media: %{y:.1%}<extra></extra>",
                 customdata=df_comp_pd["n_programas"]
             ))
 
@@ -3571,9 +3602,9 @@ def server(input, output, session):
             attr = comp_profile_attr()
             prog_name = f"SNIES {attr['codigo']}" if attr else "Prog. Base"
             fig.add_trace(go.Scatter(
-                x=df_base_pd["anno"],
+                x=df_base_pd[col_x],
                 y=df_base_pd["valor_base"],
-                mode='lines+markers',
+                mode='lines+markers+text', textposition='top center', textfont=dict(size=12, color='black'), texttemplate='%{y:.1%}',
                 name=prog_name,
                 line=dict(color=color_base, width=4),
                 marker=dict(size=9, color="white", line=dict(width=2.5, color=color_base)),
@@ -3609,7 +3640,7 @@ def server(input, output, session):
             fig.add_trace(go.Scatter(
                 x=df_comp_pd["anno"],
                 y=df_comp_pd["valor_comp_mean"],
-                mode='lines+markers',
+                mode='lines+markers+text', textposition='top center', textfont=dict(size=12, color='black'), texttemplate='%{y:,.0f}',
                 name='Media',
                 line=dict(color=color_comp, width=3, dash='dash'),
                 marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
@@ -3623,7 +3654,7 @@ def server(input, output, session):
             fig.add_trace(go.Scatter(
                 x=df_base_pd["anno"],
                 y=df_base_pd["valor_base"],
-                mode='lines+markers',
+                mode='lines+markers+text', textposition='top center', textfont=dict(size=12, color='black'), texttemplate='%{y:,.0f}',
                 name=prog_name,
                 line=dict(color=color_base, width=4),
                 marker=dict(size=9, color="white", line=dict(width=2.5, color=color_base)),
@@ -4349,6 +4380,11 @@ def server(input, output, session):
         return ui.HTML(f"<div style='font-size: 32px; font-weight: bold; color: #31497e;'>{val}</div>")
 
     @render.ui
+    def prev_kpi_instituciones(): return wrap_kpi(calc_total_instituciones())
+    @render.ui
+    def prev_kpi_programas(): return wrap_kpi(calc_total_programas())
+
+    @render.ui
     def prev_kpi_pcurso(): return wrap_kpi(calc_total_primer_curso())
     @render.ui
     def prev_kpi_matriculados(): return wrap_kpi(calc_total_matriculados())
@@ -4766,7 +4802,7 @@ def server(input, output, session):
             fig.add_trace(go.Scatter(
                 x=df_comp_pd["anno"],
                 y=df_comp_pd["valor_comp_mean"],
-                mode='lines+markers',
+                mode='lines+markers+text', textposition='top center', textfont=dict(size=12, color='black'), texttemplate='%{y:,.0f}',
                 name='Media Comparable',
                 line=dict(color=color_comp, width=3, dash='dash'),
                 marker=dict(size=8, color="white", line=dict(width=2, color=color_comp)),
@@ -4780,7 +4816,7 @@ def server(input, output, session):
             fig.add_trace(go.Scatter(
                 x=df_base_pd["anno"],
                 y=df_base_pd["valor_base"],
-                mode='lines+markers',
+                mode='lines+markers+text', textposition='top center', textfont=dict(size=12, color='black'), texttemplate='%{y:,.0f}',
                 name=prog_name,
                 line=dict(color=color_base, width=4),
                 marker=dict(size=9, color="white", line=dict(width=2.5, color=color_base)),
@@ -4840,7 +4876,7 @@ def server(input, output, session):
         df_comp_raw = df_saber.filter(pl.col("codigo_snies_del_programa").is_in(comp_codigos) & (pl.col("anno") == max_yr)) if comp_codigos else pl.DataFrame()
         
         def process_cat(df_raw, grupo_name):
-            if len(df_raw) == 0: return go.Figure()
+            if len(df_raw) == 0: return pl.DataFrame()
             d_clean = df_raw.with_columns(
                 pl.col(column_id).cast(pl.Utf8).fill_null("Sin Registro")
             ).with_columns(

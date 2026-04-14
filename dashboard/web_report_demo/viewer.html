@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe - SymbioTIC</title>
+    <!-- Incluimos la data del dummy generado -->
+    <script src="data_ANTIOQUIA.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --color-slate: #385A64;
+            --color-slate-light: #527A86;
+            --color-coral: #DF6C5B;
+            --color-bg-app: #e2e8f0;
+            --color-bg-paper: #ffffff;
+            --font-heading: 'Montserrat', sans-serif;
+            --font-body: 'Nunito', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--color-bg-app);
+            color: #334155;
+            margin: 0;
+            padding: 40px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; /* Separación visual entre páginas puestas en la pantalla */
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Toolbar / Acciones flotantes */
+        .toolbar {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, var(--color-coral), #E68576);
+            color: white;
+            border: none;
+            padding: 16px 28px;
+            border-radius: 50px;
+            font-family: var(--font-heading);
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(223, 108, 91, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+        .btn-premium:hover { transform: translateY(-4px) scale(1.02); }
+
+        /* ---------------------------------------------------
+           Configuración ESTRICTA de Tamaño Carta (Letter)
+        --------------------------------------------------- */
+        .page {
+            width: 8.5in;
+            height: 11in;       /* Obligatoriamente el alto de una caja carta */
+            padding: 0.5in 0.6in;  /* Márgenes internos reducidos para más espacio */
+            background: var(--color-bg-paper);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            page-break-after: always;
+            break-after: page;
+        }
+
+        /* Ajuste fino del espaciado interno */
+        h1, h2, h3, h4 { font-family: var(--font-heading); margin: 0; line-height: 1.2; color: var(--color-slate); }
+        h1 { font-size: 2.0rem; font-weight: 900; letter-spacing: -1px; }
+
+        .text-coral { color: var(--color-coral); }
+
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--color-slate); padding-bottom: 8px; margin-bottom: 12px; }
+        .subtitle { font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--color-coral); margin-bottom: 4px; }
+        .meta-date { font-family: var(--font-heading); font-size: 0.75rem; font-weight: 700; color: var(--color-slate-light); }
+
+        /* Nota Técnica Premium */
+        .technical-note {
+            font-size: 0.72em;
+            color: #475569;
+            background-color: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 4px solid var(--color-slate);
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        /* KPIs */
+        .kpi-container {
+            display: flex; gap: 10px; margin-bottom: 12px;
+        }
+        .kpi-card {
+            flex: 1; background: #f8fafc; border-left: 3px solid var(--color-coral); padding: 10px; border-radius: 0 6px 6px 0;
+        }
+        .kpi-label { font-family: var(--font-heading); font-size: 0.60rem; text-transform: uppercase; font-weight: 800; color: var(--color-slate-light); margin-bottom: 2px; }
+        .kpi-value { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 900; color: var(--color-slate); margin: 0; }
+
+        /* Tarjetas de Gráficos (Dashboard-style) */
+        .grid-plots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            align-content: start;
+        }
+
+        /* Permite que la primera gráfica ocupe toda la fila si se requiere, o 3 gráficas asimétricas */
+        .plot-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .plot-card.full-width { grid-column: span 2; }
+        
+        .plot-header { padding: 6px 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-family: var(--font-heading); font-size: 0.80rem; font-weight: 800; color: var(--color-slate); }
+        .plot-body { padding: 6px; flex-grow: 1; display: flex; align-items: center; justify-content: center; height: 180px;}
+        .plot-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .plot-footer { padding: 6px 10px; font-size: 0.65rem; color: #64748b; border-top: 1px solid #e2e8f0; line-height: 1.2; }
+
+        .footer-page {
+            position: absolute; bottom: 0.35in; right: 0.6in;
+            font-size: 0.65rem; font-weight: 800; color: #94a3b8; font-family: var(--font-heading);
+        }
+
+        /* ---------------------------------------------------
+           Media Query ESTRICTO IMPRESIÓN Carta
+        --------------------------------------------------- */
+        @page { size: letter; margin: 0; }
+
+        @media print {
+            body { background: white !important; padding: 0 !important; gap: 0 !important; }
+            .toolbar { display: none !important; }
+            .page {
+                margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                width: 8.5in !important;
+                height: 11in !important; 
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            .technical-note { border-left-color: var(--color-slate) !important; background-color: #f1f5f9 !important; }
+            .kpi-card { border-left-color: var(--color-coral) !important; background-color: #f8fafc !important; }
+            .plot-header { background-color: #f8fafc !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <button class="btn-premium" onclick="window.print()">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            Imprimir Reporte
+        </button>
+    </div>
+
+    <!-- ==============================================
+         PÁGINA 0: Resumen Ejecutivo y Fuentes (Portada)
+         ============================================== -->
+    <div class="page" style="justify-content: center;">
+        <div style="border-left: 8px solid var(--color-coral); padding-left: 20px; margin-bottom: 40px;">
+            <div class="subtitle" id="val-subtitle-cover" style="font-size: 0.9rem;">DEPARTAMENTO: CARGANDO...</div>
+            <h1 style="font-size: 3.5rem; margin-bottom: 10px; color: var(--color-slate); line-height: 1;">Informe <br>Estratégico</h1>
+            <h2 style="font-size: 1.5rem; font-weight: 500; color: #64748b; font-family: var(--font-body);">Inteligencia Competitiva de Educación Superior</h2>
+        </div>
+
+        <div style="margin-bottom: 40px; display: flex; gap: 40px;">
+            <div style="flex: 2;">
+                <h3 style="font-size: 1.2rem; margin-bottom: 15px; color: var(--color-slate); border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">Resumen Ejecutivo</h3>
+                <p style="font-size: 0.95rem; color: #475569; line-height: 1.6; text-align: justify;">
+                    Este documento presenta un análisis avanzado del posicionamiento y competitividad del programa dentro del ecosistema educativo colombiano. A través de la triangulación de datos oficiales, traducimos grandes volúmenes de información en inteligencia accionable. 
+                    <br><br>
+                    Nuestro objetivo es dotar a la dirección estratégica de evidencia empírica para la toma de decisiones, optimización de la oferta, políticas de retención y alineación del perfil de egreso con las demandas del sector productivo.
+                </p>
+
+                <!-- Bloque Dinámico de Filtros y Alcance -->
+                <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 4px;">
+                    <h4 style="margin: 0 0 8px 0; color: #166534; font-size: 0.9rem;">Alcance y Segmentación del Análisis</h4>
+                    <div id="val-scope-content" style="font-size: 0.85rem; color: #166534; line-height: 1.5;">
+                        <i>Cargando filtros aplicados...</i>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="flex: 1; background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h3 style="font-size: 1rem; margin-bottom: 15px; color: var(--color-coral);">Ecosistema de Datos</h3>
+                <ul style="padding-left: 15px; font-size: 0.85rem; color: #475569; line-height: 1.8; margin: 0;">
+                    <li><b><a href="https://snies.mineducacion.gov.co/portal/ESTADISTICAS/" target="_blank" style="color: var(--color-coral); text-decoration: none;">SNIES (2024):</a></b> Oferta, dinámica y titulación.</li>
+                    <li><b><a href="https://ole.mineducacion.gov.co/portal/Sistemas-de-informacion/" target="_blank" style="color: var(--color-coral); text-decoration: none;">OLE (2022):</a></b> Empleabilidad y transición laboral.</li>
+                    <li><b><a href="https://www.mineducacion.gov.co/sistemasinfo/spadies/secciones/Consultas-SPADIES-3-0/" target="_blank" style="color: var(--color-coral); text-decoration: none;">SPADIES (2023):</a></b> Retención y riesgo de deserción.</li>
+                    <li><b><a href="https://www.icfes.gov.co/investigaciones/data-icfes/" target="_blank" style="color: var(--color-coral); text-decoration: none;">ICFES (2024):</a></b> Calidad académica Saber PRO.</li>
+                </ul>
+
+                <div style="margin-top: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="background: white; border: 1px solid #cbd5e1; border-top: 3px solid var(--color-slate); padding: 10px; border-radius: 6px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                        <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Instituciones</div>
+                        <div id="val-instituciones" style="font-size: 1.6rem; font-weight: 900; color: var(--color-slate); margin-top: 5px;">0</div>
+                    </div>
+                    <div style="background: white; border: 1px solid #cbd5e1; border-top: 3px solid var(--color-coral); padding: 10px; border-radius: 6px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                        <div style="font-size: 0.65rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Programas</div>
+                        <div id="val-programas" style="font-size: 1.6rem; font-weight: 900; color: var(--color-coral); margin-top: 5px;">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: right; margin-top: auto;">
+            <div class="meta-date" id="val-date-cover" style="font-size: 1rem; color: var(--color-slate);">Generación: Abril 2026</div>
+            <img src="../logo_symbiotic.svg" alt="SymbioTIC" style="height: 50px; margin-top: 10px; opacity: 0.8;" onerror="this.style.display='none'">
+        </div>
+    </div>
+
+    <!-- ==============================================
+         PÁGINA 1: Totales y Oferta/Demanda
+         ============================================== -->
+    <div class="page">
+        <!-- Header -->
+        <div class="header-top">
+            <div>
+                <div class="subtitle" id="val-subtitle">DEPARTAMENTO: CARGANDO...</div>
+                <h1 id="val-title">Tendencias SNIES <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Oferta y Demanda</span></h1>
+            </div>
+            <div style="text-align: right;">
+                <div class="meta-date" id="val-date">Corte Oficial</div>
+            </div>
+        </div>
+
+        <!-- Nota Técnica -->
+        <div class="technical-note">
+            <b>Nota Técnica:</b> <span id="val-note">Cargando...</span>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-container">
+            <div class="kpi-card">
+                <div class="kpi-label">Primer Curso (Acumulado)</div>
+                <div class="kpi-value" id="kpi-1">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Matriculados (Total)</div>
+                <div class="kpi-value text-coral" id="kpi-2">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Graduados (Total)</div>
+                <div class="kpi-value" id="kpi-3">0</div>
+            </div>
+        </div>
+
+        <!-- Gráficos de Tendencias Totales (3) -->
+        <div class="grid-plots">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-t1">Tendencia Total Matriculados</div>
+                <div class="plot-body" style="height: 180px;"><img id="img-t1" class="plot-img" src=""></div>
+                <div class="plot-footer" id="caption-t1">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-t2">Tendencia Total Primer Curso</div>
+                <div class="plot-body" style="height: 180px;"><img id="img-t2" class="plot-img" src=""></div>
+                <div class="plot-footer" id="caption-t2">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-t3">Tendencia Total Graduados</div>
+                <div class="plot-body" style="height: 180px;"><img id="img-t3" class="plot-img" src=""></div>
+                <div class="plot-footer" id="caption-t3">Fuente...</div>
+            </div>
+        </div>
+
+        <div class="footer-page">PÁGINA 1</div>
+    </div>
+
+    <!-- ==============================================
+         PÁGINA 2: Desglose por Sexo
+         ============================================== -->
+    <div class="page">
+        <!-- Header Liviano -->
+        <div style="border-bottom: 2px solid var(--color-slate); padding-bottom: 8px; margin-bottom: 16px;">
+            <h2 style="font-size: 1.4rem;">Tendencias SNIES <span style="font-weight: 500; font-size: 1rem; color: #64748b;">(Desglose por Sexo)</span></h2>
+        </div>
+
+        <!-- Gráficos de Tendencias por Sexo (3) -->
+        <div class="grid-plots">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-s1">Matriculados por Sexo</div>
+                <div class="plot-body" style="height: 220px;"><img id="img-s1" class="plot-img" src=""></div>
+                <div class="plot-footer" id="caption-s1">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-s2">Primer Curso por Sexo</div>
+                <div class="plot-body" style="height: 220px;"><img id="img-s2" class="plot-img" src=""></div>
+                <div class="plot-footer" id="caption-s2">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-s3">Graduados por Sexo</div>
+                <div class="plot-body" style="height: 220px;"><img id="img-s3" class="plot-img" src=""></div>
+                <div class="plot-footer" id="caption-s3">Fuente...</div>
+            </div>
+        </div>
+
+        <div class="footer-page">PÁGINA 2</div>
+    </div>
+
+    <!-- ==============================================
+         PÁGINA 3: Marco Metodológico
+         ============================================== -->
+    <div class="page">
+        <!-- Header Liviano -->
+        <div style="border-bottom: 2px solid var(--color-slate); padding-bottom: 8px; margin-bottom: 25px;">
+            <h2 style="font-size: 1.4rem;">Marco Metodológico <span style="font-weight: 500; font-size: 1rem; color: #64748b;">(Dimensiones de Análisis)</span></h2>
+        </div>
+
+        <p style="font-size: 0.9rem; color: #475569; margin-bottom: 25px; line-height: 1.5; text-align: justify;">
+            El análisis utiliza un modelado de datos robusto integrando bases maestras del Ministerio de Educación y modelos algorítmicos propios. Esta arquitectura consolida registros históricos, garantizando rigor técnico para cruzar y comparar (benchmarking) el programa frente a sus pares en seis dimensiones analíticas fundamentales:
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-content: start;">
+            
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 3px solid var(--color-slate);">
+                <h4 style="color: var(--color-slate); margin-bottom: 8px; font-size: 0.95rem;">1. Dinámica y Absorción (SNIES)</h4>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">Comportamiento histórico de matrícula y capacidad de capturar demanda. Identifica patrones de crecimiento o contracción anticipando ciclos de mercado para estrategias de cobertura.</p>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 3px solid var(--color-slate);">
+                <h4 style="color: var(--color-slate); margin-bottom: 8px; font-size: 0.95rem;">2. Empleabilidad Formal (OLE)</h4>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">Pertinencia estructural del perfil de egreso midiendo vinculación efectiva al sistema de seguridad social. Termómetro directo de la aceptación del título en el sector real.</p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 3px solid var(--color-slate);">
+                <h4 style="color: var(--color-slate); margin-bottom: 8px; font-size: 0.95rem;">3. Valoración y Curva Salarial</h4>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">Monitoreo del retorno de inversión (ROI) del estudiante mediante salarios reales de enganche, normalizados a SMMLV para aislar inflación y contrastar el prestigio de la institución.</p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 3px solid var(--color-slate);">
+                <h4 style="color: var(--color-slate); margin-bottom: 8px; font-size: 0.95rem;">4. Arquitectura y Pricing</h4>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">Benchmarking cruzado que correlaciona rentabilidad (costo semestre) con la barrera de entrada curricular (volumen de créditos). Estratégico para valor percibido.</p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 3px solid var(--color-slate);">
+                <h4 style="color: var(--color-slate); margin-bottom: 8px; font-size: 0.95rem;">5. Retención y Riesgos</h4>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">Monitoreo de deserción estandar (pregrado) y modelos ad-hoc (posgrado) para mapear el bienestar, financiamiento y acompañamiento a aplicar frente a desvíos de la media regional.</p>
+            </div>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 3px solid var(--color-slate);">
+                <h4 style="color: var(--color-slate); margin-bottom: 8px; font-size: 0.95rem;">6. Competencias (SABER PRO)</h4>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">Radiografía objetiva del valor agregado institucional. Evalúa la brecha de rendimiento de competencias exigiendo estandarización de la innovación pedagógica en el ecosistema.</p>
+            </div>
+
+        </div>
+
+        <div class="footer-page">PÁGINA 3</div>
+    </div>
+
+    <!-- Inyección JS -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const data = window.__REPORT_DATA__;
+            if(!data) return;
+
+            // Metadatos y KPIs
+            document.getElementById("val-subtitle-cover").textContent = data.metadata.subtitle;
+            document.getElementById("val-date-cover").textContent = "Generación: " + data.metadata.date;
+
+            document.getElementById("val-subtitle").textContent = data.metadata.subtitle;
+            document.getElementById("val-date").textContent = "Extracción: " + data.metadata.date;
+            
+            // Procesamiento del Alcance (Scope)
+            const scopeBox = document.getElementById("val-scope-content");
+            if(data.metadata.scope) {
+                if(data.metadata.scope.type === "program") {
+                    const p = data.metadata.scope.details;
+                    scopeBox.innerHTML = `
+                        El presente informe parametriza los resultados directamente para el programa académico específico:<br>
+                        <ul style="margin: 5px 0 0 0; padding-left: 20px; color: #14532d;">
+                            <li><b>Programa:</b> ${p.nombre} (SNIES: ${p.snies})</li>
+                            <li><b>Institución:</b> ${p.institucion} (${p.sector})</li>
+                            <li><b>Ubicación:</b> ${p.departamento}</li>
+                            <li><b>Nivel y Modalidad:</b> ${p.nivel_formacion} - ${p.modalidad}</li>
+                        </ul>
+                    `;
+                } else {
+                    scopeBox.innerHTML = `
+                        El presente informe consolida un grupo de mercado segmentado así:<br>
+                        <b>Ámbito:</b> ${data.metadata.scope.description}
+                    `;
+                }
+            } else {
+                scopeBox.innerHTML = `Análisis consolidado ségun los filtros generales aplicados en pantalla.`;
+            }
+
+            document.getElementById("val-note").textContent = data.snies.technical_note;
+
+            // KPIs Portada
+            document.getElementById("val-instituciones").textContent = data.kpis.instituciones || "N/A";
+            document.getElementById("val-programas").textContent = data.kpis.programas || "N/A";
+
+            document.getElementById("kpi-1").textContent = data.kpis.pcurso;
+            document.getElementById("kpi-2").textContent = data.kpis.matriculados;
+            document.getElementById("kpi-3").textContent = data.kpis.graduados;
+
+            // Inyectar Gráficos Totales (id: t1 es la que ocupa ancha, asi que asigaremos t2 a eso, pero veamos cómo las llamó el python script)
+            /* 
+                Python armó:
+                t1: Tendencia Total.. Primer Curso
+                t2: Tendencia Total.. Matriculados
+                t3: Tendencia Total.. Graduados
+                s1: Tendencia por Sexo (Primer Curso)
+                s2: Tendencia por Sexo (Matriculados)
+                s3: Tendencia por Sexo (Graduados)
+                Vamos a mapear:
+            */
+            const p = data.snies.plots;
+            const bSrc = (b64) => "data:image/png;base64," + b64;
+            
+            // Asignación explícita según las cajas (Matriculados grande, otros dos pequeños)
+            const mapPlot = (pId, arrId) => {
+                const plotHtmlId = document.getElementById(`img-${pId}`);
+                const headHtmlId = document.getElementById(`ph-${pId}`);
+                const capHtmlId = document.getElementById(`caption-${pId}`);
+                
+                const pt = p.find(x => x.id === arrId);
+                if(pt && plotHtmlId) {
+                    plotHtmlId.src = bSrc(pt.b64);
+                    headHtmlId.innerHTML = pt.title;
+                    capHtmlId.innerHTML = pt.caption;
+                }
+            };
+
+            // Pagina 1: Matriculados (grande), PCurso y Graduados (pequeños)
+            mapPlot("t1", "t2"); // t1 container <- t2 python (Matriculados)
+            mapPlot("t2", "t1"); // t2 container <- t1 python (Primer Curso)
+            mapPlot("t3", "t3"); // t3 container <- t3 python (Graduados)
+
+            // Pagina 2: Matriculados Sexo (grande)
+            mapPlot("s1", "s2"); 
+            mapPlot("s2", "s1"); 
+            mapPlot("s3", "s3"); 
+        });
+    </script>
+</body>
+</html>
