@@ -1,0 +1,150 @@
+erDiagram
+    %% ==========================================
+    %% BLOQUE 2: DIMENSIONES MAESTRAS (NÚCLEO)
+    %% ==========================================
+    %% Estas tablas definen la estructura base sin dimensión temporal (Anno)
+
+    df_SNIES_Programas ||--o{ df_Cobertura_distinct : "codigo_snies_del_programa"
+
+    df_SNIES_Programas {
+        double codigo_snies_del_programa PK "ID único del programa académico"
+        string programa_academico "Nombre del programa"
+        string nombre_institucion "Nombre de la IES"
+        string estado_institucion "ACTIVA / INACTIVA"
+        string caracter_academico "Técnica, Tecnológica, Universitaria"
+        string sector "OFICIAL / PRIVADA"
+        string estado_programa "ACTIVO / INACTIVO"
+        string reconocimiento_del_ministerio "Acreditación (usar con cautela)"
+        timestamp fecha_de_resolucion "Fecha última resolución"
+        timestamp fecha_ejecutoria "Fecha ejecución"
+        double vigencia_annos "Años de vigencia de resolución"
+        timestamp fecha_de_registro_en_snies "Último registro en SNIES"
+        string cine_f_2013_ac_campo_amplio "Clasificación CINE Amplio"
+        string cine_f_2013_ac_campo_especific "Clasificación CINE Específico"
+        string cine_f_2013_ac_campo_detallado "Clasificación CINE Detallado"
+        string area_de_conocimiento "Agrupación disciplinar"
+        string nucleo_basico_del_conocimiento "Núcleo NBC"
+        string nivel_academico "Pregrado / Posgrado"
+        string nivel_de_formacion "Denominación específica"
+        string modalidad "Presencial, Virtual, Distancia"
+        double numero_creditos "Número de créditos"
+        double costo_matricula_estud_nuevos "Costo reportado al MEN"
+        double divipola_depto_principal "Código Depto Sede Principal"
+        double divipola_mpio_principal "Código Mpio Sede Principal"
+        string departamento_principal "Depto Sede Principal"
+        string municipio_principal "Mpio Sede Principal"
+    }
+
+    df_Cobertura_distinct {
+        string snies_divipola PK "Llave Compuesta: SNIES + DIVIPOLA"
+        double codigo_snies_del_programa FK "Relación con Programas"
+        string departamento_oferta "Departamento donde se oferta"
+        string municipio_oferta "Municipio donde se oferta"
+    }
+
+    %% ==========================================
+    %% BLOQUE 1: RESULTADOS (SALIDA)
+    %% ==========================================
+    %% Relación directa con el Programa (codigo_snies_del_programa)
+
+    df_SNIES_Programas ||--o{ df_OLE_Salario : "codigo_snies_del_programa"
+    df_SNIES_Programas ||--o{ df_OLE_Salario_M0 : "codigo_snies_del_programa"
+    df_SNIES_Programas ||--o{ df_OLE_Movilidad : "codigo_snies_del_programa"
+    df_SNIES_Programas ||--o{ df_OLE_Movilidad_M0 : "codigo_snies_del_programa"
+    df_SNIES_Programas ||--o{ df_SPADIES_Desercion : "codigo_snies_del_programa"
+    df_SNIES_Programas ||--o{ df_SPADIES_Retencion : "codigo_snies_del_programa"
+    df_SNIES_Programas ||--o{ df_SaberPRO : "codigo_snies_del_programa (Estudiante)"
+    df_SNIES_Programas ||--o{ df_SaberPRO_mean : "codigo_snies_del_programa"
+
+    df_OLE_Salario {
+        double codigo_snies_del_programa FK
+        int anno PK
+        string sexo PK
+    }
+
+    df_OLE_Salario_M0 {
+        double codigo_snies_del_programa FK
+        int anno PK
+        string sexo PK
+        string rango_salario "En SMMLV"
+    }
+
+    df_OLE_Movilidad {
+        double codigo_snies_del_programa FK
+        int anno PK
+        string sexo PK
+        double graduados "Base para porcentajes"
+        double graduados_que_cotizan "Cotizantes OLE"
+        double graduados_cotizantes_dependientes "Dependientes OLE"
+    }
+
+    df_OLE_Movilidad_M0 {
+        double codigo_snies_del_programa FK
+        int anno PK "Año siguiente al grado"
+        string sexo PK
+        double graduados
+        double graduados_que_cotizan
+        double graduados_cotizantes_dependientes
+    }
+
+    df_SPADIES_Desercion {
+        double codigo_snies_del_programa FK
+        int anno PK
+        double desercion_anual_mean "Promedio semestral"
+    }
+
+    df_SPADIES_Retencion {
+        double codigo_snies_del_programa FK
+        int anno PK
+    }
+
+    df_SaberPRO {
+        string pro_gen_estu_consecutivo PK "Grano Individuo (Estudiante)"
+        double codigo_snies_del_programa FK
+        int anno PK
+        string sexo PK
+        int pro_gen_fami_estratovivienda "Estrato socioeconómico"
+        string pro_gen_estu_horassemanatrabaja "Carga laboral"
+        int pro_gen_estu_edad "Edad exacta"
+        string grupo_edad "Rango etario"
+        int pro_gen_punt_global "Puntaje total"
+        int divipola_depto_reside "Depto residencia"
+        int divipola_mpio_reside "Mpio residencia"
+    }
+
+    df_SaberPRO_mean {
+        double codigo_snies_del_programa FK
+        int anno PK
+        double pro_gen_punt_global_mean "Promedio programa"
+        double pro_gen_punt_global_std "Desviación estándar"
+        int n_estudiantes_saberpro "Muestra evaluada"
+    }
+
+    %% ==========================================
+    %% BLOQUE 3: OPERACIÓN (COBERTURA/MATRÍCULA)
+    %% ==========================================
+    %% Relación a través de snies_divipola
+
+    df_Cobertura_distinct ||--o{ df_PCurso_agg : "snies_divipola"
+    df_Cobertura_distinct ||--o{ df_Matricula_agg : "snies_divipola"
+    df_Cobertura_distinct ||--o{ df_Graduados_agg : "snies_divipola"
+
+    df_Matricula_agg {
+        string snies_divipola FK
+        int anno PK
+        string sexo PK
+        double matricula_sum "Suma anual (Sem 1 + Sem 2)"
+    }
+
+    df_PCurso_agg {
+        string snies_divipola FK
+        int anno PK
+        string sexo PK
+        double primer_curso_sum "Nuevos inscritos"
+    }
+
+    df_Graduados_agg {
+        string snies_divipola FK
+        int anno PK
+        string sexo PK
+    }
