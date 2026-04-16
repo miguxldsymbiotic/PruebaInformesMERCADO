@@ -42,6 +42,17 @@ COLOR_SEXO = {
     "TRANS": "#d44c8d"
 }
 
+def fig_to_base64(fig, width=800, height=450):
+    """Convierte una figura de Plotly a string Base64 PNG."""
+    try:
+        if fig is None: return ""
+        img_bytes = fig.to_image(format="png", width=width, height=height, engine="kaleido", scale=2)
+        return base64.b64encode(img_bytes).decode('utf-8')
+    except Exception as e:
+        print(f"Error convirtiendo fig a base64: {e}")
+        return ""
+
+
 # Define paths
 app_dir = Path(__file__).parent
 data_dir = app_dir.parent / "data"
@@ -231,6 +242,7 @@ app_ui = ui.page_sidebar(
         ui.input_selectize("departamento", "Departamento de Oferta", choices=departamentos_oferta, multiple=True),
         ui.input_selectize("municipio", "Municipio de Oferta", choices=[], multiple=True),
         ui.input_action_button("btn_calcular", "Aplicar Filtros", class_="btn-danger w-100 mt-2 mb-2", style="font-weight: bold; font-size: 1.1em;"),
+        ui.input_action_button("btn_preview_report", "Vista Previa Informe", class_="btn-success w-100 mt-2"),
         ui.download_button("download_pdf", "Descargar Informe (PDF)", class_="btn-primary w-100 mt-2"),
         open="desktop",
     ),
@@ -4935,88 +4947,290 @@ def server(input, output, session):
     def plot_comp_saber_demo_estrato():
         return ui.HTML(pio.to_html(build_comp_saber_categorical("pro_gen_fami_estratovivienda"), full_html=False, include_plotlyjs="cdn"))
 
-    @render.download(filename=lambda: f"Informe_Educacion_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
-    def download_pdf():
-        with ui.Progress(min=1, max=15) as p:
-            p.set(message="Iniciando generación de informe...", detail="Preparando motor analítico")
-            
-            def fig_to_base64(fig):
-                if fig is None: return ""
-                img_bytes = fig.to_image(format="png", width=800, height=450, engine="kaleido")
-                return base64.b64encode(img_bytes).decode('utf-8')
-                
-            def gauge_to_base64(val, max_val, color="#DF6C5B"):
-                fig = go.Figure(go.Indicator(mode="gauge+number", value=val, gauge={"axis":{"range":[0, max_val]}, "bar":{"color":color}}))
-                fig.update_layout(margin=dict(t=10,b=10,l=10,r=10), paper_bgcolor="rgba(0,0,0,0)", font={"family":"Nunito", "color":"#385A64"})
-                img_bytes = fig.to_image(format="png", width=300, height=200, engine="kaleido")
-                return base64.b64encode(img_bytes).decode('utf-8')
-
-            p.set(3, message="Calculando indicadores...", detail="Matrícula y SNIES")
-            
-            val_matriculados = calc_total_matriculados()
-            val_graduados = calc_total_graduados()
-            val_instituciones = calc_total_instituciones()
-            
-            fig_trend_snies = calc_plot_primer_curso_total()
-            b64_trend = fig_to_base64(fig_trend_snies)
-            
-            fig_gender = calc_plot_empleabilidad_sexo()
-            b64_gender = fig_to_base64(fig_gender)
-            
-            p.set(7, detail="Observatorio Laboral y Salarios")
-            
-            val_empleabilidad = calc_kpi_empleabilidad() or "0%"
-            val_retencion = calc_kpi_retencion() or "0%"
-            
-            salario_prom = calc_kpi_salario_promedio_total()
-            
-            fig_salary = calc_plot_dist_empleabilidad()
-            b64_salary = fig_to_base64(fig_salary)
-            
-            p.set(10, detail="SPADIES y Saber PRO")
-            
-            desercion_val = calc_kpi_desercion_promedio()
+    @reactive.calc
+    def calc_all_report_data():
+        """Recopila toda la información necesaria para el reporte premium en formato JSON."""
+        # Helpers para evitar SilentExceptions de reactivos no inicializados
+        def get_input_safe(id, default=None):
             try:
-                desercion_num = float(desercion_val.replace(',','.'))
-            except Exception:
-                desercion_num = 0.0
-                
-            b64_gauge_dropout = gauge_to_base64(desercion_num, 100, "#DF6C5B")
-            
-            saber_score = calc_saber_score('pro_gen_punt_global')
-            b64_saber_radar = fig_to_base64(calc_plot_saber_dist())
-            
-            p.set(12, message="Ensamblando reporte...", detail="Renderizando Plantilla Jinja2")
-            
-            context = {
-                "kpi_matricula_total": str(val_matriculados),
-                "kpi_graduados_total": str(val_graduados),
-                "kpi_instituciones_evaluadas": str(val_instituciones),
-                "img_trend_snies": b64_trend,
-                "kpi_pct_masculino": "45,2",
-                "img_gender_snies": b64_gender,
-                "kpi_empleabilidad": str(val_empleabilidad),
-                "kpi_retencion": str(val_retencion),
-                "kpi_salario_promedio": str(salario_prom),
-                "img_salary_bar": b64_salary,
-                "img_gauge_dropout": b64_gauge_dropout,
-                "kpi_desercion": str(desercion_val),
-                "kpi_saber_global": str(saber_score),
-                "img_saber_radar": b64_saber_radar
+                val = getattr(input, id)()
+                return val if val is not None else default
+            except:
+                return default
+
+        def safe_call(fn, *args, **kwargs):
+            try:
+                return fn(*args, **kwargs)
+            except:
+                return None
+
+        def safe_fig(fn, *args, **kwargs):
+            try:
+                fig = fn(*args, **kwargs)
+                return fig_to_base64(fig)
+            except:
+                return fig_to_base64(go.Figure())
+
+        def safe_kpi(fn, default="Sin dato"):
+            try:
+                val = fn()
+                return str(val) if val is not None else default
+            except:
+                return default
+
+        dept_list = get_input_safe("departamento", ["Todos"])
+        dept_name = ", ".join(dept_list) if isinstance(dept_list, list) else str(dept_list)
+        
+        inst_list = get_input_safe("institucion", ["Todas"])
+        inst_name = ", ".join(inst_list) if isinstance(inst_list, list) else str(inst_list)
+        
+        filtros_desc = f"Departamento: {dept_name}, IES: {inst_name}"
+        
+        # SNIES Data
+        snies_y = str(int(df_matricula["anno"].max()))
+        ole_y = str(int(df_ole_m0["anno_corte"].max()))
+        spadies_y = str(int(df_desercion["anno"].max() if "anno" in df_desercion.columns else 2023))
+        icfes_y = str(int(df_saber["anno"].max() if "anno" in df_saber.columns else 2024))
+
+        # Cargar Logo en Base64
+        logo_b64 = ""
+        logo_path = app_dir / "logo_symbiotic.svg"
+        if logo_path.exists():
+            try:
+                with open(logo_path, "rb") as f:
+                    logo_b64 = base64.b64encode(f.read()).decode("utf-8")
+                    logo_b64 = f"data:image/svg+xml;base64,{logo_b64}"
+            except: pass
+
+        # Helper for Saber KPIs
+        def get_saber_val(col):
+            try:
+                df_b, _ = get_comp_saber_series(col)
+                if df_b is None or df_b.empty: return 0.0
+                return float(df_b['valor_base'].iloc[-1])
+            except:
+                return 0.0
+
+        report_data = {
+            "metadata": {
+                "title": "Informe de Mercado de Educación Superior",
+                "subtitle": f"DEPARTAMENTO: {dept_name.upper()}",
+                "date": datetime.datetime.now().strftime("%B %Y"),
+                "year_start": 2018,
+                "year_end": int(snies_y),
+                "logo_data": logo_b64,
+                "source_years": {
+                    "snies": snies_y,
+                    "ole": ole_y,
+                    "spadies": spadies_y,
+                    "icfes": icfes_y
+                },
+                "scope": {
+                    "type": "filters",
+                    "description": filtros_desc,
+                    "details": {
+                        "Departamento": dept_name,
+                        "Institución": inst_name
+                    }
+                }
+            },
+            "kpis": {
+                "instituciones": safe_kpi(calc_total_instituciones),
+                "programas": safe_kpi(calc_total_programas),
+                "pcurso": safe_kpi(calc_total_primer_curso),
+                "matriculados": safe_kpi(calc_total_matriculados),
+                "graduados": safe_kpi(calc_total_graduados),
+                "vinculacion": safe_kpi(calc_kpi_empleabilidad),
+                "salario": safe_kpi(calc_kpi_ratio, default="1.00"), 
+                "retencion": safe_kpi(calc_kpi_retencion),
+                "saber_global": f"{get_saber_val('pro_gen_punt_global'):.1f}",
+                "sal_promedio": safe_kpi(calc_kpi_salario_promedio_total),
+                "sal_femenino": safe_kpi(calc_kpi_salario_promedio_fem),
+                "sal_masculino": safe_kpi(calc_kpi_salario_promedio_masc),
+                "des_rate": safe_kpi(calc_kpi_desercion_promedio, default="0,0%"),
+                "s_global": f"{get_saber_val('pro_gen_punt_global'):.1f}",
+                "s_razona": f"{get_saber_val('pro_gen_mod_razona_cuantitat_punt'):.1f}",
+                "s_lectura": f"{get_saber_val('pro_gen_mod_lectura_critica_punt'):.1f}",
+                "s_ciuda": f"{get_saber_val('pro_gen_mod_competen_ciudada_punt'):.1f}",
+                "s_ingles": f"{get_saber_val('pro_gen_mod_ingles_punt'):.1f}",
+                "s_escrita": f"{get_saber_val('pro_gen_mod_comuni_escrita_punt'):.1f}",
+                "evaluados": format_num_es(df_saber.height),
+                "progs_saber": str(df_saber["codigo_snies_del_programa"].n_unique())
+            },
+            "snies": {
+                "technical_note": "Fuente: Registros administrativos SNIES.",
+                "plots": [
+                    {"id": "t1", "title": "Primer Curso (Total)", "b64": safe_fig(calc_plot_primer_curso_total), "caption": "Evolución histórica consolidada de ingresos."},
+                    {"id": "t2", "title": "Matriculados (Total)", "b64": safe_fig(calc_plot_matriculados_total), "caption": "Población estudiantil activa en el sistema."},
+                    {"id": "t3", "title": "Graduados (Total)", "b64": safe_fig(calc_plot_graduados_total), "caption": "Egresados titulados por cohorte de salida."},
+                    {"id": "s1", "title": "Primer Curso x Sexo", "b64": safe_fig(calc_plot_primer_curso), "caption": "Participación por género en el ingreso."},
+                    {"id": "s2", "title": "Matriculados x Sexo", "b64": safe_fig(calc_plot_matriculados), "caption": "Permanencia desagregada por sexo."},
+                    {"id": "s3", "title": "Graduados x Sexo", "b64": safe_fig(calc_plot_graduados), "caption": "Perfil de egreso por género."}
+                ]
+            },
+            "ole": {
+                "technical_note": "Fuente: Observatorio Laboral para la Educación (Graduados que cotizan).",
+                "plots": [
+                    {"id": "o1", "title": "Tasa de Empleabilidad", "b64": safe_fig(calc_plot_empleabilidad_total), "caption": "% de graduados vinculados formalmente."},
+                    {"id": "o2", "title": "Relación Dep/Grad", "b64": safe_fig(calc_plot_dependientes_total), "caption": "Proporción de empleados dependientes."},
+                    {"id": "o3", "title": "Empleabilidad x Sexo", "b64": safe_fig(calc_plot_empleabilidad_sexo), "caption": "Brechas de vinculación por género."},
+                    {"id": "o4", "title": "Dependientes x Sexo", "b64": safe_fig(calc_plot_dependientes_sexo), "caption": "Estabilidad laboral por género."},
+                    {"id": "o5", "title": "Dist. Empleabilidad", "b64": safe_fig(calc_plot_dist_empleabilidad), "caption": "Distribución regional de la tasa."},
+                    {"id": "o6", "title": "Dist. Dependientes", "b64": safe_fig(calc_plot_dist_dependientes), "caption": "Consolidado de estabilidad regional."},
+                    {"id": "o7", "title": "Dist. Emp x Sexo", "b64": safe_fig(calc_plot_dist_empleabilidad_sexo), "caption": "Mapa de calor de vinculación genérica."},
+                    {"id": "o8", "title": "Dist. Dep x Sexo", "b64": safe_fig(calc_plot_dist_dependientes_sexo), "caption": "Mapa de calor de dependencia genérica."},
+                    {"id": "o10", "title": "Evol. Retención Local", "b64": safe_fig(calc_plot_retencion_trend), "caption": "Capacidad de retención de talento."},
+                    {"id": "o11", "title": "Ratio Migratorio", "b64": safe_fig(calc_plot_ratio_trend), "caption": "Dinámica de flujo regional."},
+                    {"id": "o12", "title": "Evol. Dep/Cotizantes", "b64": safe_fig(calc_plot_dependientes_trend), "caption": "Relación de calidad de empleo."}
+                ]
+            },
+            "salarios": {
+                "technical_note": "Ajuste a pesos constantes del último año con base en el SMMLV.",
+                "plots": [
+                    {"id": "v1", "title": "Rangos Salariales", "b64": safe_fig(calc_plot_salario_dist_total), "caption": "Distribución por niveles de ingreso."},
+                    {"id": "v2", "title": "Rangos x Sexo", "b64": safe_fig(calc_plot_salario_dist_sexo), "caption": "Distribución salarial segregada."},
+                    {"id": "v5", "title": "Evolución Salario Real", "b64": safe_fig(calc_plot_salario_evolucion_total_constante), "caption": "Tendencia del poder adquisitivo."},
+                    {"id": "v6", "title": "Evolución x Sexo", "b64": safe_fig(calc_plot_salario_evolucion_sexo_constante), "caption": "Crecimiento salarial por género."}
+                ]
+            },
+            "spadies": {
+                "technical_note": "Fuente: SPADIES. La deserción se calcula sobre cohortes anuales.",
+                "plots": [
+                    {"id": "d1", "title": "Histograma Deserción", "b64": safe_fig(calc_plot_dist_desercion), "caption": "Variabilidad de la deserción académica."},
+                    {"id": "d2", "title": "Tendencia Anual", "b64": safe_fig(calc_plot_trend_desercion), "caption": "Riesgo histórico de abandono."}
+                ]
+            },
+            "saber": {
+                "technical_note": "Fuente: ICFES. Puntajes normalizados en escala 0-300.",
+                "plots": [
+                    {"id": "sb1", "title": "Tendencia Global", "b64": safe_fig(build_comp_plot_saber, *get_comp_saber_series('pro_gen_punt_global'), "Puntaje Global"), "caption": "Evolución histórica del puntaje promedio."},
+                    {"id": "sb2", "title": "Razonamiento Cuant.", "b64": safe_fig(build_comp_plot_saber, *get_comp_saber_series('pro_gen_mod_razona_cuantitat_punt'), "Razonamiento"), "caption": "Competencias matemáticas."},
+                    {"id": "sb3", "title": "Lectura Crítica", "b64": safe_fig(build_comp_plot_saber, *get_comp_saber_series('pro_gen_mod_lectura_critica_punt'), "Lectura"), "caption": "Comprensión lectora."},
+                    {"id": "sb4", "title": "Comp. Ciudadanas", "b64": safe_fig(build_comp_plot_saber, *get_comp_saber_series('pro_gen_mod_competen_ciudada_punt'), "Ciudadanas"), "caption": "Habilidades ciudadanas."}
+                ]
+            },
+            "demo": {
+                "technical_note": "Caracterización basada en formularios del ICFES.",
+                "plots": [
+                    {"id": "pr1", "title": "Socio-demográfico Sexo", "b64": safe_fig(build_comp_saber_categorical, "sexo"), "caption": "Composición por género."},
+                    {"id": "pr2", "title": "Socio-demográfico Edad", "b64": safe_fig(build_comp_saber_categorical, "grupo_edad"), "caption": "Composición por rangos de edad."},
+                    {"id": "pr3", "title": "Horas de Trabajo", "b64": safe_fig(build_comp_saber_categorical, "pro_gen_estu_horassemanatrabaja"), "caption": "Carga laboral reportada (Proxy)."},
+                    {"id": "pr4", "title": "Estrato Social", "b64": safe_fig(build_comp_saber_categorical, "pro_gen_fami_estratovivienda"), "caption": "Perfil económico de los hogares."}
+                ]
             }
-            
-            with open(app_dir / "ejemplo_plantilla.html", "r", encoding="utf-8") as f:
-                template = Template(f.read())
-            
-            html_content = template.render(context)
-            
-            p.set(14, message="Imprimiendo...", detail="Motor WeasyPrint convirtiendo a PDF")
-            
-            pdf_buffer = io.BytesIO()
-            HTML(string=html_content).write_pdf(pdf_buffer)
-            pdf_buffer.seek(0)
-            
-            p.set(15, message="Reporte finalizado", detail="Enviando documento...")
-            yield pdf_buffer.read()
+        }
+        return report_data
+
+    @reactive.effect
+    @reactive.event(input.btn_preview_report)
+    def handle_preview():
+        with ui.Progress(min=0, max=1) as p:
+            try:
+                p.set(message="Compilando datos...", detail="Generando gráficas en Base64...")
+                report_data = calc_all_report_data()
+                import json
+                report_json = json.dumps(report_data)
+                
+                p.set(0.5, message="Preparando Visualización...", detail="Inyectando datos en memoria...")
+                template_path = app_dir / "web_report_demo" / "viewer.html"
+                if not template_path.exists():
+                    template_path = app_dir / "viewer.html"
+                
+                with open(template_path, "r", encoding="utf-8") as f:
+                    template_content = f.read()
+                
+                # Inyectar el JSON y el logo en Base64 (WYSIWYG 100% en memoria)
+                injected_content = template_content.replace(
+                    '<script src="data_ANTIOQUIA.js"></script>',
+                    f'<script>window.__REPORT_DATA__ = {report_json};</script>'
+                )
+                
+                # Reemplazar el logo por el Base64 inyectado (si existe en el JSON)
+                logo_b64 = report_data.get("metadata", {}).get("logo_data", "")
+                if logo_b64:
+                    injected_content = injected_content.replace('src="../logo_symbiotic.svg"', f'src="{logo_b64}"')
+                
+                # Para evitar escribir en disco según lo solicitado (WYSWYG en memoria),
+                # usamos srcdoc en el iframe para renderizar el contenido HTML directamente.
+                p.set(1.0, message="Listo", detail="Abriendo visor...")
+                
+                ui.modal_show(ui.modal(
+                    ui.tags.div(
+                        ui.tags.iframe(
+                            srcdoc=injected_content,
+                            style="width: 100%; height: 85vh; border: none; background: white;"
+                        ),
+                        style="padding: 0; margin: -1rem; background: #f8fafc; overflow: hidden; border-radius: 4px;"
+                    ),
+                    title="Previsualización del Informe Estratégico (Vista Gráfica)",
+                    size="xl",
+                    easy_close=True,
+                    footer=ui.div(
+                        ui.tags.button(
+                            "Imprimir / Guardar (Nativo)", 
+                            onclick="document.querySelector('iframe').contentWindow.print();",
+                            class_="btn btn-info",
+                            style="margin-right: 10px;"
+                        ),
+                        ui.download_button("download_pdf", "Descargar PDF (Motor)", class_="btn-primary"),
+                        ui.modal_button("Cerrar"),
+                        style="display: flex; gap: 10px; justify-content: flex-end; width: 100%;"
+                    )
+                ))
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                # Si el error es una SilentException de Shiny, significa que falta algún dato reactivo
+                if "SilentException" in str(type(e)):
+                    ui.notification_show("Por favor, selecciona los filtros necesarios (Departamento/Institución) antes de generar el reporte.", type="warning", duration=15)
+                else:
+                    ui.notification_show(f"Error en Vista Previa: {str(e)}", type="error", duration=15)
+                print(f"DEBUG: Error Detallado en Vista Previa:\n{error_details}")
+
+    @render.download(filename=lambda: f"Informe_Mercado_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+    def download_pdf():
+        with ui.Progress(min=0, max=1) as p:
+            try:
+                p.set(message="Generando Reporte...", detail="Esto puede tardar unos segundos...")
+                report_data = calc_all_report_data()
+                import json
+                report_json = json.dumps(report_data)
+                
+                template_path = app_dir / "web_report_demo" / "viewer.html"
+                if not template_path.exists():
+                    template_path = app_dir / "viewer.html"
+                
+                with open(template_path, "r", encoding="utf-8") as f:
+                    template_content = f.read()
+                
+                html_content = template_content.replace(
+                    '<script src="data_ANTIOQUIA.js"></script>',
+                    f'<script>window.__REPORT_DATA__ = {report_json};</script>'
+                )
+                
+                # Inyectar logo Base64 para WeasyPrint (independencia total de archivos)
+                report_obj = json.loads(report_json)
+                logo_data = report_obj.get("metadata", {}).get("logo_data", "")
+                if logo_data:
+                    html_content = html_content.replace('src="../logo_symbiotic.svg"', f'src="{logo_data}"')
+                
+                pdf_buffer = io.BytesIO()
+                # Pasar app_dir como base_url para que WeasyPrint encuentre el logo en dashboard/logo_symbiotic.svg
+                HTML(string=html_content, base_url=str(app_dir)).write_pdf(pdf_buffer)
+                pdf_buffer.seek(0)
+                yield pdf_buffer.read()
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                if "SilentException" in str(type(e)):
+                    ui.notification_show("No se pudo generar el PDF: faltan filtros por seleccionar.", type="warning", duration=15)
+                else:
+                    ui.notification_show(f"Error generando PDF: {str(e)}", type="error", duration=15)
+                print(f"DEBUG: Error Detallado en PDF:\n{error_details}")
+                yield b"Error"
+
+    @render.download(filename=lambda: f"Informe_Mercado_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+    def download_pdf_inner():
+        return download_pdf()
 
 app = App(app_ui, server, static_assets={"/temp_report": app_dir / "temp_report"})
