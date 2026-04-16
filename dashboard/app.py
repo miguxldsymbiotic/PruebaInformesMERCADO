@@ -904,7 +904,11 @@ app_ui = ui.page_sidebar(
         ),
         ui.nav_panel(
             "Tendencia Comparada",
-            ui.h2("Análisis Comparativo de Tendencias", class_="mt-2 mb-3", style="color: #31497e; font-weight: bold;"),
+            ui.div(
+                ui.h2("Análisis Comparativo de Tendencias", class_="m-0", style="color: #31497e; font-weight: bold;"),
+                ui.download_button("btn_download_comp", "Descargar Informe Comparativo", class_="btn-primary", icon=fa.icon_svg("file-pdf", "solid")),
+                class_="d-flex justify-content-between align-items-center mt-2 mb-3"
+            ),
             ui.layout_columns(
                 ui.card(
                     ui.card_header(ui.HTML("<b style='color: #31497e;'>1. Selección de Programa Base</b>")),
@@ -5043,19 +5047,19 @@ def server(input, output, session):
                 "vinculacion": safe_kpi(calc_kpi_empleabilidad),
                 "salario": safe_kpi(calc_kpi_ratio, default="1.00"), 
                 "retencion": safe_kpi(calc_kpi_retencion),
-                "saber_global": f"{get_saber_val('pro_gen_punt_global'):.1f}",
+                "saber_global": safe_kpi(lambda: calc_saber_score('pro_gen_punt_global')),
                 "sal_promedio": safe_kpi(calc_kpi_salario_promedio_total),
                 "sal_femenino": safe_kpi(calc_kpi_salario_promedio_fem),
                 "sal_masculino": safe_kpi(calc_kpi_salario_promedio_masc),
                 "des_rate": safe_kpi(calc_kpi_desercion_promedio, default="0,0%"),
-                "s_global": f"{get_saber_val('pro_gen_punt_global'):.1f}",
-                "s_razona": f"{get_saber_val('pro_gen_mod_razona_cuantitat_punt'):.1f}",
-                "s_lectura": f"{get_saber_val('pro_gen_mod_lectura_critica_punt'):.1f}",
-                "s_ciuda": f"{get_saber_val('pro_gen_mod_competen_ciudada_punt'):.1f}",
-                "s_ingles": f"{get_saber_val('pro_gen_mod_ingles_punt'):.1f}",
-                "s_escrita": f"{get_saber_val('pro_gen_mod_comuni_escrita_punt'):.1f}",
-                "evaluados": format_num_es(df_saber.height),
-                "progs_saber": str(df_saber["codigo_snies_del_programa"].n_unique())
+                "s_global": safe_kpi(lambda: calc_saber_score('pro_gen_punt_global')),
+                "s_razona": safe_kpi(lambda: calc_saber_score('pro_gen_mod_razona_cuantitat_punt')),
+                "s_lectura": safe_kpi(lambda: calc_saber_score('pro_gen_mod_lectura_critica_punt')),
+                "s_ciuda": safe_kpi(lambda: calc_saber_score('pro_gen_mod_competen_ciudada_punt')),
+                "s_ingles": safe_kpi(lambda: calc_saber_score('pro_gen_mod_ingles_punt')),
+                "s_escrita": safe_kpi(lambda: calc_saber_score('pro_gen_mod_comuni_escrita_punt')),
+                "evaluados": safe_kpi(calc_total_evaluados_saber),
+                "progs_saber": safe_kpi(calc_total_programas_saber)
             },
             "snies": {
                 "technical_note": "Fuente: Registros administrativos SNIES.",
@@ -5103,22 +5107,42 @@ def server(input, output, session):
             "saber": {
                 "technical_note": "Fuente: ICFES. Puntajes normalizados en escala 0-300.",
                 "plots": [
-                    {"id": "sb1", "title": "Tendencia Global", "b64": safe_fig(build_comp_plot_saber, *get_comp_saber_series('pro_gen_punt_global'), "Puntaje Global"), "caption": "Evolución histórica del puntaje promedio."},
-                    {"id": "sb2", "title": "Razonamiento Cuant.", "b64": safe_fig(build_comp_plot_saber, *get_comp_saber_series('pro_gen_mod_razona_cuantitat_punt'), "Razonamiento"), "caption": "Competencias matemáticas."},
-                    {"id": "sb3", "title": "Lectura Crítica", "b64": safe_fig(build_comp_plot_saber, *get_comp_saber_series('pro_gen_mod_lectura_critica_punt'), "Lectura"), "caption": "Comprensión lectora."},
-                    {"id": "sb4", "title": "Comp. Ciudadanas", "b64": safe_fig(build_comp_plot_saber, *get_comp_saber_series('pro_gen_mod_competen_ciudada_punt'), "Ciudadanas"), "caption": "Habilidades ciudadanas."}
+                    {"id": "sb1", "title": "Tendencia Global por Sexo",  "b64": safe_fig(lambda: calc_plot_saber_trend()),                           "caption": "Evolución histórica de competencias genéricas."},
+                    {"id": "sb2", "title": "Tendencia Global por Edad",  "b64": safe_fig(lambda: calc_plot_saber_dist()),                            "caption": "Distribución del puntaje global."},
+                    {"id": "sb3", "title": "Distribución por Sexo",      "b64": safe_fig(lambda: calc_plot_saber_count_sexo()),                      "caption": "Cantidad de evaluados por sexo."},
+                    {"id": "sb4", "title": "Distribución por Edad",      "b64": safe_fig(lambda: calc_plot_saber_count_edad()),                      "caption": "Cantidad de evaluados por edad."},
+                    {"id": "sb5",  "title": "Global por Sexo",        "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo")),                        "caption": "Evolución del puntaje global desagregado por sexo."},
+                    {"id": "sb6",  "title": "Global por Edad",        "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad")),                    "caption": "Evolución del puntaje global desagregado por grupo de edad."},
+                    {"id": "sb7",  "title": "Razonamiento por Sexo",  "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo")),             "caption": "Tendencia de Razonamiento Cuantitativo por sexo."},
+                    {"id": "sb8",  "title": "Razonamiento por Edad",  "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad")),      "caption": "Tendencia de Razonamiento Cuantitativo por grupo de edad."},
+                    {"id": "sb9",  "title": "Lectura por Sexo",       "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo")),              "caption": "Tendencia de Lectura Crítica desagregada por sexo."},
+                    {"id": "sb10", "title": "Lectura por Edad",       "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad")),       "caption": "Tendencia de Lectura Crítica por grupo de edad."},
+                    {"id": "sb11", "title": "Ciudadanas por Sexo",    "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo")),             "caption": "Tendencia de Competencias Ciudadanas por sexo."},
+                    {"id": "sb12", "title": "Ciudadanas por Edad",    "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad")),      "caption": "Tendencia de Competencias Ciudadanas por grupo de edad."},
+                    {"id": "sb13", "title": "Inglés por Sexo",        "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo")),                      "caption": "Tendencia del módulo de Inglés desagregada por sexo."},
+                    {"id": "sb14", "title": "Inglés por Edad",        "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad")),                "caption": "Tendencia del módulo de Inglés por grupo de edad."},
+                    {"id": "sb15", "title": "Comunicación por Sexo",  "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo")),              "caption": "Tendencia de Comunicación Escrita desagregada por sexo."},
+                    {"id": "sb16", "title": "Comunicación por Edad",  "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad")),       "caption": "Tendencia de Comunicación Escrita por grupo de edad."}
                 ]
             },
             "demo": {
                 "technical_note": "Caracterización basada en formularios del ICFES.",
                 "plots": [
-                    {"id": "pr1", "title": "Socio-demográfico Sexo", "b64": safe_fig(build_comp_saber_categorical, "sexo"), "caption": "Composición por género."},
-                    {"id": "pr2", "title": "Socio-demográfico Edad", "b64": safe_fig(build_comp_saber_categorical, "grupo_edad"), "caption": "Composición por rangos de edad."},
-                    {"id": "pr3", "title": "Horas de Trabajo", "b64": safe_fig(build_comp_saber_categorical, "pro_gen_estu_horassemanatrabaja"), "caption": "Carga laboral reportada (Proxy)."},
-                    {"id": "pr4", "title": "Estrato Social", "b64": safe_fig(build_comp_saber_categorical, "pro_gen_fami_estratovivienda"), "caption": "Perfil económico de los hogares."}
+                    {"id": "pr1", "title": "Socio-demográfico Sexo",  "b64": safe_fig(lambda: calc_plot_saber_categorical("sexo", "Sexo")),                                        "caption": "Composición por género."},
+                    {"id": "pr2", "title": "Socio-demográfico Edad",  "b64": safe_fig(lambda: calc_plot_saber_categorical("grupo_edad", "Edad")),                                  "caption": "Composición por rangos de edad."},
+                    {"id": "pr3", "title": "Horas de Trabajo",         "b64": safe_fig(lambda: calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Trabajo")),          "caption": "Carga laboral reportada (Proxy)."},
+                    {"id": "pr4", "title": "Estrato Social",           "b64": safe_fig(lambda: calc_plot_saber_categorical("pro_gen_fami_estratovivienda", "Estrato")),             "caption": "Perfil económico de los hogares."},
+                    {"id": "pr5", "title": "Evolución por Sexo",       "b64": safe_fig(lambda: calc_plot_saber_categorical_trend("sexo", "Sexo")),                                  "caption": "Evolución histórica por sexo."},
+                    {"id": "pr6", "title": "Evolución por Edad",       "b64": safe_fig(lambda: calc_plot_saber_categorical_trend("grupo_edad", "Edad")),                            "caption": "Evolución histórica por grupo de edad."},
+                    {"id": "pr7", "title": "Evolución de Trabajo",     "b64": safe_fig(lambda: calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo")),    "caption": "Evolución de carga laboral."},
+                    {"id": "pr8", "title": "Evolución de Estrato",     "b64": safe_fig(lambda: calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato")),       "caption": "Evolución del perfil económico."}
                 ]
             }
         }
+        
+        print(f"DEBUG SABER KPIS: s_global={report_data['kpis']['s_global']}, s_razona={report_data['kpis']['s_razona']}")
+        print(f"DEBUG DEMO PLOT STATUS: PR1={type(report_data['demo']['plots'][0]['b64'])}")
+        
         return report_data
 
     @reactive.effect
@@ -5232,5 +5256,135 @@ def server(input, output, session):
     @render.download(filename=lambda: f"Informe_Mercado_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
     def download_pdf_inner():
         return download_pdf()
+
+
+    # ==========================================
+    # LOGICA DE DESCARGA PDF TENDENCIA COMPARADA
+    # ==========================================
+    @reactive.calc
+    def calc_all_comp_report_data():
+        """Genera el JSON para el PDF de Tendencia Comparada"""
+        def safe_fig_comp(fn, *args, **kwargs):
+            try:
+                import plotly.graph_objects as go
+                fig = fn(*args, **kwargs)
+                return fig_to_base64(fig)
+            except Exception as e:
+                import plotly.graph_objects as go
+                print("Error safe_fig_comp:", e)
+                return fig_to_base64(go.Figure())
+
+        attr = comp_profile_attr()
+        if not attr:
+            raise Exception("Debe seleccionar un programa base.")
+
+        report = {
+            "metadata": {
+                "base_codigo": attr["codigo"],
+                "base_nombre": attr["nombre_del_programa"],
+                "base_institucion": attr["nombre_institucion"]
+            },
+            "matricula": {
+                "plots": [
+                    {
+                        "id": "c1", "title": "Primer Curso", 
+                        "b64": safe_fig_comp(lambda: build_comp_plot(*calc_comp_metric(df_pcurso, "primer_curso_sum"), "Primer Curso")), 
+                        "caption": "Tendencia Primer Curso"
+                    },
+                    {
+                        "id": "c2", "title": "Estudiantes Matriculados", 
+                        "b64": safe_fig_comp(lambda: build_comp_plot(*calc_comp_metric(df_matriculados, "matriculados_sum"), "Matriculados")), 
+                        "caption": "Tendencia Matriculados"
+                    },
+                    {
+                        "id": "c3", "title": "Graduados", 
+                        "b64": safe_fig_comp(lambda: build_comp_plot(*calc_comp_metric(df_graduados, "graduados_sum"), "Graduados")), 
+                        "caption": "Tendencia Graduados"
+                    }
+                ]
+            },
+            "empleabilidad": {
+                "plots": [
+                    {
+                        "id": "c4", "title": "Empleabilidad OLE",
+                        "b64": safe_fig_comp(lambda: build_comp_plot_ole(*calc_comp_ole_metric("tasa_cotizantes"), "Tasa Cotizantes")),
+                        "caption": "Tasa de Empleabilidad OLE"
+                    },
+                    {
+                        "id": "c5", "title": "Salario Evaluado",
+                        "b64": safe_fig_comp(lambda: build_comp_plot_salario(*get_comp_salario_series(), "Salario Promedio Estimado")),
+                        "caption": "Salario de Enganche Estimado"
+                    }
+                ]
+            },
+            "desercion": {
+                "plots": [
+                    {
+                        "id": "c6", "title": "Deserción SPADIES",
+                        "b64": safe_fig_comp(lambda: build_comp_plot_ole(*calc_comp_des_metric("tasa_desercion_inst"), "Deserción Promedio")),
+                        "caption": "Tasa de Deserción Institucional"
+                    }
+                ]
+            },
+            "saber": {
+                "plots": [
+                    {
+                        "id": "c7", "title": "Puntaje Global SABER PRO",
+                        "b64": safe_fig_comp(lambda: build_comp_plot_saber(*get_comp_saber_series('pro_gen_punt_global'), "Puntaje Global")),
+                        "caption": "Evolución de Puntaje Global en SABER PRO"
+                    },
+                    {
+                        "id": "c8", "title": "Inglés SABER PRO",
+                        "b64": safe_fig_comp(lambda: build_comp_plot_saber(*get_comp_saber_series('pro_gen_mod_ingles_punt'), "Inglés")),
+                        "caption": "Evolución de Puntaje de Inglés en SABER PRO"
+                    }
+                ]
+            }
+        }
+        return report
+
+    @render.download(filename=lambda: f"Informe_Tendencia_Comparada_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+    def btn_download_comp():
+        with ui.Progress(min=0, max=1) as p:
+            try:
+                p.set(message="Generando Reporte Comparativo...", detail="Esto puede tardar unos segundos...")
+                import json
+                report_data = calc_all_comp_report_data()
+                report_json = json.dumps(report_data)
+                
+                template_path = app_dir / "web_report_demo" / "viewer_comp.html"
+                if not template_path.exists():
+                    template_path = app_dir / "viewer_comp.html"
+                
+                with open(template_path, "r", encoding="utf-8") as f:
+                    template_content = f.read()
+                
+                html_content = template_content.replace(
+                    '<script src="data_ANTIOQUIA.js"></script>',
+                    f'<script>window.__REPORT_DATA_COMP__ = {report_json};</script>'
+                )
+                
+                # Manejar logo (igual que el otro)
+                logo_path = app_dir / "logo_symbiotic.svg"
+                if logo_path.exists():
+                    import base64
+                    with open(logo_path, "rb") as image_file:
+                        encoded_string = base64.b64encode(image_file.read()).decode()
+                        logo_data = f"data:image/svg+xml;base64,{encoded_string}"
+                        html_content = html_content.replace('src="../logo_symbiotic.svg"', f'src="{logo_data}"')
+                
+                pdf_buffer = io.BytesIO()
+                HTML(string=html_content, base_url=str(app_dir)).write_pdf(pdf_buffer)
+                pdf_buffer.seek(0)
+                yield pdf_buffer.read()
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"DEBUG: Error Detallado en PDF Comparativo:\n{error_details}")
+                if "SilentException" in str(type(e)) or "programa base" in str(e):
+                    ui.notification_show("No se pudo generar el PDF comparativo: seleccione un programa base.", type="warning", duration=15)
+                else:
+                    ui.notification_show(f"Error generando PDF comparativo: {str(e)}", type="error", duration=15)
+                yield b"Error"
 
 app = App(app_ui, server, static_assets={"/temp_report": app_dir / "temp_report"})

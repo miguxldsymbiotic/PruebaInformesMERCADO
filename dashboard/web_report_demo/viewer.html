@@ -1062,8 +1062,8 @@
                 const pt = sourceArr.find(x => x.id === arrId);
                 if(pt && plotHtmlId) {
                     plotHtmlId.src = bSrc(pt.b64);
-                    headHtmlId.innerHTML = pt.title;
-                    capHtmlId.innerHTML = pt.caption;
+                    if(headHtmlId) headHtmlId.innerHTML = pt.title;
+                    if(capHtmlId) capHtmlId.innerHTML = pt.caption;
                 }
             };
 
