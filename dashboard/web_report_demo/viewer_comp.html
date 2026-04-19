@@ -3,154 +3,821 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informe Comparativo</title>
+    <title>Informe Comparativo - SymbioTIC</title>
+    <script src="data_ANTIOQUIA.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        /* ===== DESIGN TOKENS (idéntico al viewer.html validado) ===== */
         :root {
-            --color-slate: #31497e;
+            --color-slate: #385A64;
             --color-slate-light: #527A86;
             --color-coral: #DF6C5B;
             --color-bg-app: #e2e8f0;
             --color-bg-paper: #ffffff;
-            --color-comp: #674f95;
             --font-heading: 'Montserrat', sans-serif;
             --font-body: 'Nunito', sans-serif;
         }
 
-        body { font-family: var(--font-body); background-color: var(--color-bg-app); margin: 0; padding: 40px 0; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-        
+        body {
+            font-family: var(--font-body);
+            background-color: var(--color-bg-app);
+            color: #334155;
+            margin: 0;
+            padding: 40px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* ===== PÁGINA (carta, identico al validado) ===== */
         .page {
-            width: 8.5in; height: 11in; padding: 0.5in 0.6in; background: var(--color-bg-paper);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); box-sizing: border-box; position: relative;
-            overflow: hidden; display: flex; flex-direction: column; break-after: page;
+            width: 8.5in;
+            height: 11in;
+            padding: 0.5in 0.6in;
+            background: var(--color-bg-paper);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            page-break-after: always;
+            break-after: page;
         }
 
         h1, h2, h3, h4 { font-family: var(--font-heading); margin: 0; line-height: 1.2; color: var(--color-slate); }
+        h1 { font-size: 2.0rem; font-weight: 900; letter-spacing: -1px; }
+
+        .text-coral { color: var(--color-coral); }
+
         .header-top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--color-slate); padding-bottom: 8px; margin-bottom: 12px; }
-        .subtitle { font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--color-comp); margin-bottom: 4px; }
-        
-        .grid-plots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; align-content: start; }
-        .plot-card { border: 1px solid #e2e8f0; border-radius: 8px; background: #fff; display: flex; flex-direction: column; overflow: hidden; }
-        .plot-header { padding: 6px 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-family: var(--font-heading); font-size: 0.80rem; font-weight: 800; color: var(--color-slate); text-align: center; }
-        .plot-body { padding: 6px; flex-grow: 1; display: flex; align-items: center; justify-content: center; height: 220px;}
+        .subtitle { font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--color-coral); margin-bottom: 4px; }
+        .meta-date { font-family: var(--font-heading); font-size: 0.75rem; font-weight: 700; color: var(--color-slate-light); }
+
+        /* ===== NOTA TÉCNICA (idéntica al validado) ===== */
+        .technical-note {
+            font-size: 0.72em;
+            color: #475569;
+            background-color: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 4px solid var(--color-slate);
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        /* ===== KPIs (idénticos al validado) ===== */
+        .kpi-container { display: flex; gap: 10px; margin-bottom: 12px; }
+        .kpi-card {
+            flex: 1; background: #f8fafc; border-left: 3px solid var(--color-coral);
+            padding: 10px; border-radius: 0 6px 6px 0;
+        }
+        .kpi-label { font-family: var(--font-heading); font-size: 0.60rem; text-transform: uppercase; font-weight: 800; color: var(--color-slate-light); margin-bottom: 2px; }
+        .kpi-value { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 900; color: var(--color-slate); margin: 0; }
+
+        /* ===== GRID 3 COLUMNAS (copiado del viewer.html validado) ===== */
+        .grid-plots {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            align-content: start;
+        }
+
+        .grid-plots-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            align-content: start;
+        }
+
+        /* ===== PLOT CARD (idéntica al validado) ===== */
+        .plot-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .plot-card.full-width { grid-column: span 2; }
+
+        .plot-header { padding: 6px 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-family: var(--font-heading); font-size: 0.80rem; font-weight: 800; color: var(--color-slate); }
+        .plot-body { padding: 6px; flex-grow: 1; display: flex; align-items: center; justify-content: center; height: 155px; }
         .plot-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        
+        .plot-footer { padding: 6px 10px; font-size: 0.62rem; color: #64748b; border-top: 1px solid #e2e8f0; line-height: 1.3; }
+        .plot-footer b { color: #334155; }
+
+        /* ===== PORTADA ===== */
+        .cover-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .cover-title { font-size: 2.8rem; font-weight: 900; color: var(--color-slate); margin-bottom: 10px; text-transform: uppercase; line-height: 1; }
+        .cover-divider { width: 80px; height: 6px; background: var(--color-coral); margin: 20px 0; border-radius: 3px; }
+        .cover-program-box { background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; width: 85%; margin-top: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .cover-label { font-size: 0.75rem; font-weight: 800; color: var(--color-coral); text-transform: uppercase; margin-bottom: 5px; }
+        .cover-program-name { font-size: 1.4rem; font-weight: 800; color: var(--color-slate); margin-bottom: 10px; }
+
+        /* ===== CRITERIOS ===== */
+        .filter-tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .filter-tag { background: white; border: 1px solid var(--color-slate); color: var(--color-slate); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+
+        .footer-page { position: absolute; bottom: 0.15in; right: 0.6in; font-size: 0.65rem; font-weight: 800; color: #94a3b8; font-family: var(--font-heading); }
+
+        /* ===== IMPRESIÓN ===== */
         @page { size: letter; margin: 0; }
         @media print {
             body { background: white !important; padding: 0 !important; gap: 0 !important; }
-            .page { margin: 0 !important; box-shadow: none !important; border: none !important; width: 8.5in !important; height: 11in !important; -webkit-print-color-adjust: exact; }
+            .page { margin: 0 !important; box-shadow: none !important; width: 8.5in !important; height: 11in !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
+            .technical-note { border-left-color: var(--color-slate) !important; background-color: #f1f5f9 !important; }
+            .kpi-card { border-left-color: var(--color-coral) !important; background-color: #f8fafc !important; }
+            .plot-header { background-color: #f8fafc !important; }
+            .toolbar { display: none !important; }
         }
+
+        /* ===== TOOLBAR FLOTANTE (copiado de viewer.html validado) ===== */
+        .toolbar {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-premium {
+            background: linear-gradient(135deg, var(--color-coral), #E68576);
+            color: white;
+            border: none;
+            padding: 16px 28px;
+            border-radius: 50px;
+            font-family: var(--font-body);
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(223, 108, 91, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+        .btn-premium:hover { transform: translateY(-4px) scale(1.02); }
     </style>
 </head>
 <body>
 
-    <!-- PÁGINA 1: Resumen y Matrícula -->
-    <div class="page">
-        <div class="header-top">
-            <div>
-                <div class="subtitle">ANÁLISIS COMPARATIVO DE TENDENCIAS</div>
-                <h1>Tendencias de Matrícula <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;" id="lbl-title">Programa vs. Grupo Comparable</span></h1>
-            </div>
-            <div style="text-align: right;">
-                <img src="../logo_symbiotic.svg" style="height: 40px; opacity: 0.8;">
-            </div>
-        </div>
-
-        <p style="font-size: 0.8rem; color: #475569; line-height: 1.4; margin-bottom: 20px; text-align: justify;">
-            Este reporte analiza el perfil histórico de matrícula para el programa seleccionado, constratándolo contra la mediana y desviación absoluta medible (MAD) de un grupo comparable extraído del Sistema Nacional de Información de la Educación Superior (SNIES).
-        </p>
-
-        <div class="grid-plots" style="margin-bottom: auto;">
-            <div class="plot-card" style="grid-column: span 2;">
-                <div class="plot-header" id="ph-c1">Primer Curso</div>
-                <div class="plot-body" style="height: 200px;"><img id="img-c1" class="plot-img" src=""></div>
-            </div>
-            <div class="plot-card">
-                <div class="plot-header" id="ph-c2">Matriculados</div>
-                <div class="plot-body"><img id="img-c2" class="plot-img" src=""></div>
-            </div>
-            <div class="plot-card">
-                <div class="plot-header" id="ph-c3">Graduados</div>
-                <div class="plot-body"><img id="img-c3" class="plot-img" src=""></div>
-            </div>
-        </div>
+    <div class="toolbar">
+        <button class="btn-premium" onclick="window.print()">
+            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect><path d="M6 9V3h12v6"></path></svg>
+            Imprimir Reporte
+        </button>
     </div>
 
-    <!-- PÁGINA 2: OLE y Deserción -->
+    <!-- ============================================================
+         PÁGINA 0: PORTADA
+         ============================================================ -->
+    <div class="page">
+        <div class="cover-content">
+            <img src="../logo_symbiotic.svg" alt="SymbioTIC" style="height:70px; margin-bottom:25px;" onerror="this.style.display='none'">
+            <div class="subtitle">Análisis Competitivo de Mercado</div>
+            <div class="cover-title">Informe de<br>Tendencia Comparada</div>
+            <div class="cover-divider"></div>
+
+            <div class="cover-program-box">
+                <div class="cover-label">Programa Seleccionado</div>
+                <div class="cover-program-name" id="val-base-program">Cargando Programa...</div>
+                <div style="font-size:0.9rem; color:var(--color-slate-light); font-weight:700;">
+                    <span id="val-base-inst">...</span><br>
+                    <span>Código SNIES: </span><span id="val-base-code">...</span>
+                </div>
+            </div>
+
+            <div style="margin-top:30px; font-size:0.85rem; color:#475569; max-width:85%; line-height:1.5;" id="val-cover-intro">
+                Este informe presenta un análisis comparativo y de benchmarking estratégico entre el programa seleccionado y su grupo de pares académicos, evaluando indicadores de matrícula, financieros, laborales y de excelencia académica.
+            </div>
+
+            <div style="margin-top:30px; font-weight:800; color:var(--color-slate); font-size:0.85rem;" id="val-date-cover">
+                Fecha de Generación: ...
+            </div>
+        </div>
+        <div class="footer-page">PORTADA</div>
+    </div>
+
+    <!-- ============================================================
+         PÁGINA 1: GRUPO DE COMPARACIÓN
+         ============================================================ -->
     <div class="page">
         <div class="header-top">
             <div>
-                <div class="subtitle">IMPACTO Y EFICIENCIA INTERNA</div>
-                <h1>Laboral, Deserción y Calidad <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">OLE, SPADIES, ICFES</span></h1>
+                <div class="subtitle">CONFIGURACIÓN DEL ANÁLISIS</div>
+                <h1>1. Grupo de Comparación</h1>
             </div>
-            <div style="text-align: right;">
-                <img src="../logo_symbiotic.svg" style="height: 40px; opacity: 0.8;">
+            <div style="text-align:right;">
+                <div class="meta-date" id="val-date-p1">Corte Oficial</div>
             </div>
         </div>
 
-        <div class="grid-plots" style="grid-template-columns: repeat(2, 1fr); margin-bottom: auto;">
-            <div class="plot-card">
-                <div class="plot-header" id="ph-c4">Tasa Cotizantes</div>
-                <div class="plot-body"><img id="img-c4" class="plot-img" src=""></div>
-            </div>
-            <div class="plot-card">
-                <div class="plot-header" id="ph-c5">Salario Promedio</div>
-                <div class="plot-body"><img id="img-c5" class="plot-img" src=""></div>
-            </div>
-            
-            <div class="plot-card" style="grid-column: span 2;">
-                <div class="plot-header" id="ph-c6">Deserción SPADIES</div>
-                <div class="plot-body" style="height: 180px;"><img id="img-c6" class="plot-img" src=""></div>
-            </div>
+        <div class="technical-note">
+            <b>Atributos de Similitud Activos:</b>&nbsp;
+            <span id="val-filtros-text">Cargando filtros...</span>
+        </div>
 
-            <div class="plot-card">
-                <div class="plot-header" id="ph-c7">Saber PRO - Global</div>
-                <div class="plot-body"><img id="img-c7" class="plot-img" src=""></div>
+        <div class="filter-tag-container" id="container-filtros" style="margin-bottom:15px;"></div>
+
+        <p style="font-size:0.78rem; color:#475569; line-height:1.5; margin-bottom:15px; text-align:justify;" id="val-cover-intro-p1">
+            Análisis basado en atributos de segmentación para definir el grupo par comercial.
+        </p>
+
+        <!-- KPIs del Universo -->
+        <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--color-slate); border-bottom:1px solid #e2e8f0; padding-bottom:4px;">Métricas del Clúster Comparable</h3>
+        <div class="kpi-container">
+            <div class="kpi-card" style="border-left-color:var(--color-slate);">
+                <div class="kpi-label">Universo de Comparación (Programas)</div>
+                <div class="kpi-value" id="k-universo">0</div>
             </div>
-            <div class="plot-card">
-                <div class="plot-header" id="ph-c8">Saber PRO - Inglés</div>
-                <div class="plot-body"><img id="img-c8" class="plot-img" src=""></div>
+            <div class="kpi-card">
+                <div class="kpi-label">Valor Neto del Grupo: Primer Curso</div>
+                <div class="kpi-value" id="k-neto-pcurso">0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Valor Neto del Grupo: Matriculados</div>
+                <div class="kpi-value" id="k-neto-matricula">0</div>
             </div>
         </div>
+        <div class="kpi-container" style="margin-bottom:20px;">
+            <div class="kpi-card">
+                <div class="kpi-label">Valor Neto del Grupo: Graduados</div>
+                <div class="kpi-value" id="k-neto-graduados">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#ef4444;">
+                <div class="kpi-label">Desempeño Saber PRO Comparable (Global)</div>
+                <div class="kpi-value" id="k-comp-sb-global">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#22c55e;">
+                <div class="kpi-label">Tasa de Empleabilidad Comparable</div>
+                <div class="kpi-value" id="k-comp-emp">0%</div>
+            </div>
+        </div>
+
+        <div style="margin-top:auto; background:#f8fafc; padding:14px 16px; border-radius:8px; font-size:0.78rem; line-height:1.5; color:#475569; border-left:4px solid var(--color-slate);">
+            <b>Nota sobre el Universo:</b> El grupo de comparación representa el conjunto de programas que cumplen con los criterios de segmentación activos. Los valores de "Neto" corresponden a la suma total de estudiantes del clúster en el último año consolidado por el SNIES. La Mediana se usa como referencia de comparación para el programa base.
+        </div>
+
+        <div class="footer-page">PÁGINA 1</div>
+    </div>
+
+    <!-- ============================================================
+         PÁGINA 2: TENDENCIAS DE MATRÍCULA (3 columnas)
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">RESULTADOS ESTRATÉGICOS — SNIES</div>
+                <h1>2. Tendencias de Matrícula<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Primer Curso, Matriculados y Graduados</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Fuente: SNIES</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:12px; text-align:justify;">
+            Comparativa histórica entre el programa seleccionado (línea base) y la mediana del grupo comparable (banda sombreada). Permite identificar brechas y tendencias de posicionamiento relativo en el ciclo educativo completo.
+        </p>
+
+        <!-- KPIs Base vs Comp -->
+        <div class="kpi-container" style="margin-bottom:6px;">
+            <div class="kpi-card" style="background:rgba(223,108,91,0.05);">
+                <div class="kpi-label">Programa Seleccionado (Primer Curso)</div>
+                <div class="kpi-value" id="k-base-pcurso">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:var(--color-slate-light);">
+                <div class="kpi-label">Mediana Comparable (Primer Curso)</div>
+                <div class="kpi-value" id="k-comp-pcurso">0</div>
+            </div>
+            <div class="kpi-card" style="background:rgba(223,108,91,0.05);">
+                <div class="kpi-label">Programa Seleccionado (Matriculados)</div>
+                <div class="kpi-value" id="k-base-matricula">0</div>
+            </div>
+        </div>
+        <div class="kpi-container" style="margin-bottom:12px;">
+            <div class="kpi-card" style="border-left-color:var(--color-slate-light);">
+                <div class="kpi-label">Mediana Comparable (Matriculados)</div>
+                <div class="kpi-value" id="k-comp-matricula">0</div>
+            </div>
+            <div class="kpi-card" style="background:rgba(223,108,91,0.05);">
+                <div class="kpi-label">Programa Seleccionado (Graduados)</div>
+                <div class="kpi-value" id="k-base-graduados">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:var(--color-slate-light);">
+                <div class="kpi-label">Mediana Comparable (Graduados)</div>
+                <div class="kpi-value" id="k-comp-graduados">0</div>
+            </div>
+        </div>
+
+        <!-- 3 gráficas en una fila -->
+        <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--color-slate); border-bottom:1px solid #e2e8f0; padding-bottom:2px;">1. Evolución Comparada (Totales)</h3>
+        <div class="grid-plots">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-t1">Primer Curso (Total)</div>
+                <div class="plot-body"><img id="img-t1" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-t1">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-t2">Matriculados (Total)</div>
+                <div class="plot-body"><img id="img-t2" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-t2">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-t3">Graduados (Total)</div>
+                <div class="plot-body"><img id="img-t3" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-t3">Fuente...</div>
+            </div>
+        </div>
+
+        <div class="technical-note" style="margin-top:10px;">
+            <b>Nota Técnica:</b> <span id="val-note-snies">Fuente: Registros administrativos SNIES.</span>
+        </div>
+
+        <div class="footer-page">PÁGINA 2</div>
+    </div>
+
+    <!-- ============================================================
+         PÁGINA 3: FINANCIERO — COSTOS Y CRÉDITOS
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">MERCADO Y FINANZAS — SNIES</div>
+                <h1>3. Costos y Créditos<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Posicionamiento de Precio y Carga Académica</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Fuente: SNIES</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:12px; text-align:justify;">
+            Análisis comparativo del costo de matrícula y la carga académica en créditos del programa seleccionado frente a su grupo de pares, permitiendo identificar el posicionamiento de precio y la intensidad curricular relativa.
+        </p>
+
+        <div class="kpi-container" style="margin-bottom:8px;">
+            <div class="kpi-card">
+                <div class="kpi-label">Programa Seleccionado (Costo de Matrícula)</div>
+                <div class="kpi-value" id="k-base-costo">$0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:var(--color-slate-light);">
+                <div class="kpi-label">Grupo Comparable (Costo Promedio)</div>
+                <div class="kpi-value" id="k-comp-costo-avg">$0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:var(--color-slate-light);">
+                <div class="kpi-label">Grupo Comparable (Costo Mediana)</div>
+                <div class="kpi-value" id="k-comp-costo-med">$0</div>
+            </div>
+        </div>
+        <div class="kpi-container" style="margin-bottom:15px;">
+            <div class="kpi-card">
+                <div class="kpi-label">Programa Seleccionado (Número de Créditos)</div>
+                <div class="kpi-value" id="k-base-creditos">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:var(--color-slate-light);">
+                <div class="kpi-label">Grupo Comparable (Promedio de Créditos)</div>
+                <div class="kpi-value" id="k-comp-creditos">0</div>
+            </div>
+            <div style="flex:1;"></div>
+        </div>
+
+        <!-- 2 gráficas -->
+        <div class="grid-plots-2" style="margin-bottom:auto;">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-v1">Distribución Costo Matrícula</div>
+                <div class="plot-body" style="height:200px;"><img id="img-v1" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-v1">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-v2">Distribución Número de Créditos</div>
+                <div class="plot-body" style="height:200px;"><img id="img-v2" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-v2">Fuente...</div>
+            </div>
+        </div>
+
+        <div class="technical-note" style="margin-top:10px;">
+            <b>Nota Técnica:</b> <span id="val-note-sal">Costos y créditos reportados por las instituciones al SNIES.</span>
+        </div>
+
+        <div class="footer-page">PÁGINA 3</div>
+    </div>
+
+    <!-- ============================================================
+         PÁGINA 4: LABORAL I — EMPLEABILIDAD
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">VALORACIÓN LABORAL — OLE</div>
+                <h1>4. Inserción y Empleabilidad<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Vinculación Formal y Dependencia</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Fuente: OLE</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:12px; text-align:justify;">
+            Esta sección integra datos del Observatorio Laboral para la Educación (OLE) para visualizar cómo se insertan los egresados en el mercado laboral formal, comparando el programa base con el grupo de pares.
+        </p>
+
+        <div class="kpi-container" style="margin-bottom:12px;">
+            <div class="kpi-card" style="border-left-color:var(--color-slate);">
+                <div class="kpi-label">Tasa de Empleabilidad — Programa Seleccionado</div>
+                <div class="kpi-value" id="k-base-emp">0%</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Tasa de Empleabilidad — Grupo Comparable (Media)</div>
+                <div class="kpi-value" id="k-comp-emp-p4">0%</div>
+            </div>
+            <div style="flex:1;"></div>
+        </div>
+
+        <!-- Fila 1: Tendencia + Dependientes -->
+        <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--color-slate); border-bottom:1px solid #e2e8f0; padding-bottom:2px;">1. Evolución Comparada</h3>
+        <div class="grid-plots-2" style="margin-bottom:12px;">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-o1">Tasa de Empleabilidad</div>
+                <div class="plot-body" style="height:165px;"><img id="img-o1" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-o1">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-o2">Estabilidad Laboral</div>
+                <div class="plot-body" style="height:165px;"><img id="img-o2" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-o2">Fuente...</div>
+            </div>
+        </div>
+
+        <!-- Fila 2: Distribución -->
+        <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--color-slate); border-bottom:1px solid #e2e8f0; padding-bottom:2px;">2. Distribución en el Clúster</h3>
+        <div class="grid-plots-2" style="margin-bottom:auto;">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-o3">Posicionamiento Mercado</div>
+                <div class="plot-body" style="height:145px;"><img id="img-o3" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-o3">Fuente...</div>
+            </div>
+            <div style=""></div>
+        </div>
+
+        <div class="technical-note" style="margin-top:10px;">
+            <b>Nota Técnica:</b> <span id="val-note-ole">Fuente: Observatorio Laboral para la Educación (OLE). Graduados que cotizan al sistema.</span>
+        </div>
+
+        <div class="footer-page">PÁGINA 4</div>
+    </div>
+
+    <!-- ============================================================
+         PÁGINA 5: LABORAL II — SALARIOS
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">MERCADO LABORAL: RETORNO ECONÓMICO — OLE</div>
+                <h1>5. Retorno Salarial<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Salario de Enganche y Brechas</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Fuente: OLE</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:12px; text-align:justify;">
+            Esta sección analiza la remuneración inicial de los egresados, un indicador crítico del retorno de inversión educativa. Se compara el salario del programa base frente a la distribución del grupo comparable.
+        </p>
+
+        <div class="kpi-container" style="margin-bottom:12px;">
+            <div class="kpi-card">
+                <div class="kpi-label">Salario de Enganche — Programa Seleccionado</div>
+                <div class="kpi-value" id="k-base-sal">$0</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Salario de Enganche — Grupo Comparable (Media)</div>
+                <div class="kpi-value" id="k-comp-sal">$0</div>
+            </div>
+            <div style="flex:1;"></div>
+        </div>
+
+        <!-- 2 gráficas: Evolución + Distribución -->
+        <div class="grid-plots-2" style="margin-bottom:auto;">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-o4">Salario de Enganche (Evolución)</div>
+                <div class="plot-body" style="height:280px;"><img id="img-o4" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-o4">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-o5">Brecha Salarial (Distribución)</div>
+                <div class="plot-body" style="height:280px;"><img id="img-o5" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-o5">Fuente...</div>
+            </div>
+        </div>
+
+        <div class="technical-note" style="margin-top:10px;">
+            <b>Nota Metodológica:</b> Los datos de salarios se basan en registros del OLE. El salario corresponde al primer empleo formal reportado por graduados dentro de los dos años siguientes a la titulación.
+        </div>
+
+        <div class="footer-page">PÁGINA 5</div>
+    </div>
+
+    <!-- ============================================================
+         PÁGINA 6: PERMANENCIA Y DESERCIÓN
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">BIENESTAR ESTUDIANTIL — SPADIES</div>
+                <h1>6. Permanencia y Deserción<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Retención y Sostenibilidad Académica</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Fuente: SPADIES</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:12px; text-align:justify;">
+            La capacidad de retención es un factor determinante en la sostenibilidad social y académica. Esta sección compara las tasas de deserción del programa base frente al grupo comparable, identificando fortalezas y riesgos de permanencia.
+        </p>
+
+        <div class="kpi-container" style="margin-bottom:20px;">
+            <div class="kpi-card" style="border-left-color:#ef4444;">
+                <div class="kpi-label">Tasa de Deserción — Programa Seleccionado</div>
+                <div class="kpi-value" id="k-base-des" style="color:#b91c1c;">0%</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Media de Deserción — Grupo Comparable</div>
+                <div class="kpi-value" id="k-comp-des">0%</div>
+            </div>
+            <div style="flex:1;"></div>
+        </div>
+
+        <div class="grid-plots-2" style="margin-bottom:auto;">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-d1">Deserción Anual (Tendencia)</div>
+                <div class="plot-body" style="height:275px;"><img id="img-d1" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-d1">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-d2">Benchmarking Deserción (Distribución)</div>
+                <div class="plot-body" style="height:275px;"><img id="img-d2" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-d2">Fuente...</div>
+            </div>
+        </div>
+
+        <div class="technical-note" style="margin-top:10px;">
+            <b>Nota Técnica:</b> <span id="val-note-spadies">Fuente: SPADIES. La deserción anual se calcula sobre cohortes anuales por programa.</span>
+        </div>
+
+        <div class="footer-page">PÁGINA 6</div>
+    </div>
+
+    <!-- ============================================================
+         PÁGINA 7: SABER PRO (I) — GLOBAL + INGLÉS + RAZONAMIENTO
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">EXCELENCIA ACADÉMICA — ICFES</div>
+                <h1>7. Pruebas SABER PRO (I)<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Competencias Genéricas — Tendencias</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Fuente: ICFES</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:10px; text-align:justify;">
+            Comparativa del desempeño en pruebas Saber PRO entre el programa seleccionado y la mediana del grupo comparable. Los puntajes están normalizados en escala 0-300 por el ICFES.
+        </p>
+
+        <!-- Grid 4 columnas: Programa | Comparable x 6 dimensiones -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+            <div class="kpi-card" style="border-left-color:#31497e;">
+                <div class="kpi-label">Programa Seleccionado (Global)</div>
+                <div class="kpi-value" id="k-base-sb-global" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#64748b;">
+                <div class="kpi-label">Mediana Comparable (Global)</div>
+                <div class="kpi-value" id="k-comp-sb-global" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#31497e;">
+                <div class="kpi-label">Programa Seleccionado (Razonamiento)</div>
+                <div class="kpi-value" id="k-base-sb-razona" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#64748b;">
+                <div class="kpi-label">Mediana Comparable (Razonamiento)</div>
+                <div class="kpi-value" id="k-comp-sb-razona" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#31497e;">
+                <div class="kpi-label">Programa Seleccionado (Lectura Cr&iacute;tica)</div>
+                <div class="kpi-value" id="k-base-sb-lectura" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#64748b;">
+                <div class="kpi-label">Mediana Comparable (Lectura Cr&iacute;tica)</div>
+                <div class="kpi-value" id="k-comp-sb-lectura" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#31497e;">
+                <div class="kpi-label">Programa Seleccionado (Ciudadanas)</div>
+                <div class="kpi-value" id="k-base-sb-ciuda" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#64748b;">
+                <div class="kpi-label">Mediana Comparable (Ciudadanas)</div>
+                <div class="kpi-value" id="k-comp-sb-ciuda" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#31497e;">
+                <div class="kpi-label">Programa Seleccionado (Ingl&eacute;s)</div>
+                <div class="kpi-value" id="k-base-sb-ingles" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#64748b;">
+                <div class="kpi-label">Mediana Comparable (Ingl&eacute;s)</div>
+                <div class="kpi-value" id="k-comp-sb-ingles" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#31497e;">
+                <div class="kpi-label">Programa Seleccionado (Com. Escrita)</div>
+                <div class="kpi-value" id="k-base-sb-escrita" style="font-size:1.2rem;">0</div>
+            </div>
+            <div class="kpi-card" style="border-left-color:#64748b;">
+                <div class="kpi-label">Mediana Comparable (Com. Escrita)</div>
+                <div class="kpi-value" id="k-comp-sb-escrita" style="font-size:1.2rem;">0</div>
+            </div>
+        </div>
+
+        <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--color-slate); border-bottom:1px solid #e2e8f0; padding-bottom:2px;">1. Global, Inglés y Razonamiento Cuantitativo</h3>
+        <div class="grid-plots" style="margin-bottom:12px;">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-sb1">Saber PRO Global</div>
+                <div class="plot-body" style="height:155px;"><img id="img-sb1" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-sb1">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-sb2">Saber PRO Inglés</div>
+                <div class="plot-body" style="height:155px;"><img id="img-sb2" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-sb2">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-sb3">Saber PRO Razonamiento</div>
+                <div class="plot-body" style="height:155px;"><img id="img-sb3" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-sb3">Fuente...</div>
+            </div>
+        </div>
+
+        <h3 style="font-size:0.9rem; margin-bottom:8px; color:var(--color-slate); border-bottom:1px solid #e2e8f0; padding-bottom:2px;">2. Lectura Crítica, Ciudadanas y Comunicación Escrita</h3>
+        <div class="grid-plots" style="margin-bottom:auto;">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-sb4">Saber PRO Lectura</div>
+                <div class="plot-body" style="height:155px;"><img id="img-sb4" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-sb4">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-sb5">Saber PRO Ciudadanas</div>
+                <div class="plot-body" style="height:155px;"><img id="img-sb5" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-sb5">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-sb6">Saber PRO Escrita</div>
+                <div class="plot-body" style="height:155px;"><img id="img-sb6" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-sb6">Fuente...</div>
+            </div>
+        </div>
+
+        <div class="technical-note" style="margin-top:10px;">
+            <b>Nota Técnica:</b> Fuente: ICFES. Puntajes normalizados en escala 0-300. La banda sombreada representa el rango intercuartílico del grupo comparable.
+        </div>
+
+        <div class="footer-page">PÁGINA 7</div>
+    </div>
+
+    <!-- ============================================================
+         PÁGINA 8: PERFIL SOCIODEMOGRÁFICO (3 columnas)
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">SOCIODEMOGRAFÍA — ICFES</div>
+                <h1>8. Perfil de los Estudiantes<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Caracterización Sociodemográfica</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Fuente: ICFES</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:12px; text-align:justify;">
+            Caracterización del perfil sociodemográfico de los evaluados en Saber PRO que pertenecen al grupo comparable. Permite identificar rasgos comunes del segmento estudiantil y diseñar estrategias de bienestar y captación focalizada.
+        </p>
+
+        <div class="grid-plots-2" style="margin-bottom:auto;">
+            <div class="plot-card">
+                <div class="plot-header" id="ph-pr1">Perfil por Sexo</div>
+                <div class="plot-body" style="height:240px;"><img id="img-pr1" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-pr1">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-pr2">Perfil por Rango de Edad</div>
+                <div class="plot-body" style="height:240px;"><img id="img-pr2" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-pr2">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-pr3">Carga Laboral (Horas/Semana)</div>
+                <div class="plot-body" style="height:240px;"><img id="img-pr3" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-pr3">Fuente...</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" id="ph-pr4">Estrato Socioeconómico</div>
+                <div class="plot-body" style="height:240px;"><img id="img-pr4" class="plot-img" src=""></div>
+                <div class="plot-footer" id="cap-pr4">Fuente...</div>
+            </div>
+        </div>
+
+        <div class="technical-note" style="margin-top:10px;">
+            <b>Nota Técnica:</b> Caracterización basada en formularios sociodemográficos del ICFES. La comparación se hace al nivel del grupo comparable de programas en Saber PRO.
+        </div>
+
+        <div class="footer-page">PÁGINA 8</div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const data = window.__REPORT_DATA_COMP__ || {};
-            if(!data.metadata) return;
+            const data = window.__REPORT_DATA_COMP__;
+            if (!data) { console.error("No se encontró __REPORT_DATA_COMP__"); return; }
 
-            document.getElementById("lbl-title").textContent = `Base: ${data.metadata.base_nombre} (SNIES: ${data.metadata.base_codigo})`;
+            // --- METADATOS ---
+            const setTxt = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.textContent = val; };
+            const setSrc = (id, b64) => { const el = document.getElementById(id); if (el && b64) el.src = "data:image/png;base64," + b64; };
 
-            const bSrc = (b64) => "data:image/png;base64," + b64;
-            const mapPlot = (pId, arrId, sourceArr) => {
-                const plotHtmlId = document.getElementById(`img-${pId}`);
-                const headHtmlId = document.getElementById(`ph-${pId}`);
-                const pt = sourceArr.find(x => x.id === arrId);
-                if(pt && plotHtmlId) {
-                    plotHtmlId.src = bSrc(pt.b64);
-                    if(headHtmlId) headHtmlId.innerHTML = pt.title;
-                }
+            setTxt("val-base-program", data.metadata.base_nombre);
+            setTxt("val-base-code",    data.metadata.base_codigo);
+            setTxt("val-base-inst",    data.metadata.base_institucion);
+            setTxt("val-date-cover",   "Fecha de Generación: " + data.metadata.date);
+            setTxt("val-date-p1",      "Corte: " + data.metadata.date);
+
+            // Filtros
+            const filtros = data.metadata.filtros || [];
+            const cont = document.getElementById("container-filtros");
+            const filtrosTxt = document.getElementById("val-filtros-text");
+            if (filtros.length > 0) {
+                if (filtrosTxt) filtrosTxt.textContent = filtros.join(" · ");
+                filtros.forEach(f => {
+                    const tag = document.createElement("div");
+                    tag.className = "filter-tag";
+                    tag.textContent = f;
+                    cont.appendChild(tag);
+                });
+                const intro = document.getElementById("val-cover-intro");
+                if (intro) intro.textContent = `Este informe compara el programa "${data.metadata.base_nombre}" con un grupo de pares que comparten: ${filtros.join(", ")}. El análisis identifica brechas y fortalezas competitivas en el mercado de educación superior.`;
+                const introP1 = document.getElementById("val-cover-intro-p1");
+                if (introP1) introP1.textContent = `Análisis basado en ${filtros.length} atributo(s) de segmentación para definir el grupo par comercial: ${filtros.join(", ")}.`;
+            } else {
+                if (filtrosTxt) filtrosTxt.textContent = "Sin filtros activos — Alcance nacional.";
+                cont.innerHTML = "<div class='filter-tag'>Selección Manual / Nacional</div>";
+            }
+
+            // --- KPIs ---
+            const kpis = data.kpis || {};
+            const km = {
+                "universo": "k-universo",
+                "neto_pcurso": "k-neto-pcurso", "neto_matricula": "k-neto-matricula", "neto_graduados": "k-neto-graduados",
+                "base_pcurso": "k-base-pcurso", "comp_pcurso": "k-comp-pcurso",
+                "base_matricula": "k-base-matricula", "comp_matricula": "k-comp-matricula",
+                "base_graduados": "k-base-graduados", "comp_graduados": "k-comp-graduados",
+                "base_costo": "k-base-costo", "comp_costo_avg": "k-comp-costo-avg", "comp_costo_med": "k-comp-costo-med",
+                "base_creditos": "k-base-creditos", "comp_creditos": "k-comp-creditos",
+                "base_emp": "k-base-emp", "comp_emp": "k-comp-emp",
+                "base_sal": "k-base-sal", "comp_sal": "k-comp-sal",
+                "base_des": "k-base-des", "comp_des": "k-comp-des",
+                "base_sb_global":  "k-base-sb-global",  "comp_sb_global":  "k-comp-sb-global",
+                "base_sb_razona":  "k-base-sb-razona",  "comp_sb_razona":  "k-comp-sb-razona",
+                "base_sb_lectura": "k-base-sb-lectura", "comp_sb_lectura": "k-comp-sb-lectura",
+                "base_sb_ciuda":   "k-base-sb-ciuda",   "comp_sb_ciuda":   "k-comp-sb-ciuda",
+                "base_sb_ingles":  "k-base-sb-ingles",  "comp_sb_ingles":  "k-comp-sb-ingles",
+                "base_sb_escrita": "k-base-sb-escrita", "comp_sb_escrita": "k-comp-sb-escrita"
             };
+            for (const [key, id] of Object.entries(km)) {
+                if (kpis[key] != null) setTxt(id, kpis[key]);
+            }
+            // Copias de KPIs que aparecen en varias páginas
+            setTxt("k-comp-emp-p4",       kpis["comp_emp"]);
+            setTxt("k-comp-sb-global-p7", kpis["comp_sb_global"]);
 
-            const pm = data.matricula?.plots || [];
-            mapPlot("c1", "c1", pm);
-            mapPlot("c2", "c2", pm);
-            mapPlot("c3", "c3", pm);
+            // --- GRÁFICAS con metadata ---
+            function renderSection(secKey) {
+                const sec = data[secKey];
+                if (!sec || !sec.plots) return;
+                sec.plots.forEach(p => {
+                    // Imagen
+                    setSrc("img-" + p.id, p.b64);
+                    // Título en el header
+                    const ph = document.getElementById("ph-" + p.id);
+                    if (ph && p.title) ph.textContent = p.title;
+                    // Footer: descripción + fuente
+                    const cap = document.getElementById("cap-" + p.id);
+                    if (cap) {
+                        const desc = p.caption || "";
+                        const src  = p.source  || "";
+                        cap.innerHTML = (desc ? desc + "<br>" : "") + (src ? "<b>" + src.replace(/\n/g, "<br>") + "</b>" : "");
+                    }
+                });
+                // Nota técnica de la sección
+                if (sec.technical_note) {
+                    const noteMap = {
+                        snies: "val-note-snies",
+                        salarios: "val-note-sal",
+                        ole: "val-note-ole",
+                        spadies: "val-note-spadies"
+                    };
+                    if (noteMap[secKey]) setTxt(noteMap[secKey], sec.technical_note);
+                }
+            }
 
-            const po = data.empleabilidad?.plots || [];
-            mapPlot("c4", "c4", po);
-            mapPlot("c5", "c5", po);
-
-            const pd = data.desercion?.plots || [];
-            mapPlot("c6", "c6", pd);
-
-            const ps = data.saber?.plots || [];
-            mapPlot("c7", "c7", ps);
-            mapPlot("c8", "c8", ps);
+            ["snies", "salarios", "ole", "spadies", "saber", "demo"].forEach(renderSection);
         });
     </script>
 </body>

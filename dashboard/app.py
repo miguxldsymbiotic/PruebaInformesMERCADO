@@ -9,6 +9,7 @@ from report_engine import ReportEngine
 import datetime
 import base64
 import io
+import numpy as np
 from jinja2 import Template
 from weasyprint import HTML
 
@@ -906,7 +907,7 @@ app_ui = ui.page_sidebar(
             "Tendencia Comparada",
             ui.div(
                 ui.h2("Análisis Comparativo de Tendencias", class_="m-0", style="color: #31497e; font-weight: bold;"),
-                ui.download_button("btn_download_comp", "Descargar Informe Comparativo", class_="btn-primary", icon=fa.icon_svg("file-pdf", "solid")),
+                ui.input_action_button("btn_preview_comp", "VISTA PREVIA INFORME COMPARATIVO", class_="btn-primary btn-lg", icon=fa.icon_svg("file-pdf", "solid"), style="background: linear-gradient(135deg, #31497e, #4a69bd); border: none; font-weight: 800; padding: 12px 25px;"),
                 class_="d-flex justify-content-between align-items-center mt-2 mb-3"
             ),
             ui.layout_columns(
@@ -2694,6 +2695,70 @@ def server(input, output, session):
         return ui.HTML(f"<div style='width: 100%; overflow: auto;'>{html_code}</div>")
 
     @reactive.calc
+    def calc_plot_mobility_matrix_report():
+        # Versión transpuesta para el reporte (Vertical)
+        df_pd, col_orig, col_dest, label_ejes = get_ole_mobility_df()
+        if len(df_pd) == 0: return go.Figure()
+        
+        # Swapping Origin and Destination for Vertical view
+        # Now rows = Destination, cols = Origin
+        matriz = df_pd.pivot_table(index=col_dest, columns=col_orig, values="cotizantes", aggfunc="sum").fillna(0)
+        
+        def sort_labels(labels):
+            lst = sorted(list(labels))
+            if "SIN INFORMACIÓN" in lst:
+                lst.remove("SIN INFORMACIÓN")
+                lst.append("SIN INFORMACIÓN")
+            return lst
+            
+        matriz = matriz.loc[sort_labels(matriz.index)]
+        matriz = matriz[sort_labels(matriz.columns)]
+        zmax_interno = float(matriz.values.max()) if matriz.size > 0 else 1.0
+        
+        # Totales
+        matriz["TOTAL"] = matriz.sum(axis=1)
+        matriz.loc["TOTAL"] = matriz.sum(axis=0)
+        
+        # Reordenar para que TOTAL esté al final/abajo
+        idx = list(matriz.index)
+        idx.remove("TOTAL")
+        idx_inverted = idx[::-1]
+        idx_inverted.insert(0, "TOTAL")
+        cols = list(matriz.columns)
+        cols.remove("TOTAL")
+        cols.append("TOTAL")
+        matriz = matriz.loc[idx_inverted, cols]
+
+        custom_scale = [
+            [0.0, '#FFFFFF'], [0.1, '#D2D2F2'], [0.3, '#A096E1'], [0.6, '#6C5CE7'], [1.0, '#31497e']
+        ]
+        
+        text_matrix = [[f"{int(v):,}" if v > 0 else "" for v in row] for row in matriz.values]
+        
+        fig = go.Figure(data=go.Heatmap(
+            z=matriz.values, x=matriz.columns, y=matriz.index,
+            zmax=zmax_interno, colorscale=custom_scale,
+            text=text_matrix, texttemplate="%{text}",
+            xgap=1, ygap=1
+        ))
+        
+        dynamic_h = max(550, len(matriz.index) * 18 + 150)
+        
+        fig.update_layout(
+            height=dynamic_h, width=850,
+            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=5, r=5, t=5, b=5),
+            xaxis=dict(
+                title=dict(text=f"{label_ejes} de Origen Académico (Donde Graduó)", font=dict(size=14)), 
+                tickfont=dict(size=9), tickangle=-45, side="top"
+            ),
+            yaxis=dict(
+                title=dict(text=f"{label_ejes} de Destino Laboral (Donde Cotiza)", font=dict(size=14)), 
+                tickfont=dict(size=9)
+            )
+        )
+        return fig
+
+    @reactive.calc
     def calc_table_graduados():
         divipolas = valid_divipolas()
         return create_gender_table(df_graduados, divipolas, "graduados_sum")
@@ -3525,20 +3590,35 @@ def server(input, output, session):
         return fig
 
     # Gráficas
+    @reactive.calc
+    def calc_fig_comp_pcurso():
+        df_base, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
+        return build_comp_plot(df_base, df_comp, "Primer Curso")
+
     @render.ui
     def plot_comp_pcurso():
-        df_base, df_comp = calc_comp_metric(df_pcurso, "primer_curso_sum")
-        return ui.HTML(pio.to_html(build_comp_plot(df_base, df_comp, "Primer Curso"), full_html=False, include_plotlyjs="cdn"))
+        fig = calc_fig_comp_pcurso()
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_matricula():
+        df_base, df_comp = calc_comp_metric(df_matricula, "matricula_sum")
+        return build_comp_plot(df_base, df_comp, "Matriculados")
 
     @render.ui
     def plot_comp_matricula():
-        df_base, df_comp = calc_comp_metric(df_matricula, "matricula_sum")
-        return ui.HTML(pio.to_html(build_comp_plot(df_base, df_comp, "Matriculados"), full_html=False, include_plotlyjs="cdn"))
+        fig = calc_fig_comp_matricula()
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_graduados():
+        df_base, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
+        return build_comp_plot(df_base, df_comp, "Graduados")
 
     @render.ui
     def plot_comp_graduados():
-        df_base, df_comp = calc_comp_metric(df_graduados, "graduados_sum")
-        return ui.HTML(pio.to_html(build_comp_plot(df_base, df_comp, "Graduados"), full_html=False, include_plotlyjs="cdn"))
+        fig = calc_fig_comp_graduados()
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
 
     def calc_comp_ole_metric(num_col, den_col):
         import pandas as pd
@@ -3685,15 +3765,25 @@ def server(input, output, session):
         )
         return fig
 
+    @reactive.calc
+    def calc_fig_comp_ole_empleabilidad():
+        df_base, df_comp = calc_comp_ole_metric("graduados_que_cotizan", "graduados")
+        return build_comp_plot_ole(df_base, df_comp, "Tasa de Empleabilidad")
+
     @render.ui
     def plot_comp_ole_empleabilidad():
-        df_base, df_comp = calc_comp_ole_metric("graduados_que_cotizan", "graduados")
-        return ui.HTML(pio.to_html(build_comp_plot_ole(df_base, df_comp, "Tasa de Empleabilidad"), full_html=False, include_plotlyjs="cdn"))
+        fig = calc_fig_comp_ole_empleabilidad()
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_ole_dependientes():
+        df_base, df_comp = calc_comp_ole_metric("graduados_cotizantes_dependientes", "graduados_que_cotizan")
+        return build_comp_plot_ole(df_base, df_comp, "Dependientes sobre Cotizantes")
 
     @render.ui
     def plot_comp_ole_dependientes():
-        df_base, df_comp = calc_comp_ole_metric("graduados_cotizantes_dependientes", "graduados_que_cotizan")
-        return ui.HTML(pio.to_html(build_comp_plot_ole(df_base, df_comp, "Dependientes sobre Cotizantes"), full_html=False, include_plotlyjs="cdn"))
+        fig = calc_fig_comp_ole_dependientes()
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
 
     @render.ui
     def comp_dist_empleabilidad_header():
@@ -3909,7 +3999,7 @@ def server(input, output, session):
         return res
 
     @reactive.calc
-    def calc_plot_comp_salario_dist():
+    def calc_fig_comp_salario_dist():
         import plotly.graph_objects as go
         df = calc_comp_salario_dist_data()
         if df.empty: return go.Figure()
@@ -3929,12 +4019,16 @@ def server(input, output, session):
 
     @render.ui
     def plot_comp_salario_dist():
-        return ui.HTML(pio.to_html(calc_plot_comp_salario_dist(), full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(pio.to_html(calc_fig_comp_salario_dist(), full_html=False, include_plotlyjs="cdn"))
         
+    @reactive.calc
+    def calc_fig_comp_salario_evolucion():
+        df_base, df_comp = calc_comp_salario_evolucion()
+        return build_comp_plot_salario(df_base, df_comp, "Salario Promedio de Enganche")
+
     @render.ui
     def plot_comp_salario_evolucion():
-        df_base, df_comp = calc_comp_salario_evolucion()
-        return ui.HTML(pio.to_html(build_comp_plot_salario(df_base, df_comp, "Salario Promedio de Enganche"), full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(pio.to_html(calc_fig_comp_salario_evolucion(), full_html=False, include_plotlyjs="cdn"))
 
     # Costos y Créditos KPIs (Comparativo)
     @render.ui
@@ -4008,8 +4102,8 @@ def server(input, output, session):
             <div style='font-size: 15px; color: #666; margin-top: 4px;'>± {std:.1f} (SD)</div>
         """)
 
-    @render.ui
-    def plot_comp_dist_costo_matricula():
+    @reactive.calc
+    def calc_fig_comp_dist_costo():
         attr = comp_profile_attr()
         snies_list = comparable_snies_codigos()
         
@@ -4051,12 +4145,16 @@ def server(input, output, session):
             df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("costo_matricula_estud_nuevos") > 0))
             if len(df_base) > 0:
                 val = df_base["costo_matricula_estud_nuevos"][0]
-                fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Base", annotation_position="top right", annotation_font_color="#31497e")
-                
-        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
+                fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Seleccionado", annotation_position="top right", annotation_font_color="#31497e")
+        return fig
 
     @render.ui
-    def plot_comp_dist_creditos():
+    def plot_comp_dist_costo_matricula():
+        fig = calc_fig_comp_dist_costo()
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_dist_creditos():
         attr = comp_profile_attr()
         snies_list = comparable_snies_codigos()
         
@@ -4073,6 +4171,36 @@ def server(input, output, session):
                 marker_color='lightgray',
                 opacity=0.6
             ))
+            
+        if len(df_comp) > 0:
+            fig.add_trace(go.Histogram(
+                x=df_comp["numero_creditos"].to_list(),
+                histnorm='percent',
+                name='Grupo Comparable',
+                marker_color='#674f95',
+                opacity=0.9
+            ))
+            
+        fig.update_layout(
+            barmode='overlay',
+            plot_bgcolor='white', paper_bgcolor='white', separators=",.",
+            margin=dict(l=20, r=20, t=20, b=20),
+            xaxis=dict(title="Número de Créditos"),
+            yaxis=dict(title="Porcentaje (%)"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        
+        if attr:
+            df_base = df_snies.filter((pl.col("codigo_snies_del_programa") == attr["codigo"]) & (pl.col("numero_creditos") > 0))
+            if len(df_base) > 0:
+                val = df_base["numero_creditos"][0]
+                fig.add_vline(x=val, line_dash="dash", line_color="#31497e", line_width=3, annotation_text="Programa Seleccionado", annotation_position="top right", annotation_font_color="#31497e")
+        return fig
+
+    @render.ui
+    def plot_comp_dist_creditos():
+        fig = calc_fig_comp_dist_creditos()
+        return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
             
         if len(df_comp) > 0:
             fig.add_trace(go.Histogram(
@@ -4847,35 +4975,59 @@ def server(input, output, session):
         )
         return fig
 
+    @reactive.calc
+    def calc_fig_comp_saber_trend_global():
+        df_base, df_comp = get_comp_saber_series('pro_gen_punt_global')
+        return build_comp_plot_saber(df_base, df_comp, "Puntaje Global")
+
     @render.ui
     def plot_comp_saber_trend_global():
-        df_base, df_comp = get_comp_saber_series('pro_gen_punt_global')
-        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Puntaje Global"), full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(pio.to_html(calc_fig_comp_saber_trend_global(), full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_saber_trend_razona():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_razona_cuantitat_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Razonamiento Cuantitativo")
 
     @render.ui
     def plot_comp_saber_trend_razona():
-        df_base, df_comp = get_comp_saber_series('pro_gen_mod_razona_cuantitat_punt')
-        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Razonamiento Cuantitativo"), full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(pio.to_html(calc_fig_comp_saber_trend_razona(), full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_saber_trend_lectura():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_lectura_critica_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Lectura Crítica")
 
     @render.ui
     def plot_comp_saber_trend_lectura():
-        df_base, df_comp = get_comp_saber_series('pro_gen_mod_lectura_critica_punt')
-        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Lectura Crítica"), full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(pio.to_html(calc_fig_comp_saber_trend_lectura(), full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_saber_trend_ciuda():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_competen_ciudada_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Competencias Ciudadanas")
 
     @render.ui
     def plot_comp_saber_trend_ciuda():
-        df_base, df_comp = get_comp_saber_series('pro_gen_mod_competen_ciudada_punt')
-        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Competencias Ciudadanas"), full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(pio.to_html(calc_fig_comp_saber_trend_ciuda(), full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_saber_trend_ingles():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_ingles_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Inglés")
 
     @render.ui
     def plot_comp_saber_trend_ingles():
-        df_base, df_comp = get_comp_saber_series('pro_gen_mod_ingles_punt')
-        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Inglés"), full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(pio.to_html(calc_fig_comp_saber_trend_ingles(), full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_fig_comp_saber_trend_escrita():
+        df_base, df_comp = get_comp_saber_series('pro_gen_mod_comuni_escrita_punt')
+        return build_comp_plot_saber(df_base, df_comp, "Comunicación Escrita")
 
     @render.ui
     def plot_comp_saber_trend_escrita():
-        df_base, df_comp = get_comp_saber_series('pro_gen_mod_comuni_escrita_punt')
-        return ui.HTML(pio.to_html(build_comp_plot_saber(df_base, df_comp, "Comunicación Escrita"), full_html=False, include_plotlyjs="cdn"))
+        return ui.HTML(pio.to_html(calc_fig_comp_saber_trend_escrita(), full_html=False, include_plotlyjs="cdn"))
 
     def build_comp_saber_categorical(column_id):
         import pandas as pd
@@ -4968,12 +5120,12 @@ def server(input, output, session):
             except:
                 return None
 
-        def safe_fig(fn, *args, **kwargs):
+        def safe_fig(fn, w=800, h=450):
             try:
-                fig = fn(*args, **kwargs)
-                return fig_to_base64(fig)
+                fig = fn()
+                return fig_to_base64(fig, width=w, height=h)
             except:
-                return fig_to_base64(go.Figure())
+                return fig_to_base64(go.Figure(), width=w, height=h)
 
         def safe_kpi(fn, default="Sin dato"):
             try:
@@ -4982,13 +5134,28 @@ def server(input, output, session):
             except:
                 return default
 
-        dept_list = get_input_safe("departamento", ["Todos"])
-        dept_name = ", ".join(dept_list) if isinstance(dept_list, list) else str(dept_list)
-        
-        inst_list = get_input_safe("institucion", ["Todas"])
-        inst_name = ", ".join(inst_list) if isinstance(inst_list, list) else str(inst_list)
-        
-        filtros_desc = f"Departamento: {dept_name}, IES: {inst_name}"
+        # Lógica inteligente de Alcance del Análisis
+        snies_sel = get_input_safe("snies_label", [])
+        inst_sel = get_input_safe("institucion_label", []) or get_input_safe("nombre_institucion", [])
+        dept_sel = get_input_safe("departamento", [])
+
+        if snies_sel:
+            # Si hay SNIES, es lo más específico
+            snies_clean = [s.split(" - ")[0] for s in snies_sel]
+            desc_alcance = f"El alcance de este análisis es analizar el desempeño del programa con registro SNIES {', '.join(snies_clean)} y sus características competitivas en el mercado."
+        elif inst_sel:
+            # Si hay Institución
+            inst_clean = [i.split(" - ")[-1] for i in inst_sel]
+            desc_alcance = f"Este informe es un análisis estratégico donde se está evaluando el posicionamiento de {', '.join(inst_clean)} frente al ecosistema educativo."
+        elif dept_sel:
+            # Si hay Departamento
+            desc_alcance = f"Este informe es un análisis detallado del sector de educación superior a nivel departamental en {', '.join(dept_sel)}."
+        else:
+            desc_alcance = "Este informe es un análisis a nivel nacional del ecosistema de educación superior basado en los consolidados generales."
+
+        dept_name = ", ".join(dept_sel) if dept_sel else "Nacional"
+        inst_name = ", ".join(inst_sel) if inst_sel else "Todas"
+        filtros_desc = desc_alcance
         
         # SNIES Data
         snies_y = str(int(df_matricula["anno"].max()))
@@ -5015,11 +5182,30 @@ def server(input, output, session):
             except:
                 return 0.0
 
+        # Preparación de datos de movilidad para las tablas de la PÁGINA 4
+        try:
+            mob_df_pd, col_o, col_d, _ = get_ole_mobility_df()
+            mob_origin = []
+            mob_destination = []
+            if not mob_df_pd.empty:
+                total_m = mob_df_pd["cotizantes"].sum()
+                if total_m > 0:
+                    # Top 5 Origen
+                    top_o = mob_df_pd.groupby(col_o)["cotizantes"].sum().sort_values(ascending=False).head(5)
+                    mob_origin = [{"name": str(n), "value": format_pct_es(v/total_m)} for n, v in top_o.items()]
+                    # Top 5 Destino
+                    top_d = mob_df_pd.groupby(col_d)["cotizantes"].sum().sort_values(ascending=False).head(5)
+                    mob_destination = [{"name": str(n), "value": format_pct_es(v/total_m)} for n, v in top_d.items()]
+        except Exception as e:
+            print(f"Error calculando movilidad para PDF: {e}")
+            mob_origin = []
+            mob_destination = []
+
         report_data = {
             "metadata": {
                 "title": "Informe de Mercado de Educación Superior",
                 "subtitle": f"DEPARTAMENTO: {dept_name.upper()}",
-                "date": datetime.datetime.now().strftime("%B %Y"),
+                "date": (lambda dt: ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][dt.month-1] + " " + str(dt.year))(datetime.datetime.now()),
                 "year_start": 2018,
                 "year_end": int(snies_y),
                 "logo_data": logo_b64,
@@ -5045,8 +5231,11 @@ def server(input, output, session):
                 "matriculados": safe_kpi(calc_total_matriculados),
                 "graduados": safe_kpi(calc_total_graduados),
                 "vinculacion": safe_kpi(calc_kpi_empleabilidad),
-                "salario": safe_kpi(calc_kpi_ratio, default="1.00"), 
+                "salario": safe_kpi(calc_kpi_salario_promedio_total), 
                 "retencion": safe_kpi(calc_kpi_retencion),
+                "dep_grad": safe_kpi(calc_kpi_dependientes_graduados),
+                "dep_cot": safe_kpi(calc_kpi_cotizantes_dependientes),
+                "sal_ratio": safe_kpi(lambda: f"{(float(calc_kpi_salario_promedio_total().replace('$', '').replace('.', '').replace(',', '.')) / df_smmlv_pl.filter(pl.col('anno_corte') == df_smmlv_pl['anno_corte'].max())['smmlv'][0]):.2f}" if calc_kpi_salario_promedio_total() != "Sin dato" else "0.00"),
                 "saber_global": safe_kpi(lambda: calc_saber_score('pro_gen_punt_global')),
                 "sal_promedio": safe_kpi(calc_kpi_salario_promedio_total),
                 "sal_femenino": safe_kpi(calc_kpi_salario_promedio_fem),
@@ -5068,16 +5257,16 @@ def server(input, output, session):
                     {"id": "t2", "title": "Matriculados (Total)", "b64": safe_fig(calc_plot_matriculados_total), "caption": "Población estudiantil activa en el sistema."},
                     {"id": "t3", "title": "Graduados (Total)", "b64": safe_fig(calc_plot_graduados_total), "caption": "Egresados titulados por cohorte de salida."},
                     {"id": "s1", "title": "Primer Curso x Sexo", "b64": safe_fig(calc_plot_primer_curso), "caption": "Participación por género en el ingreso."},
-                    {"id": "s2", "title": "Matriculados x Sexo", "b64": safe_fig(calc_plot_matriculados), "caption": "Permanencia desagregada por sexo."},
-                    {"id": "s3", "title": "Graduados x Sexo", "b64": safe_fig(calc_plot_graduados), "caption": "Perfil de egreso por género."}
+                    {"id": "s2", "title": "Estudiantes matriculados según sexo", "b64": safe_fig(calc_plot_matriculados), "caption": "Permanencia desagregada por sexo."},
+                    {"id": "s3", "title": "Estudiantes graduados por sexo", "b64": safe_fig(calc_plot_graduados), "caption": "Perfil de egreso por género."}
                 ]
             },
             "ole": {
                 "technical_note": "Fuente: Observatorio Laboral para la Educación (Graduados que cotizan).",
                 "plots": [
-                    {"id": "o1", "title": "Tasa de Empleabilidad", "b64": safe_fig(calc_plot_empleabilidad_total), "caption": "% de graduados vinculados formalmente."},
+                    {"id": "o1", "title": "Porcentaje de graduados vinculados formalmente", "b64": safe_fig(calc_plot_empleabilidad_total), "caption": "% de graduados vinculados formalmente."},
                     {"id": "o2", "title": "Relación Dep/Grad", "b64": safe_fig(calc_plot_dependientes_total), "caption": "Proporción de empleados dependientes."},
-                    {"id": "o3", "title": "Empleabilidad x Sexo", "b64": safe_fig(calc_plot_empleabilidad_sexo), "caption": "Brechas de vinculación por género."},
+                    {"id": "o3", "title": "Tasa de empleabilidad por sexo", "b64": safe_fig(calc_plot_empleabilidad_sexo), "caption": "tasa de empleabilidad por sexo"},
                     {"id": "o4", "title": "Dependientes x Sexo", "b64": safe_fig(calc_plot_dependientes_sexo), "caption": "Estabilidad laboral por género."},
                     {"id": "o5", "title": "Dist. Empleabilidad", "b64": safe_fig(calc_plot_dist_empleabilidad), "caption": "Distribución regional de la tasa."},
                     {"id": "o6", "title": "Dist. Dependientes", "b64": safe_fig(calc_plot_dist_dependientes), "caption": "Consolidado de estabilidad regional."},
@@ -5085,15 +5274,20 @@ def server(input, output, session):
                     {"id": "o8", "title": "Dist. Dep x Sexo", "b64": safe_fig(calc_plot_dist_dependientes_sexo), "caption": "Mapa de calor de dependencia genérica."},
                     {"id": "o10", "title": "Evol. Retención Local", "b64": safe_fig(calc_plot_retencion_trend), "caption": "Capacidad de retención de talento."},
                     {"id": "o11", "title": "Ratio Migratorio", "b64": safe_fig(calc_plot_ratio_trend), "caption": "Dinámica de flujo regional."},
-                    {"id": "o12", "title": "Evol. Dep/Cotizantes", "b64": safe_fig(calc_plot_dependientes_trend), "caption": "Relación de calidad de empleo."}
-                ]
+                    {"id": "o12", "title": "Evol. Dep/Cotizantes", "b64": safe_fig(calc_plot_dependientes_trend), "caption": "Relación de calidad de empleo."},
+                    {"id": "o9", "title": "Matriz de Movilidad Origen vs Destino", "b64": safe_fig(calc_plot_mobility_matrix_report, h=800), "caption": "Relación entre lugar de formación y vinculación laboral."}
+                ],
+                "mobility": {
+                    "origin": mob_origin,
+                    "destination": mob_destination
+                }
             },
             "salarios": {
                 "technical_note": "Ajuste a pesos constantes del último año con base en el SMMLV.",
                 "plots": [
-                    {"id": "v1", "title": "Rangos Salariales", "b64": safe_fig(calc_plot_salario_dist_total), "caption": "Distribución por niveles de ingreso."},
+                    {"id": "v1", "title": "Distribución de rango salarial", "b64": safe_fig(calc_plot_salario_dist_total), "caption": "distribución de rango salarial"},
                     {"id": "v2", "title": "Rangos x Sexo", "b64": safe_fig(calc_plot_salario_dist_sexo), "caption": "Distribución salarial segregada."},
-                    {"id": "v5", "title": "Evolución Salario Real", "b64": safe_fig(calc_plot_salario_evolucion_total_constante), "caption": "Tendencia del poder adquisitivo."},
+                    {"id": "v5", "title": "Evolución de rango salarial", "b64": safe_fig(calc_plot_salario_evolucion_total_constante), "caption": "evolución de rango salarial"},
                     {"id": "v6", "title": "Evolución x Sexo", "b64": safe_fig(calc_plot_salario_evolucion_sexo_constante), "caption": "Crecimiento salarial por género."}
                 ]
             },
@@ -5101,7 +5295,7 @@ def server(input, output, session):
                 "technical_note": "Fuente: SPADIES. La deserción se calcula sobre cohortes anuales.",
                 "plots": [
                     {"id": "d1", "title": "Histograma Deserción", "b64": safe_fig(calc_plot_dist_desercion), "caption": "Variabilidad de la deserción académica."},
-                    {"id": "d2", "title": "Tendencia Anual", "b64": safe_fig(calc_plot_trend_desercion), "caption": "Riesgo histórico de abandono."}
+                    {"id": "d2", "title": "Evolución de tasa de deserción anual", "b64": safe_fig(calc_plot_trend_desercion), "caption": "evolución de tasa de deserción anual"}
                 ]
             },
             "saber": {
@@ -5148,68 +5342,163 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.btn_preview_report)
     def handle_preview():
-        with ui.Progress(min=0, max=1) as p:
-            try:
-                p.set(message="Compilando datos...", detail="Generando gráficas en Base64...")
-                report_data = calc_all_report_data()
-                import json
-                report_json = json.dumps(report_data)
-                
-                p.set(0.5, message="Preparando Visualización...", detail="Inyectando datos en memoria...")
-                template_path = app_dir / "web_report_demo" / "viewer.html"
-                if not template_path.exists():
-                    template_path = app_dir / "viewer.html"
-                
-                with open(template_path, "r", encoding="utf-8") as f:
-                    template_content = f.read()
-                
-                # Inyectar el JSON y el logo en Base64 (WYSIWYG 100% en memoria)
-                injected_content = template_content.replace(
-                    '<script src="data_ANTIOQUIA.js"></script>',
-                    f'<script>window.__REPORT_DATA__ = {report_json};</script>'
-                )
-                
-                # Reemplazar el logo por el Base64 inyectado (si existe en el JSON)
-                logo_b64 = report_data.get("metadata", {}).get("logo_data", "")
-                if logo_b64:
-                    injected_content = injected_content.replace('src="../logo_symbiotic.svg"', f'src="{logo_b64}"')
-                
-                # Para evitar escribir en disco según lo solicitado (WYSWYG en memoria),
-                # usamos srcdoc en el iframe para renderizar el contenido HTML directamente.
-                p.set(1.0, message="Listo", detail="Abriendo visor...")
-                
-                ui.modal_show(ui.modal(
-                    ui.tags.div(
-                        ui.tags.iframe(
-                            srcdoc=injected_content,
-                            style="width: 100%; height: 85vh; border: none; background: white;"
-                        ),
-                        style="padding: 0; margin: -1rem; background: #f8fafc; overflow: hidden; border-radius: 4px;"
+        """Genera la vista previa del Informe de Mercado con loader premium animado."""
+        _NID = "mercado_report_loader"
+
+        _LOADER_HTML = """
+        <style>
+          @keyframes mkt-spin  { to { transform: rotate(360deg); } }
+          @keyframes mkt-pulse { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.25);opacity:1} }
+          @keyframes mkt-slide {
+            0%   { left:-55%; width:55%; }
+            50%  { left:55%;  width:55%; }
+            100% { left:110%; width:55%; }
+          }
+          @keyframes mkt-msg {
+            0%           { opacity:0; transform:translateY(6px);  }
+            4%           { opacity:1; transform:translateY(0);    }
+            16%          { opacity:1; transform:translateY(0);    }
+            20%, 100%    { opacity:0; transform:translateY(-6px); }
+          }
+          @keyframes mkt-bounce {
+            0%,100% { transform:translateY(0);   }
+            50%     { transform:translateY(-5px); }
+          }
+          #mercado_report_loader { min-width:390px !important; }
+        </style>
+        <div style="font-family:'Nunito',sans-serif;padding:6px 2px;">
+
+          <!-- Spinner + Título -->
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+            <div style="position:relative;width:52px;height:52px;flex-shrink:0;">
+              <div style="position:absolute;inset:0;border-radius:50%;border:4px solid #f1f5f9;
+                          border-top:4px solid #DF6C5B;border-right:4px solid #385A64;
+                          animation:mkt-spin 0.85s linear infinite;"></div>
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                          width:16px;height:16px;background:#DF6C5B;border-radius:50%;
+                          animation:mkt-pulse 1.6s ease-in-out infinite;"></div>
+            </div>
+            <div>
+              <div style="font-size:1.05rem;font-weight:900;color:#385A64;letter-spacing:-0.4px;line-height:1.2;">
+                Generando Informe de Mercado
+              </div>
+              <div style="font-size:0.68rem;color:#94a3b8;margin-top:4px;font-weight:700;
+                          text-transform:uppercase;letter-spacing:0.8px;">
+                SymbioTIC &nbsp;·&nbsp; Análisis Estratégico Regional
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra deslizante indeterminada -->
+          <div style="background:#e2e8f0;border-radius:12px;height:12px;overflow:hidden;
+                      position:relative;margin-bottom:16px;">
+            <div style="position:absolute;top:0;height:100%;
+                        background:linear-gradient(90deg,#DF6C5B,#527A86,#385A64);
+                        border-radius:12px;
+                        animation:mkt-slide 1.7s ease-in-out infinite;"></div>
+          </div>
+
+          <!-- Mensajes ciclantes cada 3 s -->
+          <div style="position:relative;height:22px;overflow:hidden;margin-bottom:14px;">
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:mkt-msg 15s linear infinite;animation-delay:0s;animation-fill-mode:both;">
+              ⚙️&nbsp; Calculando KPIs de matrícula, primer curso y graduados...
+            </div>
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:mkt-msg 15s linear infinite;animation-delay:3s;animation-fill-mode:both;">
+              💼&nbsp; Procesando datos de empleabilidad y salarios del OLE...
+            </div>
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:mkt-msg 15s linear infinite;animation-delay:6s;animation-fill-mode:both;">
+              📊&nbsp; Renderizando gráficas del mercado regional en alta resolución...
+            </div>
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:mkt-msg 15s linear infinite;animation-delay:9s;animation-fill-mode:both;">
+              🏛️&nbsp; Analizando resultados Saber PRO y movilidad de egresados...
+            </div>
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:mkt-msg 15s linear infinite;animation-delay:12s;animation-fill-mode:both;">
+              📋&nbsp; Ensamblando el informe estratégico del mercado educativo...
+            </div>
+          </div>
+
+          <!-- Puntos rebotando -->
+          <div style="display:flex;gap:6px;justify-content:center;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#DF6C5B;
+                        animation:mkt-bounce 1.2s ease-in-out infinite;animation-delay:0s;"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#527A86;
+                        animation:mkt-bounce 1.2s ease-in-out infinite;animation-delay:0.2s;"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#385A64;
+                        animation:mkt-bounce 1.2s ease-in-out infinite;animation-delay:0.4s;"></div>
+          </div>
+        </div>
+        """
+
+        ui.notification_show(
+            ui.HTML(_LOADER_HTML),
+            type="default",
+            duration=None,
+            id=_NID
+        )
+
+        try:
+            report_data = calc_all_report_data()
+            import json
+            report_json = json.dumps(report_data)
+
+            template_path = app_dir / "web_report_demo" / "viewer.html"
+            if not template_path.exists():
+                template_path = app_dir / "viewer.html"
+
+            with open(template_path, "r", encoding="utf-8") as f:
+                template_content = f.read()
+
+            # Inyectar el JSON y el logo en Base64 (WYSIWYG 100% en memoria)
+            injected_content = template_content.replace(
+                '<script src="data_ANTIOQUIA.js"></script>',
+                f'<script>window.__REPORT_DATA__ = {report_json};</script>'
+            )
+
+            # Reemplazar el logo por el Base64 inyectado (si existe en el JSON)
+            logo_b64 = report_data.get("metadata", {}).get("logo_data", "")
+            if logo_b64:
+                injected_content = injected_content.replace('src="../logo_symbiotic.svg"', f'src="{logo_b64}"')
+
+            ui.notification_remove(_NID)
+
+            ui.modal_show(ui.modal(
+                ui.tags.div(
+                    ui.tags.iframe(
+                        srcdoc=injected_content,
+                        style="width: 100%; height: 85vh; border: none; background: white;"
                     ),
-                    title="Previsualización del Informe Estratégico (Vista Gráfica)",
-                    size="xl",
-                    easy_close=True,
-                    footer=ui.div(
-                        ui.tags.button(
-                            "Imprimir / Guardar (Nativo)", 
-                            onclick="document.querySelector('iframe').contentWindow.print();",
-                            class_="btn btn-info",
-                            style="margin-right: 10px;"
-                        ),
-                        ui.download_button("download_pdf", "Descargar PDF (Motor)", class_="btn-primary"),
-                        ui.modal_button("Cerrar"),
-                        style="display: flex; gap: 10px; justify-content: flex-end; width: 100%;"
-                    )
-                ))
-            except Exception as e:
-                import traceback
-                error_details = traceback.format_exc()
-                # Si el error es una SilentException de Shiny, significa que falta algún dato reactivo
-                if "SilentException" in str(type(e)):
-                    ui.notification_show("Por favor, selecciona los filtros necesarios (Departamento/Institución) antes de generar el reporte.", type="warning", duration=15)
-                else:
-                    ui.notification_show(f"Error en Vista Previa: {str(e)}", type="error", duration=15)
-                print(f"DEBUG: Error Detallado en Vista Previa:\n{error_details}")
+                    style="padding: 0; margin: -1rem; background: #f8fafc; overflow: hidden; border-radius: 4px;"
+                ),
+                title="Previsualización del Informe Estratégico (Vista Gráfica)",
+                size="xl",
+                easy_close=True,
+                footer=ui.div(
+                    ui.tags.button(
+                        "🖨️ Imprimir / Guardar (Nativo)",
+                        onclick="document.querySelector('iframe').contentWindow.print();",
+                        class_="btn btn-info",
+                        style="margin-right: 10px;"
+                    ),
+                    ui.download_button("download_pdf", "Descargar PDF (Motor)", class_="btn-primary"),
+                    ui.modal_button("Cerrar"),
+                    style="display: flex; gap: 10px; justify-content: flex-end; width: 100%;"
+                )
+            ))
+        except Exception as e:
+            import traceback
+            ui.notification_remove(_NID)
+            error_details = traceback.format_exc()
+            # Si el error es una SilentException de Shiny, significa que falta algún dato reactivo
+            if "SilentException" in str(type(e)):
+                ui.notification_show("Por favor, selecciona los filtros necesarios (Departamento/Institución) antes de generar el reporte.", type="warning", duration=15)
+            else:
+                ui.notification_show(f"Error en Vista Previa: {str(e)}", type="error", duration=15)
+            print(f"DEBUG: Error Detallado en Vista Previa:\n{error_details}")
 
     @render.download(filename=lambda: f"Informe_Mercado_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
     def download_pdf():
@@ -5263,128 +5552,351 @@ def server(input, output, session):
     # ==========================================
     @reactive.calc
     def calc_all_comp_report_data():
-        """Genera el JSON para el PDF de Tendencia Comparada"""
-        def safe_fig_comp(fn, *args, **kwargs):
+        """Genera el JSON para el PDF de Tendencia Comparada con esquema compatible"""
+        def safe_fig_comp(fn, w=800, h=450):
             try:
-                import plotly.graph_objects as go
-                fig = fn(*args, **kwargs)
-                return fig_to_base64(fig)
+                fig = fn()
+                # Aplicamos estilo reporte premium
+                fig.update_layout(
+                    plot_bgcolor='white', paper_bgcolor='white',
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    font=dict(family="Montserrat", size=10)
+                )
+                return fig_to_base64(fig, width=w, height=h)
             except Exception as e:
-                import plotly.graph_objects as go
                 print("Error safe_fig_comp:", e)
-                return fig_to_base64(go.Figure())
+                return fig_to_base64(go.Figure(), width=w, height=h)
 
         attr = comp_profile_attr()
-        if not attr:
-            raise Exception("Debe seleccionar un programa base.")
+        if not attr: return None
+        
+        # Filtros e Identificación
+        filtros_labels = {
+            "departamento_oferta": "Mismo Departamento",
+            "nivel_de_formacion": "Mismo Nivel de Formación",
+            "modalidad": "Misma Modalidad",
+            "sector": "Mismo Sector",
+            "area_de_conocimiento": "Misma Área",
+            "nucleo_basico_del_conocimiento": "Mismo NBC"
+        }
+        filtros_activos = [filtros_labels.get(f, f) for f in input.comp_criterios()]
 
-        report = {
+        def safe_val(val, format_fn=str, default="Sin dato"):
+            if val is None: return default
+            try:
+                # Evitar errores de numpy en tipos no numéricos
+                if isinstance(val, (float, np.floating)) and np.isnan(val): return default
+                return format_fn(val)
+            except:
+                try: return str(val) if val is not None else default
+                except: return default
+
+        # 1. SNIES (Series Temporales)
+        df_b_pcurso, df_c_pcurso = calc_comp_metric(df_pcurso, "primer_curso_sum")
+        df_b_matr, df_c_matr = calc_comp_metric(df_matricula, "matricula_sum")
+        df_b_grad, df_c_grad = calc_comp_metric(df_graduados, "graduados_sum")
+
+        # 2. OLE, SPADIES, SABER
+        df_b_sal, df_c_sal = calc_comp_salario_evolucion()
+        df_b_emp, df_c_emp = calc_comp_ole_metric("graduados_que_cotizan", "graduados")
+        df_b_des, df_c_des = calc_comp_desercion_metric()
+        df_b_sb, df_c_sb = get_comp_saber_series('pro_gen_punt_global')
+        
+        # SNIES Costos y Créditos
+        snies_list = comparable_snies_codigos()
+        df_snies_base = df_snies.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
+        df_c_c = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("costo_matricula_estud_nuevos") > 0))
+        df_c_cr = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list) & (pl.col("numero_creditos") > 0))
+
+        def get_last_base(df): return df["valor_base"].iloc[-1] if df is not None and not df.empty else None
+        def get_last_comp_sum(df): return df["valor_comp_sum"].iloc[-1] if df is not None and not df.empty else None
+        def get_last_median(df): return df["valor_comp_median"].iloc[-1] if df is not None and not df.empty else None
+        def get_last_mean(df): return df["valor_comp_mean"].iloc[-1] if df is not None and not df.empty else None
+
+        report_data = {
             "metadata": {
                 "base_codigo": attr["codigo"],
-                "base_nombre": attr["nombre_del_programa"],
-                "base_institucion": attr["nombre_institucion"]
+                "base_nombre": attr["nombre"],
+                "base_institucion": attr["institucion"],
+                "date": datetime.datetime.now().strftime("%d/%m/%Y"),
+                "filtros": filtros_activos,
+                "modo_manual": "Activado" if input.switch_modo_manual() else "Desactivado"
             },
-            "matricula": {
+            "kpis": {
+                "universo": format_num_es(len(snies_list)),
+                "neto_pcurso": safe_val(get_last_comp_sum(df_c_pcurso), format_num_es),
+                "neto_matricula": safe_val(get_last_comp_sum(df_c_matr), format_num_es),
+                "neto_graduados": safe_val(get_last_comp_sum(df_c_grad), format_num_es),
+                
+                "base_pcurso": safe_val(get_last_base(df_b_pcurso), format_num_es),
+                "comp_pcurso": safe_val(get_last_median(df_c_pcurso), format_num_es),
+                "base_matricula": safe_val(get_last_base(df_b_matr), format_num_es),
+                "comp_matricula": safe_val(get_last_median(df_c_matr), format_num_es),
+                "base_graduados": safe_val(get_last_base(df_b_grad), format_num_es),
+                "comp_graduados": safe_val(get_last_median(df_c_grad), format_num_es),
+                
+                "base_costo": safe_val(df_snies_base["costo_matricula_estud_nuevos"][0] if len(df_snies_base) > 0 else None, lambda x: f"${format_num_es(x)}"),
+                "comp_costo_avg": safe_val(df_c_c["costo_matricula_estud_nuevos"].mean() if len(df_c_c) > 0 else None, lambda x: f"${format_num_es(x)}"),
+                "comp_costo_med": safe_val(df_c_c["costo_matricula_estud_nuevos"].median() if len(df_c_c) > 0 else None, lambda x: f"${format_num_es(x)}"),
+                "base_creditos": safe_val(df_snies_base["numero_creditos"][0] if len(df_snies_base) > 0 else None, format_num_es),
+                "comp_creditos": safe_val(df_c_cr["numero_creditos"].mean() if len(df_c_cr) > 0 else None, format_num_es),
+                
+                "base_emp": safe_val(get_last_base(df_b_emp), format_pct_es),
+                "comp_emp": safe_val(get_last_mean(df_c_emp), format_pct_es),
+                "base_sal": safe_val(get_last_base(df_b_sal), lambda x: f"${format_num_es(x)}"),
+                "comp_sal": safe_val(get_last_mean(df_c_sal), lambda x: f"${format_num_es(x)}"),
+                "base_des": safe_val(get_last_base(df_b_des), format_pct_es),
+                "comp_des": safe_val(get_last_mean(df_c_des), format_pct_es),
+                # Saber PRO — Global
+                "base_sb_global": safe_val(get_last_base(df_b_sb), lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_global": safe_val(get_last_mean(df_c_sb), lambda x: format_num_es(x, decimals=1)),
+                # Saber PRO — Dimensiones individuales
+                "base_sb_razona":  safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_razona_cuantitat_punt")[0]),  lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_razona":  safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_razona_cuantitat_punt")[1]),  lambda x: format_num_es(x, decimals=1)),
+                "base_sb_lectura": safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_lectura_critica_punt")[0]),   lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_lectura": safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_lectura_critica_punt")[1]),   lambda x: format_num_es(x, decimals=1)),
+                "base_sb_ciuda":   safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_competen_ciudada_punt")[0]),  lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_ciuda":   safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_competen_ciudada_punt")[1]),  lambda x: format_num_es(x, decimals=1)),
+                "base_sb_ingles":  safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_ingles_punt")[0]),            lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_ingles":  safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_ingles_punt")[1]),            lambda x: format_num_es(x, decimals=1)),
+                "base_sb_escrita": safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_comuni_escrita_punt")[0]),   lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_escrita": safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_comuni_escrita_punt")[1]),   lambda x: format_num_es(x, decimals=1))
+            },
+            "snies": {
+                "technical_note": "Fuente: Registros administrativos SNIES. Ministerio de Educación Nacional.",
                 "plots": [
-                    {
-                        "id": "c1", "title": "Primer Curso", 
-                        "b64": safe_fig_comp(lambda: build_comp_plot(*calc_comp_metric(df_pcurso, "primer_curso_sum"), "Primer Curso")), 
-                        "caption": "Tendencia Primer Curso"
-                    },
-                    {
-                        "id": "c2", "title": "Estudiantes Matriculados", 
-                        "b64": safe_fig_comp(lambda: build_comp_plot(*calc_comp_metric(df_matriculados, "matriculados_sum"), "Matriculados")), 
-                        "caption": "Tendencia Matriculados"
-                    },
-                    {
-                        "id": "c3", "title": "Graduados", 
-                        "b64": safe_fig_comp(lambda: build_comp_plot(*calc_comp_metric(df_graduados, "graduados_sum"), "Graduados")), 
-                        "caption": "Tendencia Graduados"
-                    }
+                    {"id": "t1", "title": "Primer Curso (Total)",   "b64": safe_fig_comp(calc_fig_comp_pcurso),    "caption": "Evolución histórica consolidada de ingresos.",      "source": "Fuente: Ministerio de Educación Nacional (SNIES)\nElaboración propia"},
+                    {"id": "t2", "title": "Matriculados (Total)",   "b64": safe_fig_comp(calc_fig_comp_matricula), "caption": "Población estudiantil activa en el sistema.",        "source": "Fuente: Ministerio de Educación Nacional (SNIES)\nElaboración propia"},
+                    {"id": "t3", "title": "Graduados (Total)",      "b64": safe_fig_comp(calc_fig_comp_graduados), "caption": "Egresados titulados por cohorte de salida.",         "source": "Fuente: Ministerio de Educación Nacional (SNIES)\nElaboración propia"}
                 ]
             },
-            "empleabilidad": {
+            "salarios": {
+                "technical_note": "Fuente: SNIES. Costos y créditos reportados por las instituciones.",
                 "plots": [
-                    {
-                        "id": "c4", "title": "Empleabilidad OLE",
-                        "b64": safe_fig_comp(lambda: build_comp_plot_ole(*calc_comp_ole_metric("tasa_cotizantes"), "Tasa Cotizantes")),
-                        "caption": "Tasa de Empleabilidad OLE"
-                    },
-                    {
-                        "id": "c5", "title": "Salario Evaluado",
-                        "b64": safe_fig_comp(lambda: build_comp_plot_salario(*get_comp_salario_series(), "Salario Promedio Estimado")),
-                        "caption": "Salario de Enganche Estimado"
-                    }
+                    {"id": "v1", "title": "Distribución Costo Matrícula", "b64": safe_fig_comp(calc_fig_comp_dist_costo),    "caption": "Comparativa de costos de matrícula en el grupo comparable.", "source": "Fuente: Ministerio de Educación Nacional (SNIES)\nElaboración propia"},
+                    {"id": "v2", "title": "Distribución Créditos",       "b64": safe_fig_comp(calc_fig_comp_dist_creditos), "caption": "Carga académica total del programa.",                      "source": "Fuente: Ministerio de Educación Nacional (SNIES)\nElaboración propia"}
                 ]
             },
-            "desercion": {
+            "ole": {
+                "technical_note": "Fuente: Observatorio Laboral para la Educación (OLE). Graduados formalmente vinculados.",
                 "plots": [
-                    {
-                        "id": "c6", "title": "Deserción SPADIES",
-                        "b64": safe_fig_comp(lambda: build_comp_plot_ole(*calc_comp_des_metric("tasa_desercion_inst"), "Deserción Promedio")),
-                        "caption": "Tasa de Deserción Institucional"
-                    }
+                    {"id": "o1", "title": "Tasa de Empleabilidad",          "b64": safe_fig_comp(calc_fig_comp_ole_empleabilidad),    "caption": "% de graduados vinculados formalmente.",                        "source": "Fuente: Observatorio Laboral para la Educación (OLE)\nElaboración propia"},
+                    {"id": "o2", "title": "Estabilidad Laboral",            "b64": safe_fig_comp(calc_fig_comp_ole_dependientes),     "caption": "Proporción de empleados dependientes sobre graduados.",          "source": "Fuente: Observatorio Laboral para la Educación (OLE)\nElaboración propia"},
+                    {"id": "o3", "title": "Posicionamiento Mercado (Dist)", "b64": safe_fig_comp(calc_plot_comp_dist_empleabilidad),  "caption": "Ubicación del programa en el clúster de empleabilidad.",         "source": "Fuente: Observatorio Laboral para la Educación (OLE)\nElaboración propia"},
+                    {"id": "o4", "title": "Salario de Enganche (Evol)",    "b64": safe_fig_comp(calc_fig_comp_salario_evolucion),    "caption": "Evolución del ingreso mensual inicial de egresados.",           "source": "Fuente: Observatorio Laboral para la Educación (OLE)\nElaboración propia"},
+                    {"id": "o5", "title": "Brecha Salarial (Dist)",        "b64": safe_fig_comp(calc_fig_comp_salario_dist),         "caption": "Comparativa de ingresos por programa en el grupo comparable.", "source": "Fuente: Observatorio Laboral para la Educación (OLE)\nElaboración propia"}
+                ]
+            },
+            "spadies": {
+                "technical_note": "Fuente: SPADIES. La deserción se calcula sobre cohortes anuales.",
+                "plots": [
+                    {"id": "d1", "title": "Deserción Anual (Trend)",       "b64": safe_fig_comp(calc_plot_comp_desercion_trend),     "caption": "Evolución comparada de la tasa de deserción anual.",   "source": "Fuente: Ministerio de Educación Nacional (SPADIES)\nElaboración propia"},
+                    {"id": "d2", "title": "Benchmarking Deserción (Dist)", "b64": safe_fig_comp(calc_plot_comp_dist_desercion),      "caption": "Posicionamiento en tasas de permanencia académica.",     "source": "Fuente: Ministerio de Educación Nacional (SPADIES)\nElaboración propia"}
                 ]
             },
             "saber": {
+                "technical_note": "Fuente: ICFES. Puntajes normalizados en escala 0-300.",
                 "plots": [
-                    {
-                        "id": "c7", "title": "Puntaje Global SABER PRO",
-                        "b64": safe_fig_comp(lambda: build_comp_plot_saber(*get_comp_saber_series('pro_gen_punt_global'), "Puntaje Global")),
-                        "caption": "Evolución de Puntaje Global en SABER PRO"
-                    },
-                    {
-                        "id": "c8", "title": "Inglés SABER PRO",
-                        "b64": safe_fig_comp(lambda: build_comp_plot_saber(*get_comp_saber_series('pro_gen_mod_ingles_punt'), "Inglés")),
-                        "caption": "Evolución de Puntaje de Inglés en SABER PRO"
-                    }
+                    {"id": "sb1", "title": "Saber PRO Global",       "b64": safe_fig_comp(calc_fig_comp_saber_trend_global),  "caption": "Evolución comparada del puntaje global.",       "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
+                    {"id": "sb2", "title": "Saber PRO Inglés",       "b64": safe_fig_comp(calc_fig_comp_saber_trend_ingles),  "caption": "Comparativa en competencias de segunda lengua.",  "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
+                    {"id": "sb3", "title": "Saber PRO Razonamiento", "b64": safe_fig_comp(calc_fig_comp_saber_trend_razona),  "caption": "Razonamiento cuantitativo comparado.",           "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
+                    {"id": "sb4", "title": "Saber PRO Lectura",      "b64": safe_fig_comp(calc_fig_comp_saber_trend_lectura), "caption": "Lectura crítica y comprensión comparada.",       "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
+                    {"id": "sb5", "title": "Saber PRO Ciudadanas",   "b64": safe_fig_comp(calc_fig_comp_saber_trend_ciuda),   "caption": "Competencias ciudadanas comparadas.",            "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
+                    {"id": "sb6", "title": "Saber PRO Escrita",      "b64": safe_fig_comp(calc_fig_comp_saber_trend_escrita), "caption": "Comunicación escrita comparada.",               "source": "Fuente: ICFES - Saber PRO\nElaboración propia"}
+                ]
+            },
+            "demo": {
+                "technical_note": "Caracterización sociodemográfica basada en formularios del ICFES.",
+                "plots": [
+                    {"id": "pr1", "title": "Perfil por Sexo",        "b64": safe_fig_comp(lambda: build_comp_saber_categorical("sexo")),                              "caption": "Composición por género del estudiantado.",    "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
+                    {"id": "pr2", "title": "Perfil por Edad",        "b64": safe_fig_comp(lambda: build_comp_saber_categorical("grupo_edad")),                       "caption": "Rangos de edad prevalentes.",               "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
+                    {"id": "pr3", "title": "Carga Laboral",          "b64": safe_fig_comp(lambda: build_comp_saber_categorical("pro_gen_estu_horassemanatrabaja")), "caption": "Dedicación al trabajo (Proxy).",            "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
+                    {"id": "pr4", "title": "Estrato Socioeconómico", "b64": safe_fig_comp(lambda: build_comp_saber_categorical("pro_gen_fami_estratovivienda")),     "caption": "Perfil económico del hogar de los evaluados.","source": "Fuente: ICFES - Saber PRO\nElaboración propia"}
                 ]
             }
         }
-        return report
+        print(f"DEBUG COMP REPORT - Universo: {report_data['kpis']['universo']}, Base Costo: {report_data['kpis']['base_costo']}")
+        return report_data
 
-    @render.download(filename=lambda: f"Informe_Tendencia_Comparada_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
-    def btn_download_comp():
-        with ui.Progress(min=0, max=1) as p:
-            try:
-                p.set(message="Generando Reporte Comparativo...", detail="Esto puede tardar unos segundos...")
-                import json
-                report_data = calc_all_comp_report_data()
-                report_json = json.dumps(report_data)
-                
-                template_path = app_dir / "web_report_demo" / "viewer_comp.html"
-                if not template_path.exists():
-                    template_path = app_dir / "viewer_comp.html"
-                
-                with open(template_path, "r", encoding="utf-8") as f:
-                    template_content = f.read()
-                
-                html_content = template_content.replace(
-                    '<script src="data_ANTIOQUIA.js"></script>',
-                    f'<script>window.__REPORT_DATA_COMP__ = {report_json};</script>'
+    @reactive.effect
+    @reactive.event(input.btn_preview_comp)
+    def handle_preview_comp():
+        """Genera la vista previa del Informe de Tendencia Comparada con loader premium animado."""
+        _NID = "comp_report_loader"
+
+        # ─── LOADER ANIMADO ───────────────────────────────────────────────────────
+        # El CSS corre en el browser mientras Python computa en el servidor.
+        # Los @keyframes se inyectan con <style> dentro de la notificación.
+        _LOADER_HTML = """
+        <style>
+          @keyframes comp-spin  { to { transform: rotate(360deg); } }
+          @keyframes comp-pulse { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.25);opacity:1} }
+          @keyframes comp-slide {
+            0%   { left:-55%; width:55%; }
+            50%  { left:55%;  width:55%; }
+            100% { left:110%; width:55%; }
+          }
+          @keyframes comp-msg {
+            0%           { opacity:0; transform:translateY(6px);  }
+            4%           { opacity:1; transform:translateY(0);    }
+            16%          { opacity:1; transform:translateY(0);    }
+            20%, 100%    { opacity:0; transform:translateY(-6px); }
+          }
+          @keyframes comp-bounce {
+            0%,100% { transform:translateY(0);   }
+            50%     { transform:translateY(-5px); }
+          }
+          #comp_report_loader { min-width:390px !important; }
+        </style>
+        <div style="font-family:'Nunito',sans-serif;padding:6px 2px;">
+
+          <!-- Spinner + Título -->
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+            <div style="position:relative;width:52px;height:52px;flex-shrink:0;">
+              <!-- Anillo exterior giratorio -->
+              <div style="position:absolute;inset:0;border-radius:50%;border:4px solid #f1f5f9;
+                          border-top:4px solid #DF6C5B;border-right:4px solid #674f95;
+                          animation:comp-spin 0.85s linear infinite;"></div>
+              <!-- Punto central pulsante -->
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                          width:16px;height:16px;background:#385A64;border-radius:50%;
+                          animation:comp-pulse 1.6s ease-in-out infinite;"></div>
+            </div>
+            <div>
+              <div style="font-size:1.05rem;font-weight:900;color:#385A64;letter-spacing:-0.4px;line-height:1.2;">
+                Generando Informe Comparativo
+              </div>
+              <div style="font-size:0.68rem;color:#94a3b8;margin-top:4px;font-weight:700;
+                          text-transform:uppercase;letter-spacing:0.8px;">
+                SymbioTIC &nbsp;·&nbsp; Benchmarking Estratégico
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra de progreso indeterminada deslizante -->
+          <div style="background:#e2e8f0;border-radius:12px;height:12px;overflow:hidden;
+                      position:relative;margin-bottom:16px;">
+            <div style="position:absolute;top:0;height:100%;
+                        background:linear-gradient(90deg,#DF6C5B,#9333ea,#385A64);
+                        border-radius:12px;
+                        animation:comp-slide 1.7s ease-in-out infinite;"></div>
+          </div>
+
+          <!-- Mensajes ciclantes cada 3 s (duración total del ciclo: 15 s) -->
+          <div style="position:relative;height:22px;overflow:hidden;margin-bottom:14px;">
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:comp-msg 15s linear infinite;animation-delay:0s;animation-fill-mode:both;">
+              ⚙️&nbsp; Cargando datos de matrícula y primer curso del SNIES...
+            </div>
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:comp-msg 15s linear infinite;animation-delay:3s;animation-fill-mode:both;">
+              💼&nbsp; Calculando métricas del Observatorio Laboral para la Educación (OLE)...
+            </div>
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:comp-msg 15s linear infinite;animation-delay:6s;animation-fill-mode:both;">
+              📊&nbsp; Renderizando gráficas comparativas en alta resolución...
+            </div>
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:comp-msg 15s linear infinite;animation-delay:9s;animation-fill-mode:both;">
+              🏛️&nbsp; Procesando resultados Saber PRO y estadísticas sociodemográficas...
+            </div>
+            <div style="position:absolute;font-size:0.74rem;color:#475569;white-space:nowrap;
+                        opacity:0;animation:comp-msg 15s linear infinite;animation-delay:12s;animation-fill-mode:both;">
+              📋&nbsp; Ensamblando el informe de benchmarking estratégico del programa...
+            </div>
+          </div>
+
+          <!-- Tres puntos rebotando -->
+          <div style="display:flex;gap:6px;justify-content:center;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#DF6C5B;
+                        animation:comp-bounce 1.2s ease-in-out infinite;animation-delay:0s;"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#9333ea;
+                        animation:comp-bounce 1.2s ease-in-out infinite;animation-delay:0.2s;"></div>
+            <div style="width:8px;height:8px;border-radius:50%;background:#385A64;
+                        animation:comp-bounce 1.2s ease-in-out infinite;animation-delay:0.4s;"></div>
+          </div>
+        </div>
+        """
+
+        ui.notification_show(
+            ui.HTML(_LOADER_HTML),
+            type="default",
+            duration=None,
+            id=_NID
+        )
+
+        try:
+            report_data = calc_all_comp_report_data()
+
+            if not report_data:
+                ui.notification_remove(_NID)
+                ui.notification_show(
+                    "Selecciona un programa base y criterios de comparación antes de generar el informe.",
+                    type="warning", duration=12
                 )
-                
-                # Manejar logo (igual que el otro)
-                logo_path = app_dir / "logo_symbiotic.svg"
-                if logo_path.exists():
-                    import base64
-                    with open(logo_path, "rb") as image_file:
-                        encoded_string = base64.b64encode(image_file.read()).decode()
-                        logo_data = f"data:image/svg+xml;base64,{encoded_string}"
-                        html_content = html_content.replace('src="../logo_symbiotic.svg"', f'src="{logo_data}"')
-                
-                pdf_buffer = io.BytesIO()
-                HTML(string=html_content, base_url=str(app_dir)).write_pdf(pdf_buffer)
-                pdf_buffer.seek(0)
-                yield pdf_buffer.read()
-            except Exception as e:
-                import traceback
-                error_details = traceback.format_exc()
-                print(f"DEBUG: Error Detallado en PDF Comparativo:\n{error_details}")
-                if "SilentException" in str(type(e)) or "programa base" in str(e):
-                    ui.notification_show("No se pudo generar el PDF comparativo: seleccione un programa base.", type="warning", duration=15)
-                else:
-                    ui.notification_show(f"Error generando PDF comparativo: {str(e)}", type="error", duration=15)
-                yield b"Error"
+                return
+
+            import json
+            report_json = json.dumps(report_data)
+
+            template_path = app_dir / "web_report_demo" / "viewer_comp.html"
+            if not template_path.exists():
+                template_path = app_dir / "viewer_comp.html"
+
+            with open(template_path, "r", encoding="utf-8") as f:
+                template_content = f.read()
+
+            injected_content = template_content.replace(
+                '<script src="data_ANTIOQUIA.js"></script>',
+                f'<script>window.__REPORT_DATA_COMP__ = {report_json};</script>'
+            )
+
+            logo_path = app_dir / "logo_symbiotic.svg"
+            if logo_path.exists():
+                import base64 as _b64
+                with open(logo_path, "rb") as image_file:
+                    logo_data = f"data:image/svg+xml;base64,{_b64.b64encode(image_file.read()).decode()}"
+                    injected_content = injected_content.replace('src="../logo_symbiotic.svg"', f'src="{logo_data}"')
+
+            ui.notification_remove(_NID)
+
+            ui.modal_show(ui.modal(
+                ui.tags.div(
+                    ui.tags.iframe(
+                        srcdoc=injected_content,
+                        style="width: 100%; height: 85vh; border: none; background: white;"
+                    ),
+                    style="padding: 0; margin: -1rem; background: #f8fafc; overflow: hidden; border-radius: 4px;"
+                ),
+                title="Informe de Tendencia Comparada — Benchmarking Estratégico",
+                size="xl",
+                easy_close=True,
+                footer=ui.div(
+                    ui.tags.button(
+                        "🖨️ Imprimir / Guardar PDF",
+                        onclick="document.querySelector('iframe').contentWindow.print();",
+                        class_="btn btn-primary",
+                        style="font-weight: bold; padding: 8px 20px;"
+                    ),
+                    ui.modal_button("Cerrar"),
+                    style="display: flex; gap: 10px; justify-content: flex-end; width: 100%;"
+                )
+            ))
+
+        except Exception as e:
+            import traceback
+            ui.notification_remove(_NID)
+            error_details = traceback.format_exc()
+            if "SilentException" in str(type(e)):
+                ui.notification_show("Por favor, selecciona los filtros necesarios antes de generar el informe.", type="warning", duration=15)
+            else:
+                ui.notification_show(f"Error en Vista Previa Comparativa: {str(e)}", type="error", duration=15)
+            print(f"DEBUG ERROR COMP:\n{error_details}")
+
+    @render.download(filename=lambda: f"Informe_Propio_Bench_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+    def download_pdf_comp():
+        # Este disparador es para la descarga directa vía WeasyPrint si se desea, 
+        # pero para gráficas complejas se recomienda el botón de Imprimir del visor.
+        pass
 
 app = App(app_ui, server, static_assets={"/temp_report": app_dir / "temp_report"})
