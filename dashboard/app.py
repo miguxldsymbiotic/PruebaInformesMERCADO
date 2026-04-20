@@ -12,6 +12,7 @@ import io
 import numpy as np
 from jinja2 import Template
 from weasyprint import HTML
+from concurrent.futures import ThreadPoolExecutor
 
 # Custom palette global para Plotly (puntos, lineas, barras, etc.)
 px.defaults.color_discrete_sequence = [
@@ -1839,8 +1840,9 @@ def server(input, output, session):
     def calc_plot_dist_empleabilidad():
         df_pd = get_ole_distribution_df("graduados_que_cotizan", "graduados")
         if df_pd.empty: return go.Figure()
-        fig = px.histogram(df_pd, x="tasa", histnorm='percent')
-        fig.update_traces(marker=dict(color="#31497e"), xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white")
+        fig = px.histogram(df_pd, x="tasa", histnorm='percent', text_auto='.1f')
+        fig.update_traces(marker=dict(color="#31497e"), xbins=dict(start=0.0, end=1.0, size=0.05), 
+                          marker_line_width=1, marker_line_color="white", textposition='outside', textfont_size=11)
         fig.update_layout(
             showlegend=False,
             plot_bgcolor='white',
@@ -1874,8 +1876,9 @@ def server(input, output, session):
     def calc_plot_dist_dependientes():
         df_pd = get_ole_distribution_df("graduados_cotizantes_dependientes", "graduados")
         if df_pd.empty: return go.Figure()
-        fig = px.histogram(df_pd, x="tasa", histnorm='percent')
-        fig.update_traces(marker=dict(color="#31497e"), xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white")
+        fig = px.histogram(df_pd, x="tasa", histnorm='percent', text_auto='.1f')
+        fig.update_traces(marker=dict(color="#31497e"), xbins=dict(start=0.0, end=1.0, size=0.05), 
+                          marker_line_width=1, marker_line_color="white", textposition='outside', textfont_size=11)
         fig.update_layout(
             showlegend=False,
             plot_bgcolor='white',
@@ -2377,8 +2380,9 @@ def server(input, output, session):
         if len(df) == 0: return go.Figure()
         max_yr = df["anno"].max()
         df_plot = df.filter(pl.col("anno") == max_yr).to_pandas()
-        fig = px.histogram(df_plot, x="desercion_anual_mean", nbins=50, histnorm='percent')
-        fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.02), marker_color="#31497e", marker_line_color="white", marker_line_width=1)
+        fig = px.histogram(df_plot, x="desercion_anual_mean", nbins=50, histnorm='percent', text_auto='.1f')
+        fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.02), marker_color="#31497e", 
+                          marker_line_color="white", marker_line_width=1, textposition='outside', textfont_size=11)
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Tasa de Deserción", tickformat=".0%", gridcolor='#EEEEEE'),
@@ -2465,7 +2469,7 @@ def server(input, output, session):
         else:
             agg["porcentaje"] = 0
         fig = px.bar(agg, x="porcentaje", y="rango_salario", orientation='h', text_auto='.1%')
-        fig.update_traces(marker_color="#31497e", marker_line_color="white", marker_line_width=1.5)
+        fig.update_traces(marker_color="#31497e", marker_line_color="white", marker_line_width=1.5, textposition='auto', textfont_size=12)
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Participación de Graduados (%)", tickformat=".0%", gridcolor='#EEEEEE'),
@@ -2494,6 +2498,7 @@ def server(input, output, session):
         agg["porcentaje"] = agg["cantidad"] / totals_sexo.replace(0, 1)
         
         fig = px.bar(agg, x="porcentaje", y="rango_salario", color="sexo", orientation='h', barmode='group', color_discrete_map=COLOR_SEXO, text_auto='.1%')
+        fig.update_traces(textposition='auto', textfont_size=11, marker_line_width=1, marker_line_color="white")
         fig.update_layout(
             legend_title_text="Sexo", plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
             xaxis=dict(title="Participación de Graduados (%)", tickformat=".0%", gridcolor='#EEEEEE'),
@@ -2574,15 +2579,10 @@ def server(input, output, session):
         df_pd, col_orig, col_dest, label_ejes = get_ole_mobility_df()
         if len(df_pd) == 0: return go.Figure()
         
-        # Simplificación estética de nombres largos en la capa de presentación
-        long_name_san_andres = "ARCHIPIELAGO DE SAN ANDRES PROVIDENCIA Y SANTA CATALINA"
-        df_pd[col_orig] = df_pd[col_orig].astype(str).str.replace(long_name_san_andres, "SAN ANDRES ISLAS").str.replace("ARCHIPIELAGO DE SAN ANDRES, PROVIDENCIA Y SANTA CATALINA", "SAN ANDRES ISLAS")
-        df_pd[col_dest] = df_pd[col_dest].astype(str).str.replace(long_name_san_andres, "SAN ANDRES ISLAS").str.replace("ARCHIPIELAGO DE SAN ANDRES, PROVIDENCIA Y SANTA CATALINA", "SAN ANDRES ISLAS")
-        
         # Detectar el elemento geográfico actualmente seleccionado para resaltarlo
         f_vals = isolated_filters()
         seleccionados = list(f_vals["municipio"] or []) if label_ejes == "Municipio" else list(f_vals["departamento"] or [])
-        seleccionados_upper = [str(x).upper().replace(long_name_san_andres, "SAN ANDRES ISLAS").replace("ARCHIPIELAGO DE SAN ANDRES, PROVIDENCIA Y SANTA CATALINA", "SAN ANDRES ISLAS") for x in seleccionados]
+        seleccionados_upper = [str(x).upper() for x in seleccionados]
         
         # Preprocesar códigos anómalos o faltantes
         df_pd[col_orig] = df_pd[col_orig].astype(str).replace({"1": "SIN INFORMACIÓN", "1.0": "SIN INFORMACIÓN"})
@@ -2670,21 +2670,21 @@ def server(input, output, session):
         x_ticks = build_ticks(matriz.columns)
         y_ticks = build_ticks(matriz.index)
         
-        dynamic_h = max(450, len(matriz.index) * 25 + 150)
+        dynamic_h = max(500, len(matriz.index) * 25 + 200)
         
         fig.update_layout(
             height=dynamic_h,
-            plot_bgcolor='rgba(200, 200, 200, 0.4)', paper_bgcolor='white', margin=dict(l=10, r=10, t=20, b=10),
+            plot_bgcolor='rgba(200, 200, 200, 0.4)', paper_bgcolor='white', margin=dict(l=200, r=50, t=200, b=50),
             shapes=shapes,
             xaxis=dict(
                 title=dict(text=f"{label_ejes} de Destino Laboral (Donde Cotiza)", font=dict(size=17), standoff=20), 
                 tickmode='array', tickvals=list(matriz.columns), ticktext=x_ticks,
-                tickfont=dict(size=12), tickangle=-90
+                tickfont=dict(size=12), tickangle=-90, automargin=True
             ),
             yaxis=dict(
                 title=dict(text=f"{label_ejes} de Origen Académico (Donde Graduó)", font=dict(size=17), standoff=20), 
                 tickmode='array', tickvals=list(matriz.index), ticktext=y_ticks,
-                tickfont=dict(size=12)
+                tickfont=dict(size=12), automargin=True
             )
         )
         return fig
@@ -2742,18 +2742,32 @@ def server(input, output, session):
             xgap=1, ygap=1
         ))
         
-        dynamic_h = max(550, len(matriz.index) * 18 + 150)
+        # Ajuste dinámico de altura y tipografía (Ampliación Extrema)
+        num_items = len(matriz.index)
+        if num_items > 40:
+            row_height = 22
+            base_tick_size = 9
+        elif num_items > 20:
+            row_height = 28
+            base_tick_size = 10
+        else:
+            row_height = 40
+            base_tick_size = 12
+
+        # Altura dinámica considerando márgenes masivos para nombres largos (400px a la izquierda)
+        dynamic_h = max(800, num_items * row_height + 500)
         
         fig.update_layout(
-            height=dynamic_h, width=850,
-            plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=5, r=5, t=5, b=5),
+            height=dynamic_h, width=1500,
+            plot_bgcolor='white', paper_bgcolor='white', 
+            margin=dict(l=400, r=80, t=350, b=80),
             xaxis=dict(
-                title=dict(text=f"{label_ejes} de Origen Académico (Donde Graduó)", font=dict(size=14)), 
-                tickfont=dict(size=9), tickangle=-45, side="top"
+                title=dict(text=f"{label_ejes} de Origen Académico (Donde Graduó)", font=dict(size=14), standoff=30), 
+                tickfont=dict(size=base_tick_size), tickangle=-45, side="top", automargin=True
             ),
             yaxis=dict(
-                title=dict(text=f"{label_ejes} de Destino Laboral (Donde Cotiza)", font=dict(size=14)), 
-                tickfont=dict(size=9)
+                title=dict(text=f"{label_ejes} de Destino Laboral (Donde Cotiza)", font=dict(size=14), standoff=30), 
+                tickfont=dict(size=base_tick_size), automargin=True
             )
         )
         return fig
@@ -2982,8 +2996,8 @@ def server(input, output, session):
         # Convertir a formato largo para Plotly
         df_plot = df_pd.melt(id_vars="anno", var_name="Componente", value_name="Puntaje")
         
-        fig = px.line(df_plot, x="anno", y="Puntaje", color="Componente", text="Puntaje", markers=True)
-        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
+        fig = px.line(df_plot, x="anno", y="Puntaje", color="Componente", text=df_plot["Puntaje"].round(0), markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=9, color="black"))
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -3063,12 +3077,11 @@ def server(input, output, session):
         # Tendencia final de promedios
         trend = agg.group_by(["anno", dim]).agg(pl.col(column).mean()).sort(["anno", dim])
         
-        fig = px.line(trend.to_pandas(), x="anno", y=column, color=dim, markers=True)
-        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:,.0f}")
-        fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
-        for trace in fig.data:
-            trace.marker.line.color = trace.line.color
-            
+        df_pd = trend.to_pandas()
+        fig = px.line(df_pd, x="anno", y=column, color=dim, markers=True, text=df_pd[column].round(0))
+        
+        fig.update_traces(textposition="top center", textfont=dict(size=9, color="black"))
+        
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=30, b=20),
             xaxis=dict(title="Año", tickmode="linear", gridcolor='#EEEEEE'),
@@ -3164,8 +3177,8 @@ def server(input, output, session):
         ).sort(["anno", column])
         
         df_pd = df_plot.to_pandas()
-        fig = px.line(df_pd, x="anno", y="participacion", color=column, text="participacion", markers=True)
-        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=12, color="black"), texttemplate="%{y:.1%}")
+        fig = px.line(df_pd, x="anno", y="participacion", color=column, text=(df_pd["participacion"] * 100).round(1).astype(str) + "%", markers=True)
+        fig.update_traces(mode="lines+markers+text", textposition="top center", textfont=dict(size=9, color="black"))
         fig.update_traces(line=dict(width=3), marker=dict(size=8, color="white", line=dict(width=2)))
         for trace in fig.data:
             trace.marker.line.color = trace.line.color
@@ -4007,7 +4020,7 @@ def server(input, output, session):
         fig = px.bar(df, x="porcentaje", y="rango_salario", color="grupo", orientation='h', barmode='group', 
                      color_discrete_map={"Programa Seleccionado": "#31497e", "Grupo Comparable": "#674f95"}, 
                      text_auto='.1%')
-        fig.update_traces(marker_line_width=1.5, marker_line_color="white")
+        fig.update_traces(marker_line_width=1.5, marker_line_color="white", textposition='auto', textfont_size=12)
         fig.update_layout(
             legend_title_text="",
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
@@ -4833,16 +4846,22 @@ def server(input, output, session):
     @reactive.calc
     def calc_comp_kpi_desercion():
         comp_codigos = comparable_snies_codigos()
-        if len(comp_codigos) == 0: return "0%"
+        if len(comp_codigos) == 0: return None, None
         max_yr = max_anno_desercion
         df = df_desercion.filter((pl.col("codigo_snies_del_programa").is_in(comp_codigos)) & (pl.col("anno") == max_yr))
-        if len(df) == 0: return "Sin dato"
-        val = df["desercion_anual_mean"].mean()
-        return format_pct_es(val) if val is not None else "Sin dato"
+        if len(df) == 0: return None, None
+        return df["desercion_anual_mean"].mean(), df["desercion_anual_mean"].std()
 
     @render.ui
     def comp_kpi_desercion():
-        return ui.HTML(f"<div style='font-size: 44px; font-weight: bold; color: #31497e;'>{calc_comp_kpi_desercion()}</div>")
+        mean, std = calc_comp_kpi_desercion()
+        if mean is None: 
+            return ui.HTML("<div style='font-size: 44px; font-weight: bold; color: #674f95;'>Sin dato</div>")
+        
+        formatted = format_pct_es(mean)
+        if std is not None:
+            formatted += f" <span style='font-size: 18px; color: gray;'>±{format_pct_es(std)} (SD)</span>"
+        return ui.HTML(f"<div style='font-size: 44px; font-weight: bold; color: #674f95;'>{formatted}</div>")
 
     # --- TENDENCIA COMPARADA PRUEBA SABER ---
     @reactive.calc
@@ -5077,7 +5096,7 @@ def server(input, output, session):
         fig = px.bar(df_pd, x="porcentaje", y=column_id, color="grupo", orientation='h', barmode='group', 
                      color_discrete_map={"Programa Seleccionado": "#31497e", "Grupo Comparable": "#674f95"}, 
                      text_auto='.1%')
-        fig.update_traces(marker_line_width=1.5, marker_line_color="white", textfont_size=12, textangle=0, textposition="outside", cliponaxis=False)
+        fig.update_traces(marker_line_width=1.5, marker_line_color="white", textfont_size=12, textangle=0, textposition="auto", cliponaxis=False)
         fig.update_layout(
             legend_title_text="",
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=40, t=20, b=20),
@@ -5120,12 +5139,15 @@ def server(input, output, session):
             except:
                 return None
 
-        def safe_fig(fn, w=800, h=450):
+        def safe_fig(fn, w=None, h=None):
             try:
                 fig = fn()
-                return fig_to_base64(fig, width=w, height=h)
+                # Usar dimensiones del layout de la figura si no se especifican explícitamente
+                final_w = w if w is not None else (fig.layout.width or 800)
+                final_h = h if h is not None else (fig.layout.height or 450)
+                return fig_to_base64(fig, width=final_w, height=final_h)
             except:
-                return fig_to_base64(go.Figure(), width=w, height=h)
+                return fig_to_base64(go.Figure(), width=(w or 800), height=(h or 450))
 
         def safe_kpi(fn, default="Sin dato"):
             try:
@@ -5135,21 +5157,53 @@ def server(input, output, session):
                 return default
 
         # Lógica inteligente de Alcance del Análisis
+        # Lógica inteligente de Alcance del Análisis
         snies_sel = get_input_safe("snies_label", [])
         inst_sel = get_input_safe("institucion_label", []) or get_input_safe("nombre_institucion", [])
         dept_sel = get_input_safe("departamento", [])
 
+        filtros_mapeo = {
+            "departamento": "Departamento",
+            "municipio": "Municipio",
+            "modalidad": "Modalidad",
+            "nivel_de_formacion": "Nivel de Formación",
+            "area_de_conocimiento": "Área de Conocimiento",
+            "nucleo_basico_del_conocimiento": "Núcleo Básico",
+            "sector": "Sector",
+            "estado_programa": "Estado"
+        }
+        
+        filtros_activos = []
+        
+        # 1. Programa / SNIES
         if snies_sel:
-            # Si hay SNIES, es lo más específico
-            snies_clean = [s.split(" - ")[0] for s in snies_sel]
-            desc_alcance = f"El alcance de este análisis es analizar el desempeño del programa con registro SNIES {', '.join(snies_clean)} y sus características competitivas en el mercado."
-        elif inst_sel:
-            # Si hay Institución
-            inst_clean = [i.split(" - ")[-1] for i in inst_sel]
-            desc_alcance = f"Este informe es un análisis estratégico donde se está evaluando el posicionamiento de {', '.join(inst_clean)} frente al ecosistema educativo."
-        elif dept_sel:
-            # Si hay Departamento
-            desc_alcance = f"Este informe es un análisis detallado del sector de educación superior a nivel departamental en {', '.join(dept_sel)}."
+            snies_clean = [str(s).split(" - ")[0] for s in snies_sel]
+            v_snies = ", ".join(snies_clean).replace("'", "").replace("(", "").replace(")", "")
+            filtros_activos.append(f"<b>Programa (SNIES)</b>: {v_snies}")
+        
+        # 2. Institución
+        if inst_sel:
+            inst_clean = [str(i).split(" - ")[-1] for i in inst_sel]
+            v_inst = ", ".join(inst_clean).replace("'", "").replace("(", "").replace(")", "")
+            filtros_activos.append(f"<b>Institución</b>: {v_inst}")
+            
+        # 3. Resto de filtros dinámicos
+        for fid, label in filtros_mapeo.items():
+            val = get_input_safe(fid, [])
+            if val and len(val) > 0:
+                if isinstance(val, (list, tuple)):
+                    v_str = ", ".join(map(str, val))
+                else:
+                    v_str = str(val)
+                
+                # Limpiar caracteres de formato de Python
+                v_str = v_str.replace("('", "").replace("',)", "").replace("'", "").replace("(", "").replace(")", "")
+                
+                if v_str.upper() not in ["", "TODAS", "TODOS"]:
+                    filtros_activos.append(f"<b>{label}</b>: {v_str}")
+
+        if filtros_activos:
+            desc_alcance = "Este informe contempla un análisis estratégico bajo la siguiente segmentación: " + "; ".join(filtros_activos) + "."
         else:
             desc_alcance = "Este informe es un análisis a nivel nacional del ecosistema de educación superior basado en los consolidados generales."
 
@@ -5190,17 +5244,117 @@ def server(input, output, session):
             if not mob_df_pd.empty:
                 total_m = mob_df_pd["cotizantes"].sum()
                 if total_m > 0:
-                    # Top 5 Origen
-                    top_o = mob_df_pd.groupby(col_o)["cotizantes"].sum().sort_values(ascending=False).head(5)
-                    mob_origin = [{"name": str(n), "value": format_pct_es(v/total_m)} for n, v in top_o.items()]
-                    # Top 5 Destino
-                    top_d = mob_df_pd.groupby(col_d)["cotizantes"].sum().sort_values(ascending=False).head(5)
-                    mob_destination = [{"name": str(n), "value": format_pct_es(v/total_m)} for n, v in top_d.items()]
+                    # Top 13 Origen
+                    top_o = mob_df_pd.groupby(col_o)["cotizantes"].sum().sort_values(ascending=False).head(13)
+                    mob_origin = [{"name": str(n), "value": f"{v:,.0f}".replace(",", ".")} for n, v in top_o.items()]
+                    # Top 13 Destino
+                    top_d = mob_df_pd.groupby(col_d)["cotizantes"].sum().sort_values(ascending=False).head(13)
+                    mob_destination = [{"name": str(n), "value": f"{v:,.0f}".replace(",", ".")} for n, v in top_d.items()]
         except Exception as e:
             print(f"Error calculando movilidad para PDF: {e}")
             mob_origin = []
             mob_destination = []
 
+        report_kpis = {
+            "instituciones": safe_kpi(calc_total_instituciones),
+            "programas": safe_kpi(calc_total_programas),
+            "pcurso": safe_kpi(calc_total_primer_curso),
+            "matriculados": safe_kpi(calc_total_matriculados),
+            "graduados": safe_kpi(calc_total_graduados),
+            "vinculacion": safe_kpi(calc_kpi_empleabilidad),
+            "salario": safe_kpi(calc_kpi_salario_promedio_total), 
+            "retencion": safe_kpi(calc_kpi_retencion),
+            "dep_grad": safe_kpi(calc_kpi_dependientes_graduados),
+            "dep_cot": safe_kpi(calc_kpi_cotizantes_dependientes),
+            "ratio_migratorio": safe_kpi(calc_kpi_ratio),
+            "saber_global": safe_kpi(lambda: calc_saber_score('pro_gen_punt_global')),
+            "sal_promedio": safe_kpi(calc_kpi_salario_promedio_total),
+            "sal_femenino": safe_kpi(calc_kpi_salario_promedio_fem),
+            "sal_masculino": safe_kpi(calc_kpi_salario_promedio_masc),
+            "des_rate": safe_kpi(calc_kpi_desercion_promedio, default="0,0%"),
+            "s_global": safe_kpi(lambda: calc_saber_score('pro_gen_punt_global')),
+            "s_razona": safe_kpi(lambda: calc_saber_score('pro_gen_mod_razona_cuantitat_punt')),
+            "s_lectura": safe_kpi(lambda: calc_saber_score('pro_gen_mod_lectura_critica_punt')),
+            "s_ciuda": safe_kpi(lambda: calc_saber_score('pro_gen_mod_competen_ciudada_punt')),
+            "s_ingles": safe_kpi(lambda: calc_saber_score('pro_gen_mod_ingles_punt')),
+            "s_escrita": safe_kpi(lambda: calc_saber_score('pro_gen_mod_comuni_escrita_punt')),
+            "evaluados": safe_kpi(calc_total_evaluados_saber),
+            "progs_saber": safe_kpi(calc_total_programas_saber)
+        }
+        # --- GENERACIÓN DE GRÁFICOS EN PARALELO ---
+        # Definimos las tareas de renderizado (Plot configurations)
+        plot_tasks = [
+            # SNIES
+            ("snies", 0, "t1", "Primer Curso (Total)", calc_plot_primer_curso_total, "Evolución histórica consolidada de ingresos."),
+            ("snies", 1, "t2", "Matriculados (Total)", calc_plot_matriculados_total, "Población estudiantil activa en el sistema."),
+            ("snies", 2, "t3", "Graduados (Total)", calc_plot_graduados_total, "Egresados titulados por cohorte de salida."),
+            ("snies", 3, "s1", "Primer Curso x Sexo", calc_plot_primer_curso, "Participación por género en el ingreso."),
+            ("snies", 4, "s2", "Estudiantes matriculados según sexo", calc_plot_matriculados, "Permanencia desagregada por sexo."),
+            ("snies", 5, "s3", "Estudiantes graduados por sexo", calc_plot_graduados, "Perfil de egreso por género."),
+            # OLE
+            ("ole", 0, "o1", "Porcentaje de graduados vinculados formalmente", calc_plot_empleabilidad_total, "% de graduados vinculados formalmente."),
+            ("ole", 1, "o2", "Relación Dep/Grad", calc_plot_dependientes_total, "Proporción de empleados dependientes."),
+            ("ole", 2, "o3", "Tasa de empleabilidad por sexo", calc_plot_empleabilidad_sexo, "tasa de empleabilidad por sexo"),
+            ("ole", 3, "o4", "Dependientes x Sexo", calc_plot_dependientes_sexo, "Estabilidad laboral por género."),
+            ("ole", 4, "o5", "Dist. Empleabilidad", calc_plot_dist_empleabilidad, "Distribución regional de la tasa."),
+            ("ole", 5, "o6", "Dist. Dependientes", calc_plot_dist_dependientes, "Consolidado de estabilidad regional."),
+            ("ole", 6, "o7", "Dist. Emp x Sexo", calc_plot_dist_empleabilidad_sexo, "Mapa de calor de vinculación genérica."),
+            ("ole", 7, "o8", "Dist. Dep x Sexo", calc_plot_dist_dependientes_sexo, "Mapa de calor de dependencia genérica."),
+            ("ole", 8, "o10", "Evol. Retención Local", calc_plot_retencion_trend, "Capacidad de retención de talento."),
+            ("ole", 9, "o11", "Ratio Migratorio", calc_plot_ratio_trend, "Dinámica de flujo regional."),
+            ("ole", 10, "o12", "Evol. Dep/Cotizantes", calc_plot_dependientes_trend, "Relación de calidad de empleo."),
+            ("ole", 11, "o9", "Matriz de Movilidad Origen vs Destino", calc_plot_mobility_matrix_report, "Relación entre lugar de formación y vinculación laboral."),
+            # Salarios
+            ("salarios", 0, "v1", "Distribución de rango salarial", calc_plot_salario_dist_total, "distribución de rango salarial"),
+            ("salarios", 1, "v2", "Rangos x Sexo", calc_plot_salario_dist_sexo, "Distribución salarial segregada."),
+            ("salarios", 2, "v3", "Evolución Salario (Corrientes)", calc_plot_salario_evolucion_total, "Tendencia nominal."),
+            ("salarios", 3, "v4", "Evolución Salario Sexo (Corrientes)", calc_plot_salario_evolucion_sexo, "Brechas en pesos corrientes."),
+            ("salarios", 4, "v5", "Evolución Salario (Constantes)", calc_plot_salario_evolucion_total_constante, "Tendencia ajustada al SMMLV."),
+            ("salarios", 5, "v6", "Evolución Salario Sexo (Constantes)", calc_plot_salario_evolucion_sexo_constante, "Brechas en pesos constantes."),
+            # Spadies
+            ("spadies", 0, "d1", "Histograma Deserción", calc_plot_dist_desercion, "Variabilidad de la deserción académica."),
+            ("spadies", 1, "d2", "Evolución de tasa de deserción anual", calc_plot_trend_desercion, "evolución de tasa de deserción anual"),
+            # Saber Pro
+            ("saber", 0, "sb1", "Tendencia Global por Sexo", (lambda: calc_plot_saber_trend()), "Evolución histórica de competencias genéricas."),
+            ("saber", 1, "sb2", "Distribución Global", (lambda: calc_plot_saber_dist()), "Distribución del puntaje global."),
+            ("saber", 2, "sb3", "Distribución por Sexo", (lambda: calc_plot_saber_count_sexo()), "Cantidad de evaluados por sexo."),
+            ("saber", 3, "sb4", "Distribución por Edad", (lambda: calc_plot_saber_count_edad()), "Cantidad de evaluados por edad."),
+            ("saber", 4, "sb5", "Global por Sexo", (lambda: calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo")), "Evolución del puntaje global desagregado por sexo."),
+            ("saber", 5, "sb6", "Global por Edad", (lambda: calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad")), "Evolución del puntaje global desagregado por grupo de edad."),
+            ("saber", 6, "sb7", "Razonamiento por Sexo", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo")), "Tendencia de Razonamiento Cuantitativo por sexo."),
+            ("saber", 7, "sb8", "Razonamiento por Edad", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad")), "Tendencia de Razonamiento Cuantitativo por grupo de edad."),
+            ("saber", 8, "sb9", "Lectura por Sexo", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo")), "Tendencia de Lectura Crítica desagregada por sexo."),
+            ("saber", 9, "sb10", "Lectura por Edad", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad")), "Tendencia de Lectura Crítica por grupo de edad."),
+            ("saber", 10, "sb11", "Ciudadanas por Sexo", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo")), "Tendencia de Competencias Ciudadanas por sexo."),
+            ("saber", 11, "sb12", "Ciudadanas por Edad", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad")), "Tendencia de Competencias Ciudadanas por grupo de edad."),
+            ("saber", 12, "sb13", "Inglés por Sexo", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo")), "Tendencia del módulo de Inglés desagregada por sexo."),
+            ("saber", 13, "sb14", "Inglés por Edad", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad")), "Tendencia del módulo de Inglés por grupo de edad."),
+            ("saber", 14, "sb15", "Comunicación por Sexo", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo")), "Tendencia de Comunicación Escrita desagregada por sexo."),
+            ("saber", 15, "sb16", "Comunicación por Edad", (lambda: calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad")), "Tendencia de Comunicación Escrita por grupo de edad."),
+            # Demo
+            ("demo", 0, "pr1", "Socio-demográfico Sexo", (lambda: calc_plot_saber_categorical("sexo", "Sexo")), "Composición por género."),
+            ("demo", 1, "pr2", "Socio-demográfico Edad", (lambda: calc_plot_saber_categorical("grupo_edad", "Edad")), "Composición por rangos de edad."),
+            ("demo", 2, "pr3", "Horas de Trabajo", (lambda: calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Trabajo")), "Carga laboral reportada (Proxy)."),
+            ("demo", 3, "pr4", "Estrato Social", (lambda: calc_plot_saber_categorical("pro_gen_fami_estratovivienda", "Estrato")), "Perfil económico de los hogares."),
+            ("demo", 4, "pr5", "Evolución por Sexo", (lambda: calc_plot_saber_categorical_trend("sexo", "Sexo")), "Evolución histórica por sexo."),
+            ("demo", 5, "pr6", "Evolución por Edad", (lambda: calc_plot_saber_categorical_trend("grupo_edad", "Edad")), "Evolución histórica por grupo de edad."),
+            ("demo", 6, "pr7", "Evolución de Trabajo", (lambda: calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo")), "Evolución de carga laboral."),
+            ("demo", 7, "pr8", "Evolución de Estrato", (lambda: calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato")), "Evolución del perfil económico.")
+        ]
+
+        def exec_task(t):
+            section, idx, pid, title, fn, caption = t
+            return (section, idx, pid, title, safe_fig(fn), caption)
+
+        # Renderizado SECUENCIAL: Kaleido usa un subproceso Chromium único
+        # que no puede compartirse entre hilos en Windows. La ejecución en paralelo
+        # causa "Couldn't close or kill browser subprocess". Se mantiene secuencial.
+        print(f"INFO: Iniciando renderizado secuencial de {len(plot_tasks)} gráficos...")
+        start_render = datetime.datetime.now()
+        results = [exec_task(t) for t in plot_tasks]
+        print(f"INFO: Renderizado completado en {(datetime.datetime.now() - start_render).total_seconds():.2f}s")
+
+        # Inicializar estructura de report_data
         report_data = {
             "metadata": {
                 "title": "Informe de Mercado de Educación Superior",
@@ -5209,130 +5363,36 @@ def server(input, output, session):
                 "year_start": 2018,
                 "year_end": int(snies_y),
                 "logo_data": logo_b64,
-                "source_years": {
-                    "snies": snies_y,
-                    "ole": ole_y,
-                    "spadies": spadies_y,
-                    "icfes": icfes_y
-                },
-                "scope": {
-                    "type": "filters",
-                    "description": filtros_desc,
-                    "details": {
-                        "Departamento": dept_name,
-                        "Institución": inst_name
-                    }
-                }
+                "source_years": {"snies": snies_y, "ole": ole_y, "spadies": spadies_y, "icfes": icfes_y},
+                "scope": {"type": "filters", "description": filtros_desc, "details": {"Departamento": dept_name, "Institución": inst_name}}
             },
-            "kpis": {
-                "instituciones": safe_kpi(calc_total_instituciones),
-                "programas": safe_kpi(calc_total_programas),
-                "pcurso": safe_kpi(calc_total_primer_curso),
-                "matriculados": safe_kpi(calc_total_matriculados),
-                "graduados": safe_kpi(calc_total_graduados),
-                "vinculacion": safe_kpi(calc_kpi_empleabilidad),
-                "salario": safe_kpi(calc_kpi_salario_promedio_total), 
-                "retencion": safe_kpi(calc_kpi_retencion),
-                "dep_grad": safe_kpi(calc_kpi_dependientes_graduados),
-                "dep_cot": safe_kpi(calc_kpi_cotizantes_dependientes),
-                "sal_ratio": safe_kpi(lambda: f"{(float(calc_kpi_salario_promedio_total().replace('$', '').replace('.', '').replace(',', '.')) / df_smmlv_pl.filter(pl.col('anno_corte') == df_smmlv_pl['anno_corte'].max())['smmlv'][0]):.2f}" if calc_kpi_salario_promedio_total() != "Sin dato" else "0.00"),
-                "saber_global": safe_kpi(lambda: calc_saber_score('pro_gen_punt_global')),
-                "sal_promedio": safe_kpi(calc_kpi_salario_promedio_total),
-                "sal_femenino": safe_kpi(calc_kpi_salario_promedio_fem),
-                "sal_masculino": safe_kpi(calc_kpi_salario_promedio_masc),
-                "des_rate": safe_kpi(calc_kpi_desercion_promedio, default="0,0%"),
-                "s_global": safe_kpi(lambda: calc_saber_score('pro_gen_punt_global')),
-                "s_razona": safe_kpi(lambda: calc_saber_score('pro_gen_mod_razona_cuantitat_punt')),
-                "s_lectura": safe_kpi(lambda: calc_saber_score('pro_gen_mod_lectura_critica_punt')),
-                "s_ciuda": safe_kpi(lambda: calc_saber_score('pro_gen_mod_competen_ciudada_punt')),
-                "s_ingles": safe_kpi(lambda: calc_saber_score('pro_gen_mod_ingles_punt')),
-                "s_escrita": safe_kpi(lambda: calc_saber_score('pro_gen_mod_comuni_escrita_punt')),
-                "evaluados": safe_kpi(calc_total_evaluados_saber),
-                "progs_saber": safe_kpi(calc_total_programas_saber)
-            },
-            "snies": {
-                "technical_note": "Fuente: Registros administrativos SNIES.",
-                "plots": [
-                    {"id": "t1", "title": "Primer Curso (Total)", "b64": safe_fig(calc_plot_primer_curso_total), "caption": "Evolución histórica consolidada de ingresos."},
-                    {"id": "t2", "title": "Matriculados (Total)", "b64": safe_fig(calc_plot_matriculados_total), "caption": "Población estudiantil activa en el sistema."},
-                    {"id": "t3", "title": "Graduados (Total)", "b64": safe_fig(calc_plot_graduados_total), "caption": "Egresados titulados por cohorte de salida."},
-                    {"id": "s1", "title": "Primer Curso x Sexo", "b64": safe_fig(calc_plot_primer_curso), "caption": "Participación por género en el ingreso."},
-                    {"id": "s2", "title": "Estudiantes matriculados según sexo", "b64": safe_fig(calc_plot_matriculados), "caption": "Permanencia desagregada por sexo."},
-                    {"id": "s3", "title": "Estudiantes graduados por sexo", "b64": safe_fig(calc_plot_graduados), "caption": "Perfil de egreso por género."}
-                ]
-            },
-            "ole": {
-                "technical_note": "Fuente: Observatorio Laboral para la Educación (Graduados que cotizan).",
-                "plots": [
-                    {"id": "o1", "title": "Porcentaje de graduados vinculados formalmente", "b64": safe_fig(calc_plot_empleabilidad_total), "caption": "% de graduados vinculados formalmente."},
-                    {"id": "o2", "title": "Relación Dep/Grad", "b64": safe_fig(calc_plot_dependientes_total), "caption": "Proporción de empleados dependientes."},
-                    {"id": "o3", "title": "Tasa de empleabilidad por sexo", "b64": safe_fig(calc_plot_empleabilidad_sexo), "caption": "tasa de empleabilidad por sexo"},
-                    {"id": "o4", "title": "Dependientes x Sexo", "b64": safe_fig(calc_plot_dependientes_sexo), "caption": "Estabilidad laboral por género."},
-                    {"id": "o5", "title": "Dist. Empleabilidad", "b64": safe_fig(calc_plot_dist_empleabilidad), "caption": "Distribución regional de la tasa."},
-                    {"id": "o6", "title": "Dist. Dependientes", "b64": safe_fig(calc_plot_dist_dependientes), "caption": "Consolidado de estabilidad regional."},
-                    {"id": "o7", "title": "Dist. Emp x Sexo", "b64": safe_fig(calc_plot_dist_empleabilidad_sexo), "caption": "Mapa de calor de vinculación genérica."},
-                    {"id": "o8", "title": "Dist. Dep x Sexo", "b64": safe_fig(calc_plot_dist_dependientes_sexo), "caption": "Mapa de calor de dependencia genérica."},
-                    {"id": "o10", "title": "Evol. Retención Local", "b64": safe_fig(calc_plot_retencion_trend), "caption": "Capacidad de retención de talento."},
-                    {"id": "o11", "title": "Ratio Migratorio", "b64": safe_fig(calc_plot_ratio_trend), "caption": "Dinámica de flujo regional."},
-                    {"id": "o12", "title": "Evol. Dep/Cotizantes", "b64": safe_fig(calc_plot_dependientes_trend), "caption": "Relación de calidad de empleo."},
-                    {"id": "o9", "title": "Matriz de Movilidad Origen vs Destino", "b64": safe_fig(calc_plot_mobility_matrix_report, h=800), "caption": "Relación entre lugar de formación y vinculación laboral."}
-                ],
-                "mobility": {
-                    "origin": mob_origin,
-                    "destination": mob_destination
-                }
-            },
-            "salarios": {
-                "technical_note": "Ajuste a pesos constantes del último año con base en el SMMLV.",
-                "plots": [
-                    {"id": "v1", "title": "Distribución de rango salarial", "b64": safe_fig(calc_plot_salario_dist_total), "caption": "distribución de rango salarial"},
-                    {"id": "v2", "title": "Rangos x Sexo", "b64": safe_fig(calc_plot_salario_dist_sexo), "caption": "Distribución salarial segregada."},
-                    {"id": "v5", "title": "Evolución de rango salarial", "b64": safe_fig(calc_plot_salario_evolucion_total_constante), "caption": "evolución de rango salarial"},
-                    {"id": "v6", "title": "Evolución x Sexo", "b64": safe_fig(calc_plot_salario_evolucion_sexo_constante), "caption": "Crecimiento salarial por género."}
-                ]
-            },
-            "spadies": {
-                "technical_note": "Fuente: SPADIES. La deserción se calcula sobre cohortes anuales.",
-                "plots": [
-                    {"id": "d1", "title": "Histograma Deserción", "b64": safe_fig(calc_plot_dist_desercion), "caption": "Variabilidad de la deserción académica."},
-                    {"id": "d2", "title": "Evolución de tasa de deserción anual", "b64": safe_fig(calc_plot_trend_desercion), "caption": "evolución de tasa de deserción anual"}
-                ]
-            },
-            "saber": {
-                "technical_note": "Fuente: ICFES. Puntajes normalizados en escala 0-300.",
-                "plots": [
-                    {"id": "sb1", "title": "Tendencia Global por Sexo",  "b64": safe_fig(lambda: calc_plot_saber_trend()),                           "caption": "Evolución histórica de competencias genéricas."},
-                    {"id": "sb2", "title": "Tendencia Global por Edad",  "b64": safe_fig(lambda: calc_plot_saber_dist()),                            "caption": "Distribución del puntaje global."},
-                    {"id": "sb3", "title": "Distribución por Sexo",      "b64": safe_fig(lambda: calc_plot_saber_count_sexo()),                      "caption": "Cantidad de evaluados por sexo."},
-                    {"id": "sb4", "title": "Distribución por Edad",      "b64": safe_fig(lambda: calc_plot_saber_count_edad()),                      "caption": "Cantidad de evaluados por edad."},
-                    {"id": "sb5",  "title": "Global por Sexo",        "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_punt_global", "sexo")),                        "caption": "Evolución del puntaje global desagregado por sexo."},
-                    {"id": "sb6",  "title": "Global por Edad",        "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_punt_global", "grupo_edad")),                    "caption": "Evolución del puntaje global desagregado por grupo de edad."},
-                    {"id": "sb7",  "title": "Razonamiento por Sexo",  "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "sexo")),             "caption": "Tendencia de Razonamiento Cuantitativo por sexo."},
-                    {"id": "sb8",  "title": "Razonamiento por Edad",  "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_razona_cuantitat_punt", "grupo_edad")),      "caption": "Tendencia de Razonamiento Cuantitativo por grupo de edad."},
-                    {"id": "sb9",  "title": "Lectura por Sexo",       "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "sexo")),              "caption": "Tendencia de Lectura Crítica desagregada por sexo."},
-                    {"id": "sb10", "title": "Lectura por Edad",       "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_lectura_critica_punt", "grupo_edad")),       "caption": "Tendencia de Lectura Crítica por grupo de edad."},
-                    {"id": "sb11", "title": "Ciudadanas por Sexo",    "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "sexo")),             "caption": "Tendencia de Competencias Ciudadanas por sexo."},
-                    {"id": "sb12", "title": "Ciudadanas por Edad",    "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_competen_ciudada_punt", "grupo_edad")),      "caption": "Tendencia de Competencias Ciudadanas por grupo de edad."},
-                    {"id": "sb13", "title": "Inglés por Sexo",        "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "sexo")),                      "caption": "Tendencia del módulo de Inglés desagregada por sexo."},
-                    {"id": "sb14", "title": "Inglés por Edad",        "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_ingles_punt", "grupo_edad")),                "caption": "Tendencia del módulo de Inglés por grupo de edad."},
-                    {"id": "sb15", "title": "Comunicación por Sexo",  "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "sexo")),              "caption": "Tendencia de Comunicación Escrita desagregada por sexo."},
-                    {"id": "sb16", "title": "Comunicación por Edad",  "b64": safe_fig(lambda: calc_plot_saber_trend_dim("pro_gen_mod_comuni_escrita_punt", "grupo_edad")),       "caption": "Tendencia de Comunicación Escrita por grupo de edad."}
-                ]
-            },
-            "demo": {
-                "technical_note": "Caracterización basada en formularios del ICFES.",
-                "plots": [
-                    {"id": "pr1", "title": "Socio-demográfico Sexo",  "b64": safe_fig(lambda: calc_plot_saber_categorical("sexo", "Sexo")),                                        "caption": "Composición por género."},
-                    {"id": "pr2", "title": "Socio-demográfico Edad",  "b64": safe_fig(lambda: calc_plot_saber_categorical("grupo_edad", "Edad")),                                  "caption": "Composición por rangos de edad."},
-                    {"id": "pr3", "title": "Horas de Trabajo",         "b64": safe_fig(lambda: calc_plot_saber_categorical("pro_gen_estu_horassemanatrabaja", "Trabajo")),          "caption": "Carga laboral reportada (Proxy)."},
-                    {"id": "pr4", "title": "Estrato Social",           "b64": safe_fig(lambda: calc_plot_saber_categorical("pro_gen_fami_estratovivienda", "Estrato")),             "caption": "Perfil económico de los hogares."},
-                    {"id": "pr5", "title": "Evolución por Sexo",       "b64": safe_fig(lambda: calc_plot_saber_categorical_trend("sexo", "Sexo")),                                  "caption": "Evolución histórica por sexo."},
-                    {"id": "pr6", "title": "Evolución por Edad",       "b64": safe_fig(lambda: calc_plot_saber_categorical_trend("grupo_edad", "Edad")),                            "caption": "Evolución histórica por grupo de edad."},
-                    {"id": "pr7", "title": "Evolución de Trabajo",     "b64": safe_fig(lambda: calc_plot_saber_categorical_trend("pro_gen_estu_horassemanatrabaja", "Trabajo")),    "caption": "Evolución de carga laboral."},
-                    {"id": "pr8", "title": "Evolución de Estrato",     "b64": safe_fig(lambda: calc_plot_saber_categorical_trend("pro_gen_fami_estratovivienda", "Estrato")),       "caption": "Evolución del perfil económico."}
-                ]
-            }
+            "kpis": report_kpis,
+            "snies": {"technical_note": "Fuente: Registros administrativos SNIES.", "plots": [None]*6},
+            "ole": {"technical_note": "Fuente: OLE.", "plots": [None]*12, "mobility": {"origin": mob_origin, "destination": mob_destination}},
+            "salarios": {"technical_note": "Ajuste a pesos constantes.", "plots": [None]*6},
+            "spadies": {"technical_note": "Fuente: SPADIES.", "plots": [None]*2},
+            "saber": {"technical_note": "Fuente: ICFES.", "plots": [None]*16},
+            "demo": {"technical_note": "Caracterización socio-demográfica.", "plots": [None]*8}
         }
+
+        # Población de resultados
+        for section, idx, pid, title, b64, caption in results:
+            report_data[section]["plots"][idx] = {"id": pid, "title": title, "b64": b64, "caption": caption}
+
+        # Dump de datos para tabla dinámica
+        report_data["raw_data_dump"] = [
+            {
+                "Año": int(yr),
+                "Matriculados": (lambda val: int(val) if val is not None else 0)(_df_m_agg.filter((pl.col("codigo_snies_del_programa").is_in(filtered_snies()["codigo_snies_del_programa"].unique())) & (pl.col("anno") == yr))["matriculados"].sum()),
+                "Graduados": (lambda val: int(val) if val is not None else 0)(_df_g_agg.filter((pl.col("codigo_snies_del_programa").is_in(filtered_snies()["codigo_snies_del_programa"].unique())) & (pl.col("anno") == yr))["graduados"].sum()),
+                "Primer_Curso": (lambda val: int(val) if val is not None else 0)(_df_p_agg.filter((pl.col("codigo_snies_del_programa").is_in(filtered_snies()["codigo_snies_del_programa"].unique())) & (pl.col("anno") == yr))["primer_curso"].sum()),
+                "Tasa_Vinculacion": (lambda df: f"{df['tasa'].iloc[0]:.1%}" if not df.empty else "N/A")(create_ole_trend_df("graduados_que_cotizan", "graduados", ["anno_corte"]).pipe(lambda df: df[df['anno_corte'] == yr])),
+                "Salario_Promedio": (lambda df: f"${df['salario_pesos'].iloc[0]:,.0f}" if not df.empty else "N/A")(get_salary_trend_data().pipe(lambda df: df[df['label'] == 'TOTAL']).pipe(lambda df: df[df['anno_corte'] == yr])),
+                "Tasa_Desercion": (lambda df: f"{df['desercion_anual_mean'].iloc[0]:.1%}" if not df.empty else "N/A")(filtered_desercion().group_by("anno").agg(pl.col("desercion_anual_mean").mean()).to_pandas().pipe(lambda df: df[df['anno'] == yr]))
+            } for yr in sorted(_df_m_agg["anno"].unique())
+        ]
+        
+        return report_data
         
         print(f"DEBUG SABER KPIS: s_global={report_data['kpis']['s_global']}, s_razona={report_data['kpis']['s_razona']}")
         print(f"DEBUG DEMO PLOT STATUS: PR1={type(report_data['demo']['plots'][0]['b64'])}")
@@ -5612,12 +5672,24 @@ def server(input, output, session):
         def get_last_comp_sum(df): return df["valor_comp_sum"].iloc[-1] if df is not None and not df.empty else None
         def get_last_median(df): return df["valor_comp_median"].iloc[-1] if df is not None and not df.empty else None
         def get_last_mean(df): return df["valor_comp_mean"].iloc[-1] if df is not None and not df.empty else None
+        def get_last_mad(df): return df["valor_comp_mad"].iloc[-1] if df is not None and not df.empty and "valor_comp_mad" in df.columns else None
+        def get_last_std(df): return df["valor_comp_std"].iloc[-1] if df is not None and not df.empty and "valor_comp_std" in df.columns else None
+
+        # Cálculos ad-hoc para SD en Costos y Créditos
+        costo_vals = df_c_c["costo_matricula_estud_nuevos"].to_list() if len(df_c_c) > 0 else []
+        costo_sd = np.std(costo_vals) if costo_vals else None
+        costo_median = np.median(costo_vals) if costo_vals else None
+        costo_mad = np.median([abs(x - costo_median) for x in costo_vals]) * 1.4826 if costo_vals else None
+
+        creditos_vals = df_c_cr["numero_creditos"].to_list() if len(df_c_cr) > 0 else []
+        creditos_sd = np.std(creditos_vals) if creditos_vals else None
 
         report_data = {
             "metadata": {
                 "base_codigo": attr["codigo"],
                 "base_nombre": attr["nombre"],
                 "base_institucion": attr["institucion"],
+                "base_departamento": attr["departamento_oferta"],
                 "date": datetime.datetime.now().strftime("%d/%m/%Y"),
                 "filtros": filtros_activos,
                 "modo_manual": "Activado" if input.switch_modo_manual() else "Desactivado"
@@ -5630,37 +5702,65 @@ def server(input, output, session):
                 
                 "base_pcurso": safe_val(get_last_base(df_b_pcurso), format_num_es),
                 "comp_pcurso": safe_val(get_last_median(df_c_pcurso), format_num_es),
+                "comp_pcurso_mad": safe_val(get_last_mad(df_c_pcurso), format_num_es),
+
                 "base_matricula": safe_val(get_last_base(df_b_matr), format_num_es),
                 "comp_matricula": safe_val(get_last_median(df_c_matr), format_num_es),
+                "comp_matricula_mad": safe_val(get_last_mad(df_c_matr), format_num_es),
+
                 "base_graduados": safe_val(get_last_base(df_b_grad), format_num_es),
                 "comp_graduados": safe_val(get_last_median(df_c_grad), format_num_es),
+                "comp_graduados_mad": safe_val(get_last_mad(df_c_grad), format_num_es),
                 
                 "base_costo": safe_val(df_snies_base["costo_matricula_estud_nuevos"][0] if len(df_snies_base) > 0 else None, lambda x: f"${format_num_es(x)}"),
                 "comp_costo_avg": safe_val(df_c_c["costo_matricula_estud_nuevos"].mean() if len(df_c_c) > 0 else None, lambda x: f"${format_num_es(x)}"),
+                "comp_costo_avg_sd": safe_val(costo_sd, format_num_es),
                 "comp_costo_med": safe_val(df_c_c["costo_matricula_estud_nuevos"].median() if len(df_c_c) > 0 else None, lambda x: f"${format_num_es(x)}"),
+                "comp_costo_med_mad": safe_val(costo_mad, format_num_es),
+
                 "base_creditos": safe_val(df_snies_base["numero_creditos"][0] if len(df_snies_base) > 0 else None, format_num_es),
                 "comp_creditos": safe_val(df_c_cr["numero_creditos"].mean() if len(df_c_cr) > 0 else None, format_num_es),
+                "comp_creditos_sd": safe_val(creditos_sd, lambda x: format_num_es(x, decimals=1)),
                 
                 "base_emp": safe_val(get_last_base(df_b_emp), format_pct_es),
                 "comp_emp": safe_val(get_last_mean(df_c_emp), format_pct_es),
+                "comp_emp_sd": safe_val(get_last_std(df_c_emp), format_pct_es),
+
                 "base_sal": safe_val(get_last_base(df_b_sal), lambda x: f"${format_num_es(x)}"),
                 "comp_sal": safe_val(get_last_mean(df_c_sal), lambda x: f"${format_num_es(x)}"),
+                "comp_sal_sd": safe_val(get_last_std(df_c_sal), lambda x: f"${format_num_es(x)}"),
+
                 "base_des": safe_val(get_last_base(df_b_des), format_pct_es),
                 "comp_des": safe_val(get_last_mean(df_c_des), format_pct_es),
+                "comp_des_sd": safe_val(get_last_std(df_c_des), format_pct_es),
+
+                
                 # Saber PRO — Global
-                "base_sb_global": safe_val(get_last_base(df_b_sb), lambda x: format_num_es(x, decimals=1)),
-                "comp_sb_global": safe_val(get_last_mean(df_c_sb), lambda x: format_num_es(x, decimals=1)),
+                "base_sb_global":    safe_val(get_last_base(df_b_sb), lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_global":    safe_val(get_last_mean(df_c_sb), lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_global_sd": safe_val(get_last_std(df_c_sb),  lambda x: format_num_es(x, decimals=1)),
+                
                 # Saber PRO — Dimensiones individuales
-                "base_sb_razona":  safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_razona_cuantitat_punt")[0]),  lambda x: format_num_es(x, decimals=1)),
-                "comp_sb_razona":  safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_razona_cuantitat_punt")[1]),  lambda x: format_num_es(x, decimals=1)),
-                "base_sb_lectura": safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_lectura_critica_punt")[0]),   lambda x: format_num_es(x, decimals=1)),
-                "comp_sb_lectura": safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_lectura_critica_punt")[1]),   lambda x: format_num_es(x, decimals=1)),
-                "base_sb_ciuda":   safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_competen_ciudada_punt")[0]),  lambda x: format_num_es(x, decimals=1)),
-                "comp_sb_ciuda":   safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_competen_ciudada_punt")[1]),  lambda x: format_num_es(x, decimals=1)),
-                "base_sb_ingles":  safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_ingles_punt")[0]),            lambda x: format_num_es(x, decimals=1)),
-                "comp_sb_ingles":  safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_ingles_punt")[1]),            lambda x: format_num_es(x, decimals=1)),
-                "base_sb_escrita": safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_comuni_escrita_punt")[0]),   lambda x: format_num_es(x, decimals=1)),
-                "comp_sb_escrita": safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_comuni_escrita_punt")[1]),   lambda x: format_num_es(x, decimals=1))
+                "base_sb_razona":    safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_razona_cuantitat_punt")[0]),  lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_razona":    safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_razona_cuantitat_punt")[1]),  lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_razona_sd": safe_val(get_last_std(get_comp_saber_series("pro_gen_mod_razona_cuantitat_punt")[1]),   lambda x: format_num_es(x, decimals=1)),
+                
+                "base_sb_lectura":    safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_lectura_critica_punt")[0]),   lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_lectura":    safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_lectura_critica_punt")[1]),   lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_lectura_sd": safe_val(get_last_std(get_comp_saber_series("pro_gen_mod_lectura_critica_punt")[1]),    lambda x: format_num_es(x, decimals=1)),
+                
+                "base_sb_ciuda":    safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_competen_ciudada_punt")[0]),  lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_ciuda":    safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_competen_ciudada_punt")[1]),  lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_ciuda_sd": safe_val(get_last_std(get_comp_saber_series("pro_gen_mod_competen_ciudada_punt")[1]),   lambda x: format_num_es(x, decimals=1)),
+                
+                "base_sb_ingles":    safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_ingles_punt")[0]),            lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_ingles":    safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_ingles_punt")[1]),            lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_ingles_sd": safe_val(get_last_std(get_comp_saber_series("pro_gen_mod_ingles_punt")[1]),             lambda x: format_num_es(x, decimals=1)),
+                
+                "base_sb_escrita":    safe_val(get_last_base(get_comp_saber_series("pro_gen_mod_comuni_escrita_punt")[0]),   lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_escrita":    safe_val(get_last_mean(get_comp_saber_series("pro_gen_mod_comuni_escrita_punt")[1]),   lambda x: format_num_es(x, decimals=1)),
+                "comp_sb_escrita_sd": safe_val(get_last_std(get_comp_saber_series("pro_gen_mod_comuni_escrita_punt")[1]),    lambda x: format_num_es(x, decimals=1))
+
             },
             "snies": {
                 "technical_note": "Fuente: Registros administrativos SNIES. Ministerio de Educación Nacional.",
