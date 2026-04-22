@@ -44,15 +44,128 @@ COLOR_SEXO = {
     "TRANS": "#d44c8d"
 }
 
+# --- PLAYWRIGHT ENGINE (reemplaza Kaleido por completo) ---
+# CLAVE: Playwright Sync API no puede correr dentro del asyncio loop de Shiny.
+# SOLUCIÓN: ThreadPoolExecutor con 1 worker = thread dedicado sin asyncio loop.
+# El browser Chromium se inicia UNA vez en ese thread y se reutiliza para todos.
+import json as _json
+from concurrent.futures import ThreadPoolExecutor as _ThreadPoolExecutor
+
+_PW_INSTANCE   = None
+_PW_BROWSER    = None
+_PW_PAGE       = None
+_PW_PAGE_DIM   = None
+_PLOTLY_JS_BUNDLE = None
+# Executor con 1 worker: todo Playwright corre en ese único thread limpio
+_PW_EXECUTOR   = _ThreadPoolExecutor(max_workers=1, thread_name_prefix="pw_renderer")
+
+def _load_plotlyjs():
+    """Carga el bundle de Plotly.js del paquete local (sin necesidad de internet)."""
+    global _PLOTLY_JS_BUNDLE
+    if _PLOTLY_JS_BUNDLE is None:
+        try:
+            import plotly.offline as _plo
+            _PLOTLY_JS_BUNDLE = _plo.get_plotlyjs()
+            print("INFO: Plotly.js bundle cargado en memoria.")
+        except Exception as e:
+            print(f"WARN: No se pudo cargar Plotly.js bundle: {e}")
+            _PLOTLY_JS_BUNDLE = ""
+    return _PLOTLY_JS_BUNDLE
+
+def _ensure_pw_page(width: int, height: int):
+    """Garantiza browser Playwright + página con Plotly.js listos.
+    DEBE llamarse solo desde dentro del _PW_EXECUTOR thread."""
+    global _PW_INSTANCE, _PW_BROWSER, _PW_PAGE, _PW_PAGE_DIM
+
+    dim = (width, height)
+
+    if _PW_BROWSER is None or not _PW_BROWSER.is_connected():
+        from playwright.sync_api import sync_playwright
+        if _PW_INSTANCE:
+            try: _PW_INSTANCE.stop()
+            except: pass
+        _PW_INSTANCE = sync_playwright().start()
+        _PW_BROWSER  = _PW_INSTANCE.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"]
+        )
+        _PW_PAGE = None
+        print("INFO: Playwright Chromium iniciado correctamente.")
+
+    if _PW_PAGE is None or _PW_PAGE.is_closed() or _PW_PAGE_DIM != dim:
+        if _PW_PAGE and not _PW_PAGE.is_closed():
+            try: _PW_PAGE.close()
+            except: pass
+
+        plotlyjs = _load_plotlyjs()
+        html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>*{{margin:0;padding:0;box-sizing:border-box;}}body{{background:white;}}</style>
+<script>{plotlyjs}</script>
+</head><body>
+<div id="gd" style="width:{width}px;height:{height}px;"></div>
+</body></html>"""
+
+        _PW_PAGE = _PW_BROWSER.new_page(viewport={"width": width + 20, "height": height + 20})
+        _PW_PAGE.set_content(html, wait_until="domcontentloaded")
+        _PW_PAGE_DIM = dim
+        print(f"INFO: Playwright page lista ({width}x{height}px).")
+
+    return _PW_PAGE
+
+
+def _render_in_thread(fig_json_str: str, width: int, height: int) -> bytes:
+    """Worker que corre en el thread dedicado (sin asyncio loop de Shiny).
+    Playwright Sync API funciona perfecto aquí."""
+    import asyncio, sys
+    # CRÍTICO en Windows: los threads usan SelectorEventLoop por defecto,
+    # que NO soporta crear subprocesos. Playwright necesita ProactorEventLoop.
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
+    page = _ensure_pw_page(width, height)
+
+    # Pasar JSON como string y parsear en JS evita límites de serialización
+    # de Playwright con objetos grandes (figuras Saber PRO, etc.)
+    page.evaluate(f"""
+        async (figJsonStr) => {{
+            const spec = JSON.parse(figJsonStr);
+            const gd  = document.getElementById('gd');
+            gd.style.width  = '{width}px';
+            gd.style.height = '{height}px';
+            if (gd._fullLayout) Plotly.purge(gd);
+            await Plotly.newPlot(gd, spec.data,
+                Object.assign({{}}, spec.layout, {{ width: {width}, height: {height} }}),
+                {{displayModeBar: false, staticPlot: true}}
+            );
+        }}
+    """, fig_json_str)
+
+    page.wait_for_timeout(80)
+    return page.locator("#gd").screenshot(type="png")
+
+
 def fig_to_base64(fig, width=800, height=450):
-    """Convierte una figura de Plotly a string Base64 PNG."""
+    """Convierte figura Plotly a PNG base64.
+    Usa Playwright en thread dedicado (sin conflicto con asyncio de Shiny).
+    Fallback a Kaleido si Playwright falla.
+    """
     try:
         if fig is None: return ""
-        img_bytes = fig.to_image(format="png", width=width, height=height, engine="kaleido", scale=2)
+        fig_json = fig.to_json()
+        # Enviar al thread de Playwright (fuera del asyncio loop de Shiny)
+        future = _PW_EXECUTOR.submit(_render_in_thread, fig_json, width, height)
+        img_bytes = future.result(timeout=60)
         return base64.b64encode(img_bytes).decode('utf-8')
+
     except Exception as e:
-        print(f"Error convirtiendo fig a base64: {e}")
-        return ""
+        print(f"WARN Playwright ({type(e).__name__}): {e}. Fallback a Kaleido...")
+        try:
+            img_bytes = fig.to_image(format="png", width=width, height=height, engine="kaleido", scale=1)
+            return base64.b64encode(img_bytes).decode('utf-8')
+        except Exception as e2:
+            print(f"ERROR total en fig_to_base64: {e2}")
+            return ""
 
 
 # Define paths
@@ -1840,6 +1953,23 @@ def server(input, output, session):
     def calc_plot_dist_empleabilidad():
         df_pd = get_ole_distribution_df("graduados_que_cotizan", "graduados")
         if df_pd.empty: return go.Figure()
+        # Caso especial: 1 solo programa o todos con el mismo valor
+        if len(df_pd) == 1 or df_pd["tasa"].nunique() == 1:
+            val = df_pd["tasa"].iloc[0]
+            fig = go.Figure()
+            fig.add_vline(x=val, line_width=4, line_color="#31497e")
+            fig.add_annotation(x=val, y=0.5, yref="paper", text=f"<b>{val:.1%}</b><br>Valor del programa",
+                               showarrow=True, arrowhead=2, arrowcolor="#31497e", font=dict(size=16, color="#31497e"),
+                               bgcolor="white", bordercolor="#31497e", borderwidth=2)
+            fig.update_layout(showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
+                              margin=dict(l=20, r=20, t=40, b=20),
+                              xaxis=dict(title=dict(text="Tasa de Empleabilidad", font=dict(size=17)), tickformat=".0%",
+                                         range=[max(0, val-0.15), min(1, val+0.15)], showgrid=True, gridcolor='#EEEEEE'),
+                              yaxis=dict(visible=False),
+                              annotations=[dict(x=0.5, y=1.05, xref="paper", yref="paper", showarrow=False,
+                                               text="<i>Programa único seleccionado — se muestra valor puntual</i>",
+                                               font=dict(size=12, color="#888"))])
+            return fig
         fig = px.histogram(df_pd, x="tasa", histnorm='percent', text_auto='.1f')
         fig.update_traces(marker=dict(color="#31497e"), xbins=dict(start=0.0, end=1.0, size=0.05), 
                           marker_line_width=1, marker_line_color="white", textposition='outside', textfont_size=11)
@@ -1864,7 +1994,6 @@ def server(input, output, session):
                 showgrid=True, gridcolor='#EEEEEE'
             )
         )
-        # Format tooltips
         fig.update_traces(hovertemplate='Tasa: %{x}<br>Frecuencia: %{y:.1f}% de programas<extra></extra>')
         return fig
 
@@ -1876,6 +2005,23 @@ def server(input, output, session):
     def calc_plot_dist_dependientes():
         df_pd = get_ole_distribution_df("graduados_cotizantes_dependientes", "graduados")
         if df_pd.empty: return go.Figure()
+        # Caso especial: 1 solo programa o todos con el mismo valor
+        if len(df_pd) == 1 or df_pd["tasa"].nunique() == 1:
+            val = df_pd["tasa"].iloc[0]
+            fig = go.Figure()
+            fig.add_vline(x=val, line_width=4, line_color="#31497e")
+            fig.add_annotation(x=val, y=0.5, yref="paper", text=f"<b>{val:.1%}</b><br>Valor del programa",
+                               showarrow=True, arrowhead=2, arrowcolor="#31497e", font=dict(size=16, color="#31497e"),
+                               bgcolor="white", bordercolor="#31497e", borderwidth=2)
+            fig.update_layout(showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
+                              margin=dict(l=20, r=20, t=40, b=20),
+                              xaxis=dict(title=dict(text="Dependientes sobre Graduados", font=dict(size=17)), tickformat=".0%",
+                                         range=[max(0, val-0.15), min(1, val+0.15)], showgrid=True, gridcolor='#EEEEEE'),
+                              yaxis=dict(visible=False),
+                              annotations=[dict(x=0.5, y=1.05, xref="paper", yref="paper", showarrow=False,
+                                               text="<i>Programa único seleccionado — se muestra valor puntual</i>",
+                                               font=dict(size=12, color="#888"))])
+            return fig
         fig = px.histogram(df_pd, x="tasa", histnorm='percent', text_auto='.1f')
         fig.update_traces(marker=dict(color="#31497e"), xbins=dict(start=0.0, end=1.0, size=0.05), 
                           marker_line_width=1, marker_line_color="white", textposition='outside', textfont_size=11)
@@ -1911,6 +2057,27 @@ def server(input, output, session):
     def calc_plot_dist_empleabilidad_sexo():
         df_pd = get_ole_distribution_df("graduados_que_cotizan", "graduados", ["codigo_snies_del_programa", "sexo"])
         if df_pd.empty: return go.Figure()
+        # Caso especial: 1 solo programa (pocos puntos o sin variabilidad)
+        if df_pd["codigo_snies_del_programa"].nunique() == 1 or df_pd["tasa"].nunique() <= len(df_pd["sexo"].unique()):
+            fig = go.Figure()
+            for sexo_val, color in COLOR_SEXO.items():
+                sub = df_pd[df_pd["sexo"] == sexo_val]
+                if sub.empty: continue
+                val = sub["tasa"].iloc[0]
+                fig.add_vline(x=val, line_width=3, line_dash="dash", line_color=color,
+                              annotation_text=f"<b>{sexo_val}: {val:.1%}</b>",
+                              annotation_position="top", annotation_font=dict(color=color, size=13))
+            all_vals = df_pd["tasa"].tolist()
+            center = sum(all_vals) / len(all_vals) if all_vals else 0.5
+            fig.update_layout(showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
+                              margin=dict(l=20, r=20, t=60, b=20),
+                              xaxis=dict(title=dict(text="Tasa de Empleabilidad", font=dict(size=17)), tickformat=".0%",
+                                         range=[max(0, center-0.2), min(1, center+0.2)], showgrid=True, gridcolor='#EEEEEE'),
+                              yaxis=dict(visible=False),
+                              annotations=[dict(x=0.5, y=1.08, xref="paper", yref="paper", showarrow=False,
+                                               text="<i>Programa único — se muestran valores puntuales por sexo</i>",
+                                               font=dict(size=12, color="#888"))])
+            return fig
         fig = px.histogram(df_pd, x="tasa", color="sexo", color_discrete_map=COLOR_SEXO, histnorm='percent', barmode='group')
         fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white")
         fig.update_layout(
@@ -1934,7 +2101,6 @@ def server(input, output, session):
                 showgrid=True, gridcolor='#EEEEEE'
             )
         )
-        # Format tooltips
         fig.update_traces(hovertemplate='Tasa: %{x}<br>Frecuencia: %{y:.1f}% de sub-grupos<extra></extra>')
         return fig
 
@@ -1946,6 +2112,27 @@ def server(input, output, session):
     def calc_plot_dist_dependientes_sexo():
         df_pd = get_ole_distribution_df("graduados_cotizantes_dependientes", "graduados", ["codigo_snies_del_programa", "sexo"])
         if df_pd.empty: return go.Figure()
+        # Caso especial: 1 solo programa
+        if df_pd["codigo_snies_del_programa"].nunique() == 1 or df_pd["tasa"].nunique() <= len(df_pd["sexo"].unique()):
+            fig = go.Figure()
+            for sexo_val, color in COLOR_SEXO.items():
+                sub = df_pd[df_pd["sexo"] == sexo_val]
+                if sub.empty: continue
+                val = sub["tasa"].iloc[0]
+                fig.add_vline(x=val, line_width=3, line_dash="dash", line_color=color,
+                              annotation_text=f"<b>{sexo_val}: {val:.1%}</b>",
+                              annotation_position="top", annotation_font=dict(color=color, size=13))
+            all_vals = df_pd["tasa"].tolist()
+            center = sum(all_vals) / len(all_vals) if all_vals else 0.5
+            fig.update_layout(showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
+                              margin=dict(l=20, r=20, t=60, b=20),
+                              xaxis=dict(title=dict(text="Dependientes sobre Graduados", font=dict(size=17)), tickformat=".0%",
+                                         range=[max(0, center-0.2), min(1, center+0.2)], showgrid=True, gridcolor='#EEEEEE'),
+                              yaxis=dict(visible=False),
+                              annotations=[dict(x=0.5, y=1.08, xref="paper", yref="paper", showarrow=False,
+                                               text="<i>Programa único — se muestran valores puntuales por sexo</i>",
+                                               font=dict(size=12, color="#888"))])
+            return fig
         fig = px.histogram(df_pd, x="tasa", color="sexo", color_discrete_map=COLOR_SEXO, histnorm='percent', barmode='group')
         fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.05), marker_line_width=1, marker_line_color="white")
         fig.update_layout(
@@ -2380,6 +2567,23 @@ def server(input, output, session):
         if len(df) == 0: return go.Figure()
         max_yr = df["anno"].max()
         df_plot = df.filter(pl.col("anno") == max_yr).to_pandas()
+        # Caso especial: 1 solo programa o todos con el mismo valor
+        if len(df_plot) == 1 or df_plot["desercion_anual_mean"].nunique() == 1:
+            val = df_plot["desercion_anual_mean"].iloc[0]
+            fig = go.Figure()
+            fig.add_vline(x=val, line_width=4, line_color="#31497e")
+            fig.add_annotation(x=val, y=0.5, yref="paper", text=f"<b>{val:.1%}</b><br>Valor del programa",
+                               showarrow=True, arrowhead=2, arrowcolor="#31497e", font=dict(size=16, color="#31497e"),
+                               bgcolor="white", bordercolor="#31497e", borderwidth=2)
+            fig.update_layout(showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
+                              margin=dict(l=20, r=20, t=40, b=20),
+                              xaxis=dict(title="Tasa de Deserción", tickformat=".0%",
+                                         range=[max(0, val-0.1), min(1, val+0.1)], showgrid=True, gridcolor='#EEEEEE'),
+                              yaxis=dict(visible=False),
+                              annotations=[dict(x=0.5, y=1.05, xref="paper", yref="paper", showarrow=False,
+                                               text="<i>Programa único seleccionado — se muestra valor puntual</i>",
+                                               font=dict(size=12, color="#888"))])
+            return fig
         fig = px.histogram(df_plot, x="desercion_anual_mean", nbins=50, histnorm='percent', text_auto='.1f')
         fig.update_traces(xbins=dict(start=0.0, end=1.0, size=0.02), marker_color="#31497e", 
                           marker_line_color="white", marker_line_width=1, textposition='outside', textfont_size=11)
@@ -3021,6 +3225,24 @@ def server(input, output, session):
         # Agregación por programa académico
         agg = df.group_by("codigo_snies_del_programa").agg(pl.col("pro_gen_punt_global").mean())
         df_pd = agg.to_pandas()
+        
+        # Caso especial: 1 solo programa o todos con el mismo valor
+        if len(df_pd) == 1 or df_pd["pro_gen_punt_global"].nunique() == 1:
+            val = df_pd["pro_gen_punt_global"].iloc[0]
+            fig = go.Figure()
+            fig.add_vline(x=val, line_width=4, line_color="#31497e")
+            fig.add_annotation(x=val, y=0.5, yref="paper", text=f"<b>{val:.1f} pts</b><br>Puntaje del programa",
+                               showarrow=True, arrowhead=2, arrowcolor="#31497e", font=dict(size=16, color="#31497e"),
+                               bgcolor="white", bordercolor="#31497e", borderwidth=2)
+            fig.update_layout(showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
+                              margin=dict(l=20, r=20, t=40, b=20),
+                              xaxis=dict(title="Puntaje Global Promedio",
+                                         range=[max(0, val-20), val+20], showgrid=True, gridcolor='#EEEEEE'),
+                              yaxis=dict(visible=False),
+                              annotations=[dict(x=0.5, y=1.05, xref="paper", yref="paper", showarrow=False,
+                                               text="<i>Programa único seleccionado — se muestra valor puntual</i>",
+                                               font=dict(size=12, color="#888"))])
+            return fig
         
         fig = px.histogram(df_pd, x="pro_gen_punt_global", histnorm='percent', nbins=100)
         fig.update_traces(marker_color="#31497e", marker_line_color="white", marker_line_width=1, xbins=dict(size=1))
@@ -5303,7 +5525,6 @@ def server(input, output, session):
             ("ole", 8, "o10", "Evol. Retención Local", calc_plot_retencion_trend, "Capacidad de retención de talento."),
             ("ole", 9, "o11", "Ratio Migratorio", calc_plot_ratio_trend, "Dinámica de flujo regional."),
             ("ole", 10, "o12", "Evol. Dep/Cotizantes", calc_plot_dependientes_trend, "Relación de calidad de empleo."),
-            ("ole", 11, "o9", "Matriz de Movilidad Origen vs Destino", calc_plot_mobility_matrix_report, "Relación entre lugar de formación y vinculación laboral."),
             # Salarios
             ("salarios", 0, "v1", "Distribución de rango salarial", calc_plot_salario_dist_total, "distribución de rango salarial"),
             ("salarios", 1, "v2", "Rangos x Sexo", calc_plot_salario_dist_sexo, "Distribución salarial segregada."),
