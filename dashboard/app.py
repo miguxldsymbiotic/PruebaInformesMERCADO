@@ -1816,14 +1816,14 @@ def server(input, output, session):
         snies_codigos = fs["codigo_snies_del_programa"].unique()
         
         if len(snies_codigos) == 0:
-            return pd.DataFrame()
+            return pd.DataFrame(columns=group_by_cols + ["tasa"])
             
         ole_filtered = df_ole_m0.filter(
             pl.col("codigo_snies_del_programa").is_in(snies_codigos) & 
             (pl.col("anno_corte") >= 2016)
         )
         if len(ole_filtered) == 0:
-            return pd.DataFrame()
+            return pd.DataFrame(columns=group_by_cols + ["tasa"])
             
         agg_df = ole_filtered.group_by(group_by_cols).agg([
             pl.col(measure_numerator).sum().alias("num"),
@@ -1832,7 +1832,7 @@ def server(input, output, session):
         
         agg_df = agg_df.filter(pl.col("den") > 0)
         if len(agg_df) == 0:
-            return pd.DataFrame()
+            return pd.DataFrame(columns=group_by_cols + ["tasa"])
             
         agg_df = agg_df.with_columns((pl.col("num") / pl.col("den")).alias("tasa"))
         
@@ -2391,7 +2391,7 @@ def server(input, output, session):
     def _calculate_salary_trend_data(is_constant=False):
         fs = filtered_snies()
         snies_codigos = fs["codigo_snies_del_programa"].unique()
-        if len(snies_codigos) == 0: return pd.DataFrame()
+        if len(snies_codigos) == 0: return pd.DataFrame(columns=["anno_corte", "label", "salario_pesos"])
         
         # 1. Filtro base
         df_base = df_ole_salario.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos))
@@ -2407,7 +2407,7 @@ def server(input, output, session):
             div_codes = divis_num["divipola_mpio_oferta"].drop_nulls().unique()
             df_base = df_base.filter(pl.col("divipola_mpio_principal").is_in(div_codes))
             
-        if len(df_base) == 0: return pd.DataFrame()
+        if len(df_base) == 0: return pd.DataFrame(columns=["anno_corte", "label", "salario_pesos"])
         
         # 3. Join y Midpoints
         df_base = df_base.join(df_smmlv_pl, on="anno_corte", how="inner")
@@ -2545,7 +2545,7 @@ def server(input, output, session):
         fs = filtered_snies()
         snies_codigos = fs["codigo_snies_del_programa"].unique()
         if len(snies_codigos) == 0:
-            return pl.DataFrame()
+            return df_desercion.clear()
         return df_desercion.filter(pl.col("codigo_snies_del_programa").is_in(snies_codigos))
 
     @reactive.calc
@@ -5607,9 +5607,9 @@ def server(input, output, session):
                 "Matriculados": (lambda val: int(val) if val is not None else 0)(_df_m_agg.filter((pl.col("codigo_snies_del_programa").is_in(filtered_snies()["codigo_snies_del_programa"].unique())) & (pl.col("anno") == yr))["matriculados"].sum()),
                 "Graduados": (lambda val: int(val) if val is not None else 0)(_df_g_agg.filter((pl.col("codigo_snies_del_programa").is_in(filtered_snies()["codigo_snies_del_programa"].unique())) & (pl.col("anno") == yr))["graduados"].sum()),
                 "Primer_Curso": (lambda val: int(val) if val is not None else 0)(_df_p_agg.filter((pl.col("codigo_snies_del_programa").is_in(filtered_snies()["codigo_snies_del_programa"].unique())) & (pl.col("anno") == yr))["primer_curso"].sum()),
-                "Tasa_Vinculacion": (lambda df: f"{df['tasa'].iloc[0]:.1%}" if not df.empty else "N/A")(create_ole_trend_df("graduados_que_cotizan", "graduados", ["anno_corte"]).pipe(lambda df: df[df['anno_corte'] == yr])),
-                "Salario_Promedio": (lambda df: f"${df['salario_pesos'].iloc[0]:,.0f}" if not df.empty else "N/A")(get_salary_trend_data().pipe(lambda df: df[df['label'] == 'TOTAL']).pipe(lambda df: df[df['anno_corte'] == yr])),
-                "Tasa_Desercion": (lambda df: f"{df['desercion_anual_mean'].iloc[0]:.1%}" if not df.empty else "N/A")(filtered_desercion().group_by("anno").agg(pl.col("desercion_anual_mean").mean()).to_pandas().pipe(lambda df: df[df['anno'] == yr]))
+                "Tasa_Vinculacion": (lambda df: f"{df['tasa'].iloc[0]:.1%}" if not df.empty else "N/A")(create_ole_trend_df("graduados_que_cotizan", "graduados", ["anno_corte"]).pipe(lambda df: df[df['anno_corte'] == yr] if 'anno_corte' in df.columns else df)),
+                "Salario_Promedio": (lambda df: f"${df['salario_pesos'].iloc[0]:,.0f}" if not df.empty else "N/A")(get_salary_trend_data().pipe(lambda df: df[df['label'] == 'TOTAL'] if 'label' in df.columns else df).pipe(lambda df: df[df['anno_corte'] == yr] if 'anno_corte' in df.columns else df)),
+                "Tasa_Desercion": (lambda df: f"{df['desercion_anual_mean'].iloc[0]:.1%}" if not df.empty else "N/A")(filtered_desercion().group_by("anno").agg(pl.col("desercion_anual_mean").mean()).to_pandas().pipe(lambda df: df[df['anno'] == yr] if 'anno' in df.columns else df))
             } for yr in sorted(_df_m_agg["anno"].unique())
         ]
         
