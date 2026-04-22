@@ -8,4 +8,8 @@ openpyxl
 typst
 kaleido
 ridgeplot
-
+playwright
+weasyprint
+beautifulsoup4
+numpy
+jinja2

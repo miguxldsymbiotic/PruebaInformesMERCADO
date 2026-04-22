@@ -561,6 +561,69 @@
     </div>
 
     <!-- ============================================================
+         PÁGINA 4-B: MOVILIDAD Y FLUJO LABORAL (NUEVA)
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">MOVILIDAD GEOGRÁFICA — OLE</div>
+                <h1>3.5 Flujo de Fuerza Laboral<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Origen Académico vs Destino Laboral</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Fuente: OLE</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:12px; text-align:justify;">
+            Análisis detallado de la distribución geográfica de los graduados del programa seleccionado. Permite identificar de qué regiones provienen los estudiantes y en qué regiones se encuentran laborando formalmente (cotizando).
+        </p>
+
+        <div style="display: flex; gap: 20px; margin-bottom: auto;">
+            <!-- Tabla de Origen -->
+            <div style="flex: 1;">
+                <h3 style="font-size:0.85rem; margin-bottom:8px; color:var(--color-slate); border-bottom:1px solid #e2e8f0; padding-bottom:4px; text-transform:uppercase; font-weight:800;">Top Origen (<span id="val-mobility-label-orig">Departamento</span>)</h3>
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th id="th-mob-orig">Lugar</th>
+                            <th>Cotizantes</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-mobility-origen">
+                        <!-- Cargado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Tabla de Destino -->
+            <div style="flex: 1;">
+                <h3 style="font-size:0.85rem; margin-bottom:8px; color:var(--color-slate); border-bottom:1px solid #e2e8f0; padding-bottom:4px; text-transform:uppercase; font-weight:800;">Top Destino (<span id="val-mobility-label-dest">Departamento</span>)</h3>
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th id="th-mob-dest">Lugar</th>
+                            <th>Cotizantes</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-mobility-destino">
+                        <!-- Cargado dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="margin-top:20px; background:#f0f9ff; padding:12px 14px; border-radius:8px; font-size:0.75rem; line-height:1.4; color:#0369a1; border-left:4px solid #0ea5e9;">
+            <b>Interpretación de Movilidad:</b> La tabla de <b>Origen</b> muestra la procedencia de los graduados que el sistema detecta como cotizantes. La tabla de <b>Destino</b> muestra la ubicación actual de su puesto de trabajo reportado. La diferencia entre ambas tablas indica la migración laboral del programa.
+        </div>
+
+        <div class="technical-note" style="margin-top:10px;">
+            <b>Nota Técnica:</b> Datos calculados para el programa seleccionado en el último año de corte disponible en el OLE. Se consideran exclusivamente graduados con registro de cotización.
+        </div>
+
+        <div class="footer-page">PÁGINA 4-B</div>
+    </div>
+
+    <!-- ============================================================
          PÁGINA 6: PERMANENCIA Y DESERCIÓN
          ============================================================ -->
     <div class="page">
@@ -914,6 +977,34 @@
             }
 
             ["snies", "salarios", "ole", "spadies", "saber", "demo"].forEach(renderSection);
+
+            // --- TABLAS DE MOVILIDAD ---
+            const mobility = data.mobility;
+            if (mobility) {
+                setTxt("val-mobility-label-orig", mobility.label || "Departamento");
+                setTxt("val-mobility-label-dest", mobility.label || "Departamento");
+                if (document.getElementById("th-mob-orig")) document.getElementById("th-mob-orig").textContent = mobility.label || "Lugar";
+                if (document.getElementById("th-mob-dest")) document.getElementById("th-mob-dest").textContent = mobility.label || "Lugar";
+
+                const renderMobTable = (tableId, list) => {
+                    const tbody = document.getElementById(tableId);
+                    if (!tbody) return;
+                    if (list.length === 0) {
+                        tbody.innerHTML = "<tr><td colspan='3' style='text-align:center; padding:20px;'>Sin datos de movilidad disponibles</td></tr>";
+                        return;
+                    }
+                    tbody.innerHTML = list.map(row => `
+                        <tr>
+                            <td>${row.lugar}</td>
+                            <td style="text-align:right;">${row.cantidad}</td>
+                            <td style="text-align:right; font-weight:800;">${row.porcentaje}</td>
+                        </tr>
+                    `).join("");
+                };
+
+                renderMobTable("tbody-mobility-origen", mobility.origen || []);
+                renderMobTable("tbody-mobility-destino", mobility.destino || []);
+            }
         });
     </script>
 </body>
