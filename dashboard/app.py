@@ -900,6 +900,21 @@ app_ui = ui.page_sidebar(
                 class_="mb-4"
             ),
             ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Concentración Geográfica: <b style='color: #31497e;'>Origen</b> (Depto/Mpio Formación)")),
+                    ui.output_data_frame("prev_ole_top_origen"),
+                    ui.card_footer(ui.HTML("Fuente: OLE. Datos completos sin truncar.")),
+                    full_screen=True, style="height: 450px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Concentración Geográfica: <b style='color: #31497e;'>Destino</b> (Depto/Mpio Vinculación)")),
+                    ui.output_data_frame("prev_ole_top_destino"),
+                    ui.card_footer(ui.HTML("Fuente: OLE. Datos completos sin truncar.")),
+                    full_screen=True, style="height: 450px;"
+                ),
+                class_="mb-4"
+            ),
+            ui.layout_columns(
                 ui.card(ui.card_header(ui.HTML("Evolución de <b style='color: #31497e;'>Dependientes sobre Cotizantes</b>")), ui.output_ui("prev_ole_trend_dep"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
                 ui.card(ui.card_header(ui.HTML("Evolución de la <b style='color: #31497e;'>Tasa de Retención Local</b>")), ui.output_ui("prev_ole_trend_ret"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
                 ui.card(ui.card_header(ui.HTML("Evolución del <b style='color: #31497e;'>Ratio Salen / Entran</b>")), ui.output_ui("prev_ole_trend_ratio"), ui.card_footer(ui.HTML("Fuente: Observatorio Laboral para la Educación (OLE)<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
@@ -1014,6 +1029,16 @@ app_ui = ui.page_sidebar(
             ui.layout_columns(
                 ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Horas de Trabajo</b>")), ui.output_ui("prev_demo_trabajo_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la participación según carga laboral."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
                 ui.card(ui.card_header(ui.HTML("Evolución de Participación por <b style='color: #31497e;'>Estrato Social</b>")), ui.output_ui("prev_demo_estrato_trend"), ui.card_footer(ui.HTML("Fuente: ICFES - Prueba SABER PRO<br>Evolución histórica de la composición socioeconómica."), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 450px;"),
+                class_="mb-5"
+            ),
+            ui.h3("7. Ranking de Competitividad por Ingresos", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px;"),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Top de Programas por <b style='color: #31497e;'>Volumen de Ingresos</b> (Primer Curso)")),
+                    ui.output_data_frame("prev_top_ingresos"),
+                    ui.card_footer(ui.HTML("Fuente: SNIES. Tabla ordenada por número de ingresos en el último año reportado (Primer Curso).")),
+                    full_screen=True, style="height: 600px;"
+                ),
                 class_="mb-5"
             )
         ),
@@ -1176,7 +1201,22 @@ app_ui = ui.page_sidebar(
                     full_screen=True, style="min-height: 450px;"
                 ),
                 ui.div(),
-                class_="mb-5", col_widths=(6, 6)
+                class_="mb-4", col_widths=(6, 6)
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Programa Referencia: <b style='color: #31497e;'>Origen Geográfico</b>")),
+                    ui.output_data_frame("comp_ole_top_origen"),
+                    ui.card_footer(ui.HTML("Concentración por Depto/Mpio de formación del programa seleccionado.")),
+                    full_screen=True, style="height: 400px;"
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Programa Referencia: <b style='color: #31497e;'>Destino Geográfico</b>")),
+                    ui.output_data_frame("comp_ole_top_destino"),
+                    ui.card_footer(ui.HTML("Concentración por Depto/Mpio de vinculación laboral (cotizantes).")),
+                    full_screen=True, style="height: 400px;"
+                ),
+                class_="mb-5"
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
             ui.h3("Salario de Enganche (Estimado)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
@@ -1299,6 +1339,14 @@ app_ui = ui.page_sidebar(
                     full_screen=True, style="min-height: 400px;"
                 ),
                 class_="mb-5", col_widths=(6, 6)
+            ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
+            ui.h3("Ranking Comparativo de Competitividad", class_="mb-3", style="color: #31497e; bold; font-size: 1.5em;"),
+            ui.card(
+                ui.card_header(ui.HTML("<b>Programas con Mayor Volumen de Ingresos</b> en el Clúster")),
+                ui.output_data_frame("prev_top_ingresos_comp"),
+                ui.card_footer(ui.HTML("Este ranking muestra los programas del grupo de comparación ordenados por el número de estudiantes de primer curso en el último año reportado.")),
+                class_="mb-5"
             )
         )
     ),
@@ -2987,6 +3035,114 @@ def server(input, output, session):
         return render.DataGrid(df_pd, filters=False, width="100%", selection_mode="none")
 
     @reactive.calc
+    def calc_top_ingresos_table():
+        import pandas as pd
+        divipolas = valid_divipolas()
+        if len(divipolas) == 0:
+            return pd.DataFrame()
+            
+        df_filt = filtered_snies()
+        if df_filt.is_empty():
+            return pd.DataFrame()
+            
+        max_yr = int(df_pcurso["anno"].max())
+        # Consolidar ingresos por programa (último año) FILTRANDO POR GEOGRAFÍA
+        df_p_agg = df_pcurso.filter(
+            (pl.col("anno") == max_yr) & 
+            pl.col("snies_divipola").is_in(divipolas)
+        ).group_by("codigo_snies_del_programa").agg(
+            pl.col("primer_curso_sum").sum().alias("Ingresos")
+        )
+        
+        # Unir con la información de SNIES filtrada
+        df_res = df_filt.join(df_p_agg, on="codigo_snies_del_programa", how="inner")
+        
+        # Seleccionar y renombrar columnas
+        df_res = df_res.select([
+            "codigo_snies_del_programa",
+            "nombre_institucion",
+            "programa_academico",
+            "numero_creditos",
+            "costo_matricula_estud_nuevos",
+            "Ingresos"
+        ]).sort("Ingresos", descending=True)
+        
+        df_res = df_res.rename({
+            "codigo_snies_del_programa": "SNIES",
+            "nombre_institucion": "Institución",
+            "programa_academico": "Programa Académico",
+            "numero_creditos": "Créditos",
+            "costo_matricula_estud_nuevos": "Valor Matrícula",
+            "Ingresos": f"Ingresos ({max_yr})"
+        })
+        
+        df_pd = df_res.to_pandas()
+        # Formatear moneda para Valor Matrícula (solo si no es nulo/NaN)
+        df_pd["Valor Matrícula"] = df_pd["Valor Matrícula"].apply(
+            lambda x: f"$ {format_num_es(x)}" if pd.notnull(x) else ""
+        )
+        return df_pd
+
+    @render.data_frame
+    def prev_top_ingresos():
+        df_pd = calc_top_ingresos_table()
+        return render.DataGrid(df_pd, filters=True, width="100%", selection_mode="none")
+
+    @reactive.calc
+    def calc_top_ingresos_comp_table():
+        import pandas as pd
+        # Obtenemos la lista de divipolas del grupo comparable
+        comp_divipolas = comparable_snies_list()
+        if len(comp_divipolas) == 0:
+            return pd.DataFrame()
+            
+        max_yr = int(df_pcurso["anno"].max())
+        # Consolidar ingresos por programa (último año) filtrando por el GRUPO COMPARABLE
+        df_p_agg = df_pcurso.filter(
+            (pl.col("anno") == max_yr) & 
+            pl.col("snies_divipola").is_in(comp_divipolas)
+        ).group_by("codigo_snies_del_programa").agg(
+            pl.col("primer_curso_sum").sum().alias("Ingresos")
+        )
+        
+        # Cruzar con metadatos de SNIES
+        df_snies_small = df_snies.select([
+            "codigo_snies_del_programa", "nombre_institucion", "programa_academico", 
+            "numero_creditos", "costo_matricula_estud_nuevos"
+        ]).to_pandas()
+        
+        df_p_agg_pd = df_p_agg.to_pandas()
+        df_res = pd.merge(df_p_agg_pd, df_snies_small, on="codigo_snies_del_programa", how="inner")
+        
+        # Ordenar (Sin límite para el Dashboard)
+        df_res = df_res.sort_values("Ingresos", ascending=False)
+        
+        # Formatear
+        df_res["#"] = range(1, len(df_res) + 1)
+        df_res = df_res.rename(columns={
+            "codigo_snies_del_programa": "SNIES",
+            "nombre_institucion": "Institución",
+            "programa_academico": "Programa Académico",
+            "numero_creditos": "Créditos",
+            "costo_matricula_estud_nuevos": "Valor Matrícula",
+            "Ingresos": f"Ingresos {max_yr}"
+        })
+        
+        # Formatear moneda para Valor Matrícula
+        df_res["Valor Matrícula"] = df_res["Valor Matrícula"].apply(
+            lambda x: f"$ {format_num_es(x)}" if pd.notnull(x) and x > 0 else ""
+        )
+        
+        return df_res[[
+            "#", "SNIES", "Institución", "Programa Académico", "Créditos", "Valor Matrícula", f"Ingresos {max_yr}"
+        ]]
+
+    @render.data_frame
+    def prev_top_ingresos_comp():
+        df_pd = calc_top_ingresos_comp_table()
+        return render.DataGrid(df_pd, filters=True, width="100%", selection_mode="none")
+
+    @reactive.calc
     def calc_plot_primer_curso_total():
         divipolas = valid_divipolas()
         if len(divipolas) == 0: return go.Figure()
@@ -4020,6 +4176,63 @@ def server(input, output, session):
         fig = calc_fig_comp_ole_dependientes()
         return ui.HTML(pio.to_html(fig, full_html=False, include_plotlyjs="cdn"))
 
+    @reactive.calc
+    def calc_comp_mobility_tables():
+        import pandas as pd
+        snies_base_full = input.comp_snies_base()
+        if not snies_base_full:
+            return pd.DataFrame(), pd.DataFrame(), "Lugar"
+            
+        try:
+            # Extraer solo el código SNIES del string "CÓDIGO - NOMBRE"
+            snies_base = int(str(snies_base_full).split(" - ")[0])
+        except:
+            return pd.DataFrame(), pd.DataFrame(), "Lugar"
+            
+        # Detectar nivel de agregación (Depto/Mpio) según filtros generales
+        f_vals = isolated_filters()
+        mpio_filtro = f_vals["municipio"]
+        if hasattr(mpio_filtro, '__iter__') and len(mpio_filtro) > 0 and mpio_filtro[0]:
+            col_o = "municipio_origen"
+            col_d = "municipio_destino"
+            label = "Municipio"
+        else:
+            col_o = "departamento_origen"
+            col_d = "departamento_destino"
+            label = "Departamento"
+            
+        max_anno = df_ole_m0["anno_corte"].max()
+        # Filtro estricto para el programa base
+        df_base = df_ole_m0.filter(
+            (pl.col("codigo_snies_del_programa") == snies_base) & 
+            (pl.col("anno_corte") == max_anno)
+        ).to_pandas()
+        
+        if df_base.empty:
+            return pd.DataFrame(), pd.DataFrame(), label
+            
+        # Origen
+        df_o = df_base.groupby(col_o)["graduados_que_cotizan"].sum().reset_index()
+        df_o.columns = [label, "Cotizantes"]
+        df_o = df_o.sort_values("Cotizantes", ascending=False)
+        
+        # Destino
+        df_d = df_base.groupby(col_d)["graduados_que_cotizan"].sum().reset_index()
+        df_d.columns = [label, "Cotizantes"]
+        df_d = df_d.sort_values("Cotizantes", ascending=False)
+        
+        return df_o, df_d, label
+
+    @render.data_frame
+    def comp_ole_top_origen():
+        df_o, _, _ = calc_comp_mobility_tables()
+        return render.DataGrid(df_o, filters=True, width="100%", selection_mode="none")
+
+    @render.data_frame
+    def comp_ole_top_destino():
+        _, df_d, _ = calc_comp_mobility_tables()
+        return render.DataGrid(df_d, filters=True, width="100%", selection_mode="none")
+
     @render.ui
     def comp_dist_empleabilidad_header():
         max_yr = df_ole_m0["anno_corte"].max()
@@ -4861,6 +5074,36 @@ def server(input, output, session):
     def prev_ole_dist_dep_sexo(): return ui.HTML(pio.to_html(calc_plot_dist_dependientes_sexo(), full_html=False, include_plotlyjs="cdn"))
     @render.ui
     def prev_ole_mobility(): return ui.HTML(pio.to_html(calc_plot_mobility_matrix(), full_html=False, include_plotlyjs="cdn"))
+
+    @reactive.calc
+    def calc_mobility_tables():
+        import pandas as pd
+        mob_df_pd, col_o, col_d, label_ejes = get_ole_mobility_df()
+        if mob_df_pd.empty:
+            return pd.DataFrame(), pd.DataFrame(), label_ejes
+        
+        # En mob_df_pd la columna YA se llama 'cotizantes' por el alias en get_ole_mobility_df
+        # Origen
+        df_o = mob_df_pd.groupby(col_o)["cotizantes"].sum().reset_index()
+        df_o.columns = [label_ejes, "Cotizantes"]
+        df_o = df_o.sort_values("Cotizantes", ascending=False)
+        
+        # Destino
+        df_d = mob_df_pd.groupby(col_d)["cotizantes"].sum().reset_index()
+        df_d.columns = [label_ejes, "Cotizantes"]
+        df_d = df_d.sort_values("Cotizantes", ascending=False)
+        
+        return df_o, df_d, label_ejes
+
+    @render.data_frame
+    def prev_ole_top_origen():
+        df_o, _, _ = calc_mobility_tables()
+        return render.DataGrid(df_o, filters=True, width="100%", selection_mode="none")
+
+    @render.data_frame
+    def prev_ole_top_destino():
+        _, df_d, _ = calc_mobility_tables()
+        return render.DataGrid(df_d, filters=True, width="100%", selection_mode="none")
     @render.ui
     def prev_sal_dist_total(): return ui.HTML(pio.to_html(calc_plot_salario_dist_total(), full_html=False, include_plotlyjs="cdn"))
     @render.ui
@@ -5593,7 +5836,8 @@ def server(input, output, session):
             "salarios": {"technical_note": "Ajuste a pesos constantes.", "plots": [None]*6},
             "spadies": {"technical_note": "Fuente: SPADIES.", "plots": [None]*2},
             "saber": {"technical_note": "Fuente: ICFES.", "plots": [None]*16},
-            "demo": {"technical_note": "Caracterización socio-demográfica.", "plots": [None]*8}
+            "demo": {"technical_note": "Caracterización socio-demográfica.", "plots": [None]*8},
+            "top_ranking_ingresos": []
         }
 
         # Población de resultados
@@ -5612,6 +5856,24 @@ def server(input, output, session):
                 "Tasa_Desercion": (lambda df: f"{df['desercion_anual_mean'].iloc[0]:.1%}" if not df.empty else "N/A")(filtered_desercion().group_by("anno").agg(pl.col("desercion_anual_mean").mean()).to_pandas().pipe(lambda df: df[df['anno'] == yr] if 'anno' in df.columns else df))
             } for yr in sorted(_df_m_agg["anno"].unique())
         ]
+        
+        # Ranking de Competitividad por Ingresos (Top 20 para el informe)
+        try:
+            df_top_ing = calc_top_ingresos_table()
+            if not df_top_ing.empty:
+                top_df = df_top_ing.head(20)
+                for _, row in top_df.iterrows():
+                    report_data["top_ranking_ingresos"].append({
+                        "pos": str(row["#"]),
+                        "snies": str(row["SNIES"]),
+                        "inst": str(row["Institución"]),
+                        "prog": str(row["Programa Académico"]),
+                        "cred": str(row["Créditos"]),
+                        "costo": str(row["Valor Matrícula"]),
+                        "ing": format_num_es(row.iloc[6])
+                    })
+        except Exception as e:
+            print(f"Error generando ranking ingresos PDF: {e}")
         
         return report_data
         
@@ -5765,7 +6027,7 @@ def server(input, output, session):
                         class_="btn btn-info",
                         style="margin-right: 10px;"
                     ),
-                    ui.download_button("download_pdf", "Descargar PDF (Motor)", class_="btn-primary"),
+                    ui.download_button("download_pdf_inner", "Descargar PDF (Motor)", class_="btn-primary"),
                     ui.modal_button("Cerrar"),
                     style="display: flex; gap: 10px; justify-content: flex-end; width: 100%;"
                 )
@@ -5905,6 +6167,48 @@ def server(input, output, session):
         creditos_vals = df_c_cr["numero_creditos"].to_list() if len(df_c_cr) > 0 else []
         creditos_sd = np.std(creditos_vals) if creditos_vals else None
 
+        # --- MOVILIDAD GEOGRÁFICA (Solo Programa Base) ---
+        mob_origin = []
+        mob_destination = []
+        try:
+            f_vals = isolated_filters()
+            mpio_filtro = f_vals["municipio"]
+            if hasattr(mpio_filtro, '__iter__') and len(mpio_filtro) > 0 and mpio_filtro[0]:
+                col_o, col_d, label = "municipio_origen", "municipio_destino", "Municipio"
+            else:
+                col_o, col_d, label = "departamento_origen", "departamento_destino", "Departamento"
+                
+            max_anno_ole = df_ole_m0["anno_corte"].max()
+            df_mob_base = df_ole_m0.filter(
+                (pl.col("codigo_snies_del_programa") == attr["codigo"]) & 
+                (pl.col("anno_corte") == max_anno_ole)
+            ).to_pandas()
+            
+            if not df_mob_base.empty:
+                # Usar el nombre de columna real del backend: graduados_que_cotizan
+                top_o = df_mob_base.groupby(col_o)["graduados_que_cotizan"].sum().sort_values(ascending=False).head(13)
+                mob_origin = [{"name": str(n), "value": f"{v:,.0f}".replace(",", ".")} for n, v in top_o.items()]
+                top_d = df_mob_base.groupby(col_d)["graduados_que_cotizan"].sum().sort_values(ascending=False).head(13)
+                mob_destination = [{"name": str(n), "value": f"{v:,.0f}".replace(",", ".")} for n, v in top_d.items()]
+        except Exception as e:
+            print(f"Error movilidad PDF comp: {e}")
+
+        # 3. RANKING DE COMPETITIVIDAD (TOP 20 PARA EL INFORME)
+        df_ranking = calc_top_ingresos_comp_table().head(20)
+        ranking_data = []
+        if not df_ranking.empty:
+            max_yr_col = [c for c in df_ranking.columns if "Ingresos" in c][0]
+            for _, row in df_ranking.iterrows():
+                ranking_data.append({
+                    "pos": str(row["#"]),
+                    "snies": str(row["SNIES"]),
+                    "inst": str(row["Institución"]),
+                    "prog": str(row["Programa Académico"]),
+                    "cred": str(row["Créditos"]) if pd.notna(row["Créditos"]) else "-",
+                    "val": str(row["Valor Matrícula"]) if row["Valor Matrícula"] else "-",
+                    "ing": format_num_es(row[max_yr_col])
+                })
+
         report_data = {
             "metadata": {
                 "base_codigo": attr["codigo"],
@@ -5915,8 +6219,14 @@ def server(input, output, session):
                 "filtros": filtros_activos,
                 "modo_manual": "Activado" if input.switch_modo_manual() else "Desactivado"
             },
+            "mobility": {
+                "label": label,
+                "origin": mob_origin,
+                "destination": mob_destination
+            },
+            "top_ranking_comp": ranking_data,
             "kpis": {
-                "universo": format_num_es(len(snies_list)),
+                "universo": safe_val(df_c_pcurso["n_programas"].iloc[-1] if not df_c_pcurso.empty else 0, format_num_es),
                 "neto_pcurso": safe_val(get_last_comp_sum(df_c_pcurso), format_num_es),
                 "neto_matricula": safe_val(get_last_comp_sum(df_c_matr), format_num_es),
                 "neto_graduados": safe_val(get_last_comp_sum(df_c_grad), format_num_es),

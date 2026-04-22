@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  app-test:
+    build: .
+    ports:
+      - "7860:7860"
+    # Montamos el código y los datos para probar cambios sin reconstruir todo
+    volumes:
+      - ./dashboard:/home/user/app/dashboard
+      - ./data:/home/user/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+      # Aquí puedes añadir variables de entorno de prueba si las necesitas
+      # - SUPABASE_URL=tu_url
+      # - SUPABASE_KEY=tu_key
+    restart: unless-stopped

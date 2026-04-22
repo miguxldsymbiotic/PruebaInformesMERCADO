@@ -399,6 +399,8 @@
         <div class="footer-page">PÁGINA 1</div>
     </div>
 
+    <!-- Ranking removido de aquí -->
+
     <!-- ==============================================
          PÁGINA 2: Observatorio Laboral (OLE-I)
          ============================================== -->
@@ -1048,6 +1050,51 @@
     </div>
 
     <!-- ==============================================
+         PÁGINA 11: Ranking de Competitividad por Ingresos (NUEVA)
+         ============================================== -->
+    <div class="page" style="height: auto; min-height: 11in; overflow: visible;">
+        <!-- Header -->
+        <div class="header-top">
+            <div>
+                <div class="subtitle">INTELIGENCIA DE MERCADO: ATRACCIÓN Y DEMANDA</div>
+                <h1>11. Ranking de Competitividad <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Top de Programas por Volumen de Ingresos</span></h1>
+            </div>
+            <div style="text-align: right;">
+                <div class="meta-date">Fuente: SNIES</div>
+            </div>
+        </div>
+
+        <p style="font-size: 0.75rem; color: #475569; line-height: 1.4; margin-bottom: 20px; text-align: justify;">
+            El volumen de ingresos (estudiantes de primer curso) es el indicador de éxito más directo en términos de atracción de mercado. Este ranking presenta los 20 programas con mayor demanda en el último año reportado, permitiendo identificar a los líderes del sector y su estructura de costos asociada.
+        </p>
+
+        <table class="premium-table" style="font-size: 0.65rem;">
+            <thead>
+                <tr>
+                    <th style="width: 5%; text-align: center;">#</th>
+                    <th style="width: 10%; text-align: center;">SNIES</th>
+                    <th style="width: 25%;">Institución</th>
+                    <th style="width: 25%;">Programa Académico</th>
+                    <th style="width: 10%; text-align: center;">Créditos</th>
+                    <th style="width: 15%; text-align: right;">Matrícula</th>
+                    <th style="width: 10%; text-align: right;">Ingresos</th>
+                </tr>
+            </thead>
+            <tbody id="table-ranking-ingresos-body">
+                <!-- Se poblará dinámicamente -->
+            </tbody>
+        </table>
+
+        <div style="margin-top: 25px; background: #fef9e7; padding: 15px; border-radius: 8px; border-left: 5px solid #f59e0b;">
+             <p style="font-size: 0.7rem; color: #92400e; line-height: 1.4; margin: 0;">
+                <b>Nota de Análisis:</b> La relación entre el volumen de ingresos y el costo de matrícula permite visualizar diferentes estrategias competitivas: programas masivos con costos optimizados frente a nichos de alta especialización con menor volumen pero mayor valor percibido.
+             </p>
+        </div>
+
+        <div class="footer-page">PÁGINA 11</div>
+    </div>
+
+    <!-- ==============================================
          PÁGINA 10: Marco Metodológico
          ============================================== -->
     <div class="page">
@@ -1094,7 +1141,7 @@
 
         </div>
 
-        <div class="footer-page">PÁGINA 11</div>
+        <div class="footer-page">PÁGINA 12</div>
     </div>
 
     <!-- Inyección JS -->
@@ -1291,6 +1338,11 @@
             if(data.kpis.evaluados) document.getElementById("kpi-pr-1").textContent = data.kpis.evaluados;
             if(data.kpis.progs_saber) document.getElementById("kpi-pr-2").textContent = data.kpis.progs_saber;
 
+            // Ranking de Ingresos Página 2
+            if(data.top_ranking_ingresos) {
+                mapRankingTable("table-ranking-ingresos-body", data.top_ranking_ingresos);
+            }
+
             if(data.demo.technical_note) document.getElementById("val-note-demo").textContent = data.demo.technical_note;
             } catch(globalErr) {
                 console.error("Error crítico en renderizado del informe:", globalErr);
@@ -1340,7 +1392,7 @@
         }
         */
 
-        // Función auxiliar para mapear tablas (Pendiente de integrar con estructura JSON final)
+        // Función auxiliar para mapear tablas
         function mapTable(bodyId, dataList) {
             const body = document.getElementById(bodyId);
             if(!body || !dataList) return;
@@ -1348,6 +1400,23 @@
                 <tr>
                     <td>${item.name}</td>
                     <td>${item.value}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Función específica para el Ranking con más columnas
+        function mapRankingTable(bodyId, dataList) {
+            const body = document.getElementById(bodyId);
+            if(!body || !dataList) return;
+            body.innerHTML = dataList.map((item) => `
+                <tr>
+                    <td style="font-weight: 800; color: var(--color-coral); text-align: center;">${item.pos}</td>
+                    <td style="text-align: center; font-weight: 700;">${item.snies}</td>
+                    <td style="font-size: 0.6rem; font-weight: 700;">${item.inst}</td>
+                    <td style="font-size: 0.6rem;">${item.prog}</td>
+                    <td style="text-align: center;">${item.cred}</td>
+                    <td style="text-align: right; font-weight: 700;">${item.costo}</td>
+                    <td style="text-align: right; font-weight: 900; color: var(--color-slate);">${item.ing}</td>
                 </tr>
             `).join('');
         }

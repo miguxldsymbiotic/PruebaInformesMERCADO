@@ -1,0 +1,13 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.db
+.ipynb_checkpoints
+.venv
+venv
+dashboard/doc-mig
+# Opcional: Ignorar carpetas de datos pesados si se cargarán por URL
+# data/

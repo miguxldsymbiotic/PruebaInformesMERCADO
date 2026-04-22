@@ -561,6 +561,63 @@
     </div>
 
     <!-- ============================================================
+         PÁGINA 5: PERFIL GEOGRÁFICO (Origen y Destino) - Solo Programa Base
+         ============================================================ -->
+    <div class="page">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">MOVILIDAD Y MERCADO GEOGRÁFICO — OLE</div>
+                <h1>5. Concentración Geográfica<br><span style="font-size:1.2rem; font-weight:700; color:#475569;">Origen (Formación) vs Destino (Vinculación)</span></h1>
+            </div>
+            <div style="text-align:right;"><div class="meta-date">Programa Analizado</div></div>
+        </div>
+
+        <p style="font-size:0.75rem; color:#475569; line-height:1.4; margin-bottom:12px; text-align:justify;">
+            Análisis de la distribución geográfica de los graduados del <b>programa base</b>. Permite identificar los principales mercados de origen de los estudiantes y las regiones donde logran su vinculación laboral efectiva (cotizantes).
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: auto;">
+            <!-- TABLA ORIGEN -->
+            <div>
+                <h3 style="font-size:0.85rem; margin-bottom:10px; color:var(--color-slate); border-bottom:2px solid var(--color-coral); padding-bottom:4px; font-weight: 800; text-transform: uppercase;">Top Origen: <span id="val-mob-label-o">...</span></h3>
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th id="val-mob-th-o" style="font-size: 0.55rem;">Localización</th>
+                            <th style="width: 80px; text-align: right; font-size: 0.55rem;">Graduados</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-mob-origin">
+                        <!-- Dinámico -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TABLA DESTINO -->
+            <div>
+                <h3 style="font-size:0.85rem; margin-bottom:10px; color:var(--color-slate); border-bottom:2px solid var(--color-coral); padding-bottom:4px; font-weight: 800; text-transform: uppercase;">Top Destino: <span id="val-mob-label-d">...</span></h3>
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th id="val-mob-th-d" style="font-size: 0.55rem;">Localización</th>
+                            <th style="width: 80px; text-align: right; font-size: 0.55rem;">Cotizantes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-mob-destination">
+                        <!-- Dinámico -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="technical-note" style="margin-top:15px; margin-bottom: 0;">
+            <b>Nota Analítica:</b> Esta página se enfoca exclusivamente en el programa seleccionado. El nivel de detalle (Departamento o Municipio) se ajusta automáticamente según la selección de filtros del usuario. Los datos reflejan el último año de corte oficial reportado por el OLE.
+        </div>
+
+        <div class="footer-page">PÁGINA 5</div>
+    </div>
+
+    <!-- ============================================================
          PÁGINA 6: PERMANENCIA Y DESERCIÓN
          ============================================================ -->
     <div class="page">
@@ -774,6 +831,50 @@
         <div class="footer-page">PÁGINA 8</div>
     </div>
 
+    <!-- ============================================================
+         PÁGINA 9: Ranking de Competitividad (Top 25)
+         ============================================================ -->
+    <div class="page" style="height: auto; min-height: 11in; overflow: visible;">
+        <div class="header-top">
+            <div>
+                <div class="subtitle">BENCHMARKING DE ATRACCIÓN Y DEMANDA</div>
+                <h1>9. Ranking de Competitividad <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Top 20 de Programas por Volumen de Ingresos</span></h1>
+            </div>
+            <div style="text-align: right;">
+                <div class="meta-date">Fuente: SNIES</div>
+            </div>
+        </div>
+
+        <p style="font-size: 0.75rem; color: #475569; line-height: 1.4; margin-bottom: 20px; text-align: justify;">
+            Este ranking presenta los 20 programas del grupo de comparación con mayor captación de estudiantes en el último año reportado. Permite identificar la jerarquía del mercado y contrastar la estructura de costos frente a los líderes del clúster.
+        </p>
+
+        <table class="premium-table" style="font-size: 0.65rem;">
+            <thead>
+                <tr>
+                    <th style="width: 5%; text-align: center;">#</th>
+                    <th style="width: 10%; text-align: center;">SNIES</th>
+                    <th style="width: 25%;">Institución</th>
+                    <th style="width: 25%;">Programa Académico</th>
+                    <th style="width: 10%; text-align: center;">Créditos</th>
+                    <th style="width: 15%; text-align: right;">Matrícula</th>
+                    <th style="width: 10%; text-align: right;">Ingresos</th>
+                </tr>
+            </thead>
+            <tbody id="table-ranking-comp-body">
+                <!-- Se poblará dinámicamente -->
+            </tbody>
+        </table>
+
+        <div style="margin-top: 25px; background: #fef9e7; padding: 15px; border-radius: 8px; border-left: 5px solid #f59e0b;">
+             <p style="font-size: 0.7rem; color: #92400e; line-height: 1.4; margin: 0;">
+                <b>Nota de Análisis:</b> La competitividad no solo se mide por calidad académica, sino por la capacidad de tracción de mercado. Los programas que encabezan este ranking definen la tendencia de precios y el estándar de volumen para el clúster analizado.
+             </p>
+        </div>
+
+        <div class="footer-page">PÁGINA 9</div>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const data = window.__REPORT_DATA_COMP__;
@@ -914,6 +1015,42 @@
             }
 
             ["snies", "salarios", "ole", "spadies", "saber", "demo"].forEach(renderSection);
+
+            // --- MOVILIDAD (Nuevo) ---
+            const mob = data.mobility || {};
+            setTxt("val-mob-label-o", mob.label || "Departamento");
+            setTxt("val-mob-label-d", mob.label || "Departamento");
+            setTxt("val-mob-th-o", mob.label || "Localización");
+            setTxt("val-mob-th-d", mob.label || "Localización");
+
+            const renderMobTable = (id, list) => {
+                const tbody = document.getElementById(id);
+                if (!tbody) return;
+                tbody.innerHTML = (list && list.length)
+                    ? list.map(item => `<tr><td>${item.name}</td><td>${item.value}</td></tr>`).join("")
+                    : '<tr><td colspan="2" style="text-align:center; color:#94a3b8; padding: 20px;">Sin datos registrados en el período analizado.</td></tr>';
+            };
+            renderMobTable("table-mob-origin", mob.origin);
+            renderMobTable("table-mob-destination", mob.destination);
+
+            // --- RANKING COMPETITIVIDAD ---
+            const ranking = data.top_ranking_comp || [];
+            const rankBody = document.getElementById("table-ranking-comp-body");
+            if (rankBody) {
+                rankBody.innerHTML = (ranking && ranking.length)
+                    ? ranking.map(item => `
+                        <tr>
+                            <td style="text-align:center; font-weight:800;">${item.pos}</td>
+                            <td style="text-align:center;">${item.snies}</td>
+                            <td>${item.inst}</td>
+                            <td style="font-weight:700;">${item.prog}</td>
+                            <td style="text-align:center;">${item.cred}</td>
+                            <td style="text-align:right;">${item.val}</td>
+                            <td style="text-align:right; font-weight:900;">${item.ing}</td>
+                        </tr>
+                    `).join("")
+                    : '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding: 20px;">No hay datos de ingresos disponibles para este clúster.</td></tr>';
+            }
         });
     </script>
 </body>
