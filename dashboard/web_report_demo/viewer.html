@@ -112,7 +112,7 @@
 
         .header-top { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--color-slate); padding-bottom: 8px; margin-bottom: 12px; }
         .subtitle { font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--color-coral); margin-bottom: 4px; }
-        .meta-date { font-family: var(--font-heading); font-size: 0.75rem; font-weight: 700; color: var(--color-slate-light); }
+        .meta-date { font-family: var(--font-heading); font-size: 0.70rem; font-weight: 700; color: var(--color-slate-light); }
 
         /* Nota Técnica Premium */
         .technical-note {
@@ -128,13 +128,13 @@
 
         /* Estilos para Tablas Premium (Sección Movilidad) */
         .premium-table {
-            width: 100%; border-collapse: collapse; margin-top: 5px; font-family: var(--font-body); font-size: 0.65rem;
+            width: 100%; border-collapse: collapse; margin-top: 5px; font-family: var(--font-body); font-size: 0.52rem; line-height: 1.1;
         }
         .premium-table th {
             background-color: var(--color-slate); color: white; padding: 6px 10px; text-align: left; text-transform: uppercase; font-family: var(--font-heading); font-size: 0.55rem; font-weight: 800;
         }
         .premium-table td {
-            padding: 5px 10px; border-bottom: 1px solid #e2e8f0; color: var(--color-slate);
+            padding: 1px 6px; border-bottom: 1px solid #e2e8f0; color: var(--color-slate);
         }
         .premium-table tr:nth-child(even) { background-color: #f8fafc; }
         .premium-table td:last-child { font-weight: 800; color: var(--color-slate-light); text-align: right; }
@@ -170,7 +170,7 @@
         .plot-card.full-width { grid-column: span 2; }
         
         .plot-header { padding: 6px 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-family: var(--font-heading); font-size: 0.80rem; font-weight: 800; color: var(--color-slate); }
-        .plot-body { padding: 6px; flex-grow: 1; display: flex; align-items: center; justify-content: center; height: 180px;}
+        .plot-body { padding: 6px; flex-grow: 1; display: flex; align-items: center; justify-content: center; height: 160px;}
         .plot-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .plot-footer { padding: 6px 10px; font-size: 0.65rem; color: #64748b; border-top: 1px solid #e2e8f0; line-height: 1.2; }
 
@@ -335,10 +335,10 @@
         <div class="header-top">
             <div>
                 <div class="subtitle" id="val-subtitle">DEPARTAMENTO: CARGANDO...</div>
-                <h1 id="val-title">Tendencias SNIES <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Oferta, Demanda y Desglose por Sexo</span></h1>
+                <h1 id="val-title">1.Tendencias SNIES Oferta, Demanda y Desglose por Sexo</h1>
             </div>
             <div style="text-align: right;">
-                <div class="meta-date" id="val-date">Corte Oficial</div>
+                <div class="meta-date">Fuente: SNIES</div>
             </div>
         </div>
 
@@ -409,7 +409,7 @@
         <div class="header-top">
             <div>
                 <div class="subtitle">MERCADO LABORAL: VINCULACIÓN Y FORMALIDAD</div>
-                <h1>3. Observatorio Laboral (I) <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Evolución de la Cotización y Estabilidad</span></h1>
+                <h1>2.Resultados de Empleabilidad y Vinculación</h1>
             </div>
             <div style="text-align: right;">
                 <div class="meta-date">Fuente: OLE</div>
@@ -418,7 +418,7 @@
 
         <!-- Texto Introductorio Sección OLE -->
         <p style="font-size: 0.75rem; color: #475569; line-height: 1.4; margin-bottom: 12px; text-align: justify;">
-            Para complementar el ciclo formativo, esta sección integra datos del Observatorio Laboral para la Educación (OLE). Su valor radica en que visibiliza el puente entre la academia y el sector productivo, permitiendo observar cómo se insertan realmente los egresados en el mercado laboral formal.
+            Para complementar el ciclo formativo, esta sección integra datos del Observatorio Laboral para la Educación (OLE). Su valor radica en que visibiliza el puente entre la academia y el sector productivo, permitiendo observar cómo se insertan los egresados en el mercado laboral.
         </p>
 
         <!-- KPIs de Movilidad y Mercado Laboral (Movidos desde Pág 3) -->
@@ -448,12 +448,12 @@
         <!-- Fila 1 -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o1">Tasa de Cotización</div>
+                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o1">Tendencia Total de Empleabilidad</div>
                 <div class="plot-body" style="height: 150px;"><img id="img-o1" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.6rem;" id="caption-o1">Fuente...</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o2">Dependientes / Graduados</div>
+                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o2">Tendencia Total de la Relación Dependientes sobre Graduados</div>
                 <div class="plot-body" style="height: 150px;"><img id="img-o2" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.6rem;" id="caption-o2">Fuente...</div>
             </div>
@@ -461,12 +461,12 @@
         <!-- Fila 2 -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o3">Vinculación Sexo</div>
+                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o3">Empleabilidad por Sexo</div>
                 <div class="plot-body" style="height: 150px;"><img id="img-o3" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.6rem;" id="caption-o3">Fuente...</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o4">Dependientes Sexo</div>
+                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o4">Relación Dependientes sobre Graduados por Sexo</div>
                 <div class="plot-body" style="height: 150px;"><img id="img-o4" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.6rem;" id="caption-o4">Fuente...</div>
             </div>
@@ -488,7 +488,7 @@
         <div class="header-top">
             <div>
                 <div class="subtitle">MERCADO LABORAL: MOVILIDAD Y RETENCIÓN</div>
-                <h1>4. Observatorio Laboral (II) <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Ecosistema de Movilidad y Atracción de Talento</span></h1>
+                <h1>3. Distribución Regional de Empleabilidad y Dependencia</h1>
             </div>
             <div style="text-align: right;">
                 <div class="meta-date">Fuente: OLE</div>
@@ -503,12 +503,12 @@
         <!-- Fila de Distribución (Movida desde Pág 2 para ganar espacio) -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o5">Dist. Vinculación</div>
+                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o5">Distribución Total de Empleabilidad (2022)</div>
                 <div class="plot-body" style="height: 150px;"><img id="img-o5" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.6rem;" id="caption-o5">Fuente...</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o6">Dist. Dependencia</div>
+                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o6">Distribución Total de la Relación Dependientes sobre Graduados (2022)</div>
                 <div class="plot-body" style="height: 150px;"><img id="img-o6" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.6rem;" id="caption-o6">Fuente...</div>
             </div>
@@ -517,12 +517,12 @@
         <!-- Fila 1: Distribuciones -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o7">Dist. Vinculación Sexo</div>
+                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o7">Distribución de Empleabilidad por Sexo (2022)</div>
                 <div class="plot-body" style="height: 150px;"><img id="img-o7" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.6rem;" id="caption-o7">Fuente...</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o8">Dist. Dependencia Sexo</div>
+                <div class="plot-header" style="font-size: 0.7rem;" id="ph-o8">Distribución de la Relación Dependientes sobre Graduados por Sexo (2022)</div>
                 <div class="plot-body" style="height: 150px;"><img id="img-o8" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.6rem;" id="caption-o8">Fuente...</div>
             </div>
@@ -533,17 +533,17 @@
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
             <div class="plot-card">
                 <div class="plot-header" style="font-size: 0.6rem;" id="ph-o12">Evolución de Dependientes sobre Cotizantes</div>
-                <div class="plot-body" style="height: 130px;"><img id="img-o12" class="plot-img" src=""></div>
+                <div class="plot-body" style="height: 115px;"><img id="img-o12" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.5rem;" id="caption-o12">Fuente...</div>
             </div>
             <div class="plot-card">
                 <div class="plot-header" style="font-size: 0.6rem;" id="ph-o10">Evolución de la Tasa de Retención Local</div>
-                <div class="plot-body" style="height: 130px;"><img id="img-o10" class="plot-img" src=""></div>
+                <div class="plot-body" style="height: 115px;"><img id="img-o10" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.5rem;" id="caption-o10">Fuente...</div>
             </div>
             <div class="plot-card">
                 <div class="plot-header" style="font-size: 0.6rem;" id="ph-o11">Evolución del Ratio Salen / Entran</div>
-                <div class="plot-body" style="height: 130px;"><img id="img-o11" class="plot-img" src=""></div>
+                <div class="plot-body" style="height: 115px;"><img id="img-o11" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px 10px; font-size: 0.5rem;" id="caption-o11">Fuente...</div>
             </div>
         </div>
@@ -565,7 +565,7 @@
         <div class="header-top">
             <div>
                 <div class="subtitle">MERCADO LABORAL: MOVILIDAD Y FLUJO REGIONAL</div>
-                <h1>5. Observatorio Laboral (III) <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Concentración Geográfica de Origen y Destino</span></h1>
+                <h1>4.Concentración Geográfica de Origen y Destino</h1>
             </div>
             <div style="text-align: right;">
                 <div class="meta-date">Fuente: OLE</div>
@@ -574,7 +574,7 @@
 
         <!-- Texto Introductorio Compactado -->
         <p style="font-size: 0.7rem; color: #475569; line-height: 1.2; margin-bottom: 15px; text-align: justify;">
-            A continuación se presentan los principales flujos migratorios de los graduados. Las tablas permiten comparar los departamentos donde se obtuvo el título académico frente a las regiones donde se está ejerciendo la actividad laboral formal.
+            A continuación se presentan los principales flujos migratorios de los graduados. Las tablas permiten comparar los departamentos donde se obtuvo el título académico frente a las regiones donde se está ejerciendo la actividad laboral formal. Se tienen en cuenta unicamente graduados, cotizantes dependientes.
         </p>
 
         <!-- Tablas de Movilidad (Reemplazo de Matriz - Vista Vertical Completa) -->
@@ -588,7 +588,8 @@
                     <thead>
                         <tr>
                             <th>Departamento</th>
-                            <th>Graduados Cotizantes</th>
+                            <th style="text-align: right;">Graduados Cotizantes</th>
+                            <th style="text-align: right;">Distribución %</th>
                         </tr>
                     </thead>
                     <tbody id="table-origin-body-v3">
@@ -606,7 +607,8 @@
                     <thead>
                         <tr>
                             <th>Departamento</th>
-                            <th>Graduados Cotizantes</th>
+                            <th style="text-align: right;">Graduados Cotizantes</th>
+                            <th style="text-align: right;">Distribución %</th>
                         </tr>
                     </thead>
                     <tbody id="table-destination-body-v3">
@@ -616,11 +618,7 @@
             </div>
         </div>
 
-        <div style="margin-top: 25px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-             <p style="font-size: 0.65rem; color: #64748b; line-height: 1.4; margin: 0; font-style: italic;">
-                <b>Interpretación de Movilidad:</b> La comparación entre estas tablas permite identificar si el departamento es un "exportador" de talento o un polo de atracción laboral. Una alta coincidencia en los nombres sugiere estabilidad regional, mientras que cambios drásticos indican dinamismo migratorio hacia centros económicos.
-             </p>
-        </div>
+
 
         <div class="footer-page">PÁGINA 4</div>
     </div>
@@ -633,25 +631,19 @@
         <div class="header-top">
             <div>
                 <div class="subtitle" id="val-subtitle-sal">MERCADO LABORAL: RETORNO ECONÓMICO</div>
-                <h1>5. Salarios de Enganche <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Valoración del Título y Brechas de Género</span></h1>
+                <h1>5. Salarios de Enganche</h1>
             </div>
             <div style="text-align: right;">
-                <div class="meta-date">Fuente: OLE / SMMLV</div>
+                <div class="meta-date">Fuente: OLE</div>
             </div>
         </div>
 
         <!-- Texto Introductorio Sección Salarios -->
         <p style="font-size: 0.75rem; color: #475569; line-height: 1.4; margin-bottom: 12px; text-align: justify;">
-            Esta sección analiza la remuneración inicial de los egresados, un indicador crítico del retorno de inversión educativa. Al desagregar por sexo y ajustar por poder adquisitivo (SMMLV), se identifican las brechas de equidad y la evolución del valor percibido de la formación en el tiempo.
+            Esta sección muestra la remuneración al siguiente año de graduado, un indicador crítico del retorno de inversión educativa. Al desagregar por sexo y ajustar por poder adquisitivo (SMMLV), se identifican las brechas de equidad y la evolución del valor percibido de la formación en el tiempo. Se utilizan pesos corrientes y constantes (al ultimo año disponible)
         </p>
 
-        <!-- Bloque Reubicado de Interpretación Matrix -->
-        <div style="background: #f1f5f9; border-left: 4px solid #31497e; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px;">
-            <h4 style="font-size: 0.75rem; color: #31497e; margin-top: 0; margin-bottom: 5px; text-transform: uppercase; font-weight: 800;">Nota sobre Movilidad Laboral:</h4>
-            <p style="font-size: 0.7rem; color: #475569; line-height: 1.4; margin-bottom: 0; text-align: justify;">
-                La concentración de datos en la diagonal principal de la matriz anterior indica una alta retención de talento local, mientras que la dispersión revela la movilidad nacional de los egresados hacia diversas regiones fuera del centro de formación académica original.
-            </p>
-        </div>
+
 
         <!-- KPIs de Salarios -->
         <div class="kpi-container" style="margin-bottom: 15px;">
@@ -672,17 +664,17 @@
         <!-- Grillas de Gráficas de Salarios (Redistribuidas 3x2) -->
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v1">Distribución por Rango Salarial</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v1">Distribución Total por Rango Salarial (2022)</div>
                 <div class="plot-body" style="height: 140px;"><img id="img-v1" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px; font-size: 0.5rem;" id="caption-v1">Fuente...</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v2">Distribución Salarial por Sexo</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v2">Distribución Salarial por Sexo (2022)</div>
                 <div class="plot-body" style="height: 140px;"><img id="img-v2" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px; font-size: 0.5rem;" id="caption-v2">Fuente...</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v3">Evolución Salario Promedio (Corrientes)</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v3">Evolución del Salario Promedio Estimado (Pesos corrientes)</div>
                 <div class="plot-body" style="height: 140px;"><img id="img-v3" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px; font-size: 0.5rem;" id="caption-v3">Histórico nominal.</div>
             </div>
@@ -690,26 +682,23 @@
 
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v4">Evolución Salarial por Sexo (Corrientes)</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v4">Evolución Salarial por Sexo (Pesos corrientes)</div>
                 <div class="plot-body" style="height: 140px;"><img id="img-v4" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px; font-size: 0.5rem;" id="caption-v4">Brechas nominales.</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v5">Evolución Salario Promedio (Constantes)</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v5">Evolución de Salario Promedio Estimado (Pesos constantes - SMMLV 2026)</div>
                 <div class="plot-body" style="height: 140px;"><img id="img-v5" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px; font-size: 0.5rem;" id="caption-v5">Ajustado SMMLV 2026.</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v6">Evolución Salarial por Sexo (Constantes)</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-v6">Evolución Salarial por Sexo (Pesos constantes - SMMLV 2026)</div>
                 <div class="plot-body" style="height: 140px;"><img id="img-v6" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 4px; font-size: 0.5rem;" id="caption-v6">Brechas reales.</div>
             </div>
         </div>
 
-        <!-- Nota Técnica -->
-        <div class="technical-note" style="margin-top: 15px;">
-            <b>Nota Técnica:</b> <span id="val-note-sal">Cargando...</span>
-        </div>
+
 
         <div class="footer-page">PÁGINA 5</div>
     </div>
@@ -722,7 +711,7 @@
         <div class="header-top">
             <div>
                 <div class="subtitle" id="val-subtitle-spadies">BIENESTAR ESTUDIANTIL Y GESTIÓN DE RIESGOS</div>
-                <h1>6. Permanencia y Deserción <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Análisis de Retención y Sostenibilidad Académica</span></h1>
+                <h1>6-Permanencia y Deserción (SPADIES)</h1>
             </div>
             <div style="text-align: right;">
                 <div class="meta-date">Fuente: SPADIES</div>
@@ -731,7 +720,7 @@
 
         <!-- Texto Introductorio Sección Deserción -->
         <p style="font-size: 0.75rem; color: #475569; line-height: 1.4; margin-bottom: 20px; text-align: justify;">
-            Para profundizar en el bienestar estudiantil y la eficacia institucional, esta sección analiza los indicadores de deserción y permanencia reportados por el SPADIES. La capacidad de retención es un factor determinante en la sostenibilidad social y académica del ecosistema educativo, reflejando el éxito de las estrategias de acompañamiento institucional.
+            La capacidad de retención es un factor determinante en la sostenibilidad social y académica. Esta sección compara las tasas de deserción del programa base frente al grupo comparable.
         </p>
 
         <!-- KPI de Deserción -->
@@ -745,12 +734,12 @@
         <!-- Fila de Gráficas: Distribución y Tendencia -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.8rem;" id="ph-d1">Distribución de la Tasa de Deserción</div>
+                <div class="plot-header" style="font-size: 0.8rem;" id="ph-d1">Distribución de la Tasa de Deserción (Último Año)</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-d1" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 6px 12px; font-size: 0.65rem;" id="caption-d1">Fuente: SPADIES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.8rem;" id="ph-d2">Tendencia Histórica de Deserción</div>
+                <div class="plot-header" style="font-size: 0.8rem;" id="ph-d2">Tendencia Histórica de Deserción Anual</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-d2" class="plot-img" src=""></div>
                 <div class="plot-footer" style="padding: 6px 12px; font-size: 0.65rem;" id="caption-d2">Fuente: SPADIES</div>
             </div>
@@ -772,16 +761,16 @@
         <div class="header-top">
             <div>
                 <div class="subtitle" id="val-subtitle-saber">CALIDAD ACADÉMICA Y VALOR AGREGADO</div>
-                <h1>7. Prueba SABER PRO <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Desempeño de Competencias Genéricas</span></h1>
+                <h1>7.Excelencia Académica (Prueba SABER PRO)</h1>
             </div>
             <div style="text-align: right;">
-                <div class="meta-date">Fuente: ICFES</div>
+                <div class="meta-date">Fuente: ICFES, SABER PRO</div>
             </div>
         </div>
 
         <!-- Texto Introductorio -->
         <p style="font-size: 0.75rem; color: #475569; line-height: 1.4; margin-bottom: 20px; text-align: justify;">
-            Esta sección evalúa la calidad educativa a través de los resultados en las pruebas de Estado SABER PRO. El desempeño en competencias genéricas permite medir el valor agregado de la institución y el grado de preparación de los graduandos para enfrentar desafíos intelectuales complejos en el ámbito profesional y ciudadano.
+            Comparativa del desempeño en pruebas Saber PRO UNICAMENTE PARA PROGRAMAS UNIVERSITARIOS,.
         </p>
 
         <!-- Layout Central: Gráficas Principales + Sidebar KPIs -->
@@ -789,22 +778,22 @@
             <!-- Lado Izquierdo: 2x2 Grid -->
             <div style="flex: 3; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="plot-card">
-                    <div class="plot-header" style="font-size: 0.65rem;" id="ph-sb1">Tendencia Global</div>
+                    <div class="plot-header" style="font-size: 0.65rem;" id="ph-sb1">Evolución de Competencias Genéricas (Promedio por Programa)</div>
                     <div class="plot-body" style="height: 125px;"><img id="img-sb1" class="plot-img" src=""></div>
                     <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb1">ICFES</div>
                 </div>
                 <div class="plot-card">
-                    <div class="plot-header" style="font-size: 0.65rem;" id="ph-sb2">Distribución Global</div>
+                    <div class="plot-header" style="font-size: 0.65rem;" id="ph-sb2">Distribución del Puntaje Global (2024)</div>
                     <div class="plot-body" style="height: 125px;"><img id="img-sb2" class="plot-img" src=""></div>
                     <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb2">ICFES</div>
                 </div>
                 <div class="plot-card">
-                    <div class="plot-header" style="font-size: 0.65rem;" id="ph-sb3">Evaluados por Sexo</div>
+                    <div class="plot-header" style="font-size: 0.65rem;" id="ph-sb3">Cantidad de Evaluados por Sexo</div>
                     <div class="plot-body" style="height: 125px;"><img id="img-sb3" class="plot-img" src=""></div>
                     <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb3">ICFES</div>
                 </div>
                 <div class="plot-card">
-                    <div class="plot-header" style="font-size: 0.65rem;" id="ph-sb4">Evaluados por Edad</div>
+                    <div class="plot-header" style="font-size: 0.65rem;" id="ph-sb4">Cantidad de Evaluados por Edad</div>
                     <div class="plot-body" style="height: 125px;"><img id="img-sb4" class="plot-img" src=""></div>
                     <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb4">ICFES</div>
                 </div>
@@ -839,107 +828,123 @@
             </div>
         </div>
 
-        <h3 style="font-size: 0.9rem; color: #31497e; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 12px;">Evolución Detallada por Perfil Sociodemográfico</h3>
-        
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: auto;">
-            <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb5">Global por Sexo</div>
-                <div class="plot-body" style="height: 140px;"><img id="img-sb5" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb5">ICFES</div>
-            </div>
-            <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb6">Global por Edad</div>
-                <div class="plot-body" style="height: 140px;"><img id="img-sb6" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb6">ICFES</div>
-            </div>
-            <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb7">Razonamiento por Sexo</div>
-                <div class="plot-body" style="height: 140px;"><img id="img-sb7" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb7">ICFES</div>
-            </div>
-        </div>
-
         <div class="footer-page">PÁGINA 7</div>
     </div>
 
     <!-- ==============================================
-         PÁGINA 8: SABER PRO (II)
+         PÁGINA 8: Evolución Detallada por Perfil Sociodemográfico (I)
+         ============================================== -->
+    <!-- ==============================================
+         PÁGINA 8: Evolución Detallada por Perfil Sociodemográfico (PARTE I)
          ============================================== -->
     <div class="page">
-        <!-- Fila 2 de 4 -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
-            <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb8">Razonamiento por Edad</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb8" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb8">ICFES</div>
+        <!-- Header -->
+        <div class="header-top">
+            <div>
+                <div class="subtitle">CALIDAD ACADÉMICA — DESGLOSE DEMOGRÁFICO (PARTE I)</div>
+                <h1>8. Evolución Detallada por Perfil Sociodemográfico</h1>
             </div>
-            <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb9">Lectura por Sexo</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb9" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb9">ICFES</div>
-            </div>
-            <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb10">Lectura por Edad</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb10" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb10">ICFES</div>
+            <div style="text-align: right;">
+                <div class="meta-date">Fuente: ICFES, SABER PRO</div>
             </div>
         </div>
 
-        <!-- Fila 3 de 4 -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: auto;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb11">Ciudadanas por Sexo</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb11" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb11">ICFES</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb5">Global por Sexo</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb5" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb5">ICFES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb12">Ciudadanas por Edad</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb12" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb12">ICFES</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb6">Global por Edad</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb6" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb6">ICFES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb13">Inglés por Sexo</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb13" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb13">ICFES</div>
-            </div>
-        </div>
-
-        <!-- Fila 4 de 4 -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
-            <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb14">Inglés por Edad</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb14" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb14">ICFES</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb7">Razonamiento por Sexo</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb7" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb7">ICFES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb15">Comunicación por Sexo</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb15" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb15">ICFES</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb8">Razonamiento por Edad</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb8" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb8">ICFES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.55rem;" id="ph-sb16">Comunicación por Edad</div>
-                <div class="plot-body" style="height: 160px;"><img id="img-sb16" class="plot-img" src=""></div>
-                <div class="plot-footer" style="font-size: 0.55rem;" id="caption-sb16">ICFES</div>
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb9">Lectura por Sexo</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb9" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb9">ICFES</div>
             </div>
-        </div>
-
-        <!-- Nota Técnica -->
-        <div class="technical-note">
-            <b>Nota Técnica Saber Pro:</b> <span id="val-note-saber">Resultados ponderados por área de conocimiento e institución seleccionada. Fuente: ICFES FTP Datasets.</span>
+            <div class="plot-card">
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb10">Lectura por Edad</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb10" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb10">ICFES</div>
+            </div>
         </div>
 
         <div class="footer-page">PÁGINA 8</div>
     </div>
 
     <!-- ==============================================
-         PÁGINA 8: Perfil Socio-demográfico
+         PÁGINA 9: Evolución Detallada por Perfil Sociodemográfico (PARTE II)
+         ============================================== -->
+    <div class="page">
+        <!-- Header -->
+        <div class="header-top">
+            <div>
+                <div class="subtitle">CALIDAD ACADÉMICA — DESGLOSE DEMOGRÁFICO (PARTE II)</div>
+                <h1>8. Evolución Detallada por Perfil Sociodemográfico</h1>
+            </div>
+            <div style="text-align: right;">
+                <div class="meta-date">Fuente: ICFES, SABER PRO</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: auto;">
+            <div class="plot-card">
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb11">Ciudadanas por Sexo</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb11" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb11">ICFES</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb12">Ciudadanas por Edad</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb12" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb12">ICFES</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb13">Inglés por Sexo</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb13" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb13">ICFES</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb14">Inglés por Edad</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb14" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb14">ICFES</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb15">Comunicación por Sexo</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb15" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb15">ICFES</div>
+            </div>
+            <div class="plot-card">
+                <div class="plot-header" style="font-size: 0.6rem;" id="ph-sb16">Comunicación por Edad</div>
+                <div class="plot-body" style="height: 200px;"><img id="img-sb16" class="plot-img" src=""></div>
+                <div class="plot-footer" style="font-size: 0.5rem;" id="caption-sb16">ICFES</div>
+            </div>
+        </div>
+
+        <div class="footer-page">PÁGINA 9</div>
+    </div>
+
+    <!-- ==============================================
+         PÁGINA 11: Perfil Socio-demográfico
          ============================================== -->
     <div class="page">
         <!-- Header -->
         <div class="header-top">
             <div>
                 <div class="subtitle" id="val-subtitle-demo">CARACTERIZACIÓN DEL ESTUDIANTADO</div>
-                <h1>8. Perfil Socio-demográfico <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Contexto de los Evaluados (Prueba SABER PRO)</span></h1>
+                <h1>9.Perfil Socio-demográfico de los Evaluados(SABER PRO)</h1>
             </div>
             <div style="text-align: right;">
                 <div class="meta-date">Fuente: ICFES</div>
@@ -966,12 +971,12 @@
         <!-- Fila 1: Distribución Bar 1&2 -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr1">Distribución por Sexo</div>
+                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr1">Distribución por Sexo (2024)</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-pr1" class="plot-img" src=""></div>
                 <div class="plot-footer" style="font-size: 0.6rem;" id="caption-pr1">ICFES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr2">Distribución por Edad</div>
+                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr2">Distribución por Grupo de Edad (2024)</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-pr2" class="plot-img" src=""></div>
                 <div class="plot-footer" style="font-size: 0.6rem;" id="caption-pr2">ICFES</div>
             </div>
@@ -980,29 +985,29 @@
         <!-- Fila 2: Distribución Bar 3&4 -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr3">Horas de Trabajo</div>
+                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr3">Distribución por Horas de Trabajo (2024)</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-pr3" class="plot-img" src=""></div>
                 <div class="plot-footer" style="font-size: 0.6rem;" id="caption-pr3">ICFES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr4">Estrato Social</div>
+                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr4">Distribución por Estrato Social (2024)</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-pr4" class="plot-img" src=""></div>
                 <div class="plot-footer" style="font-size: 0.6rem;" id="caption-pr4">ICFES</div>
             </div>
         </div>
 
-        <div class="footer-page">PÁGINA 9</div>
+        <div class="footer-page">PÁGINA 10</div>
     </div>
 
     <!-- ==============================================
-         PÁGINA 9: Perfil Socio-demográfico (Evolución)
+         PÁGINA 12: Perfil Socio-demográfico (Evolución)
          ============================================== -->
     <div class="page">
         <!-- Header Simplificado -->
         <div class="header-top">
             <div>
                 <div class="subtitle">CARACTERIZACIÓN DEL ESTUDIANTADO</div>
-                <h1>Perfil Socio-demográfico <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Evolución Histórica de la Caracterización</span></h1>
+                <h1>10. Perfil Socio-demográfico, Evolución Histórica de la Caracterización</h1>
             </div>
             <div style="text-align: right;">
                 <div class="meta-date">Fuente: ICFES</div>
@@ -1016,12 +1021,12 @@
         <!-- Fila 1: Evolución 1&2 -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr5">Evolución Participación Sexo</div>
+                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr5">Evolución de Participación por Sexo</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-pr5" class="plot-img" src=""></div>
                 <div class="plot-footer" style="font-size: 0.6rem;" id="caption-pr5">ICFES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr6">Evolución Participación Edad</div>
+                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr6">Evolución de Participación por Grupo de Edad</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-pr6" class="plot-img" src=""></div>
                 <div class="plot-footer" style="font-size: 0.6rem;" id="caption-pr6">ICFES</div>
             </div>
@@ -1030,54 +1035,53 @@
         <!-- Fila 2: Evolución 3&4 -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: auto;">
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr7">Evolución Horas Trabajo</div>
+                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr7">Evolución de Participación por Horas de Trabajo</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-pr7" class="plot-img" src=""></div>
                 <div class="plot-footer" style="font-size: 0.6rem;" id="caption-pr7">ICFES</div>
             </div>
             <div class="plot-card">
-                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr8">Evolución Estrato Social</div>
+                <div class="plot-header" style="font-size: 0.65rem;" id="ph-pr8">Evolución de Participación por Estrato Social</div>
                 <div class="plot-body" style="height: 250px;"><img id="img-pr8" class="plot-img" src=""></div>
                 <div class="plot-footer" style="font-size: 0.6rem;" id="caption-pr8">ICFES</div>
             </div>
         </div>
 
-        <!-- Nota Técnica -->
-        <div class="technical-note" style="margin-top: 15px;">
-            <b>Nota Técnica:</b> <span id="val-note-demo">Tendencias calculadas sobre el histórico de registros SABER PRO para el ámbito seleccionado.</span>
-        </div>
 
-        <div class="footer-page">PÁGINA 10</div>
+
+        <div class="footer-page">PÁGINA 11</div>
     </div>
 
     <!-- ==============================================
-         PÁGINA 11: Ranking de Competitividad por Ingresos (NUEVA)
+         PÁGINA 13: Grupo Comparable
          ============================================== -->
     <div class="page" style="height: auto; min-height: 11in; overflow: visible;">
         <!-- Header -->
         <div class="header-top">
             <div>
                 <div class="subtitle">INTELIGENCIA DE MERCADO: ATRACCIÓN Y DEMANDA</div>
-                <h1>11. Ranking de Competitividad <br><span style="font-size: 1.2rem; font-weight: 700; color: #475569;">Top de Programas por Volumen de Ingresos</span></h1>
+                <h1>11. Grupo Comparable</h1>
             </div>
             <div style="text-align: right;">
                 <div class="meta-date">Fuente: SNIES</div>
             </div>
         </div>
 
-        <p style="font-size: 0.75rem; color: #475569; line-height: 1.4; margin-bottom: 20px; text-align: justify;">
-            El volumen de ingresos (estudiantes de primer curso) es el indicador de éxito más directo en términos de atracción de mercado. Este ranking presenta los 20 programas con mayor demanda en el último año reportado, permitiendo identificar a los líderes del sector y su estructura de costos asociada.
+        <p style="font-size: 0.70rem; color: #475569; line-height: 1.2; margin-bottom: 8px; text-align: justify;">
+            El volumen de ingresos (estudiantes de primer curso) es el indicador de éxito más directo en términos de atracción de mercado. Se presentan los primeros 15 programas con mayor demanda en el último año reportado, permitiendo identificar a los líderes del sector y su estructura de costos asociada.
         </p>
 
-        <table class="premium-table" style="font-size: 0.65rem;">
+        <table class="premium-table">
             <thead>
                 <tr>
                     <th style="width: 5%; text-align: center;">#</th>
-                    <th style="width: 10%; text-align: center;">SNIES</th>
-                    <th style="width: 25%;">Institución</th>
-                    <th style="width: 25%;">Programa Académico</th>
-                    <th style="width: 10%; text-align: center;">Créditos</th>
-                    <th style="width: 15%; text-align: right;">Matrícula</th>
-                    <th style="width: 10%; text-align: right;">Ingresos</th>
+                    <th style="width: 8%; text-align: center;">SNIES</th>
+                    <th style="width: 15%;">Institución</th>
+                    <th style="width: 15%;">Programa Académico</th>
+                    <th style="width: 10%; text-align: center;">Sector</th>
+                    <th style="width: 10%; text-align: center;">Modalidad</th>
+                    <th style="width: 7%; text-align: center;">Créditos</th>
+                    <th style="width: 12%; text-align: right;">Matrícula</th>
+                    <th style="width: 8%; text-align: right;">Ingresos</th>
                 </tr>
             </thead>
             <tbody id="table-ranking-ingresos-body">
@@ -1085,17 +1089,13 @@
             </tbody>
         </table>
 
-        <div style="margin-top: 25px; background: #fef9e7; padding: 15px; border-radius: 8px; border-left: 5px solid #f59e0b;">
-             <p style="font-size: 0.7rem; color: #92400e; line-height: 1.4; margin: 0;">
-                <b>Nota de Análisis:</b> La relación entre el volumen de ingresos y el costo de matrícula permite visualizar diferentes estrategias competitivas: programas masivos con costos optimizados frente a nichos de alta especialización con menor volumen pero mayor valor percibido.
-             </p>
-        </div>
 
-        <div class="footer-page">PÁGINA 11</div>
+
+        <div class="footer-page">PÁGINA 12</div>
     </div>
 
     <!-- ==============================================
-         PÁGINA 10: Marco Metodológico
+         PÁGINA 14: Marco Metodológico
          ============================================== -->
     <div class="page">
         <!-- Header Liviano -->
@@ -1125,7 +1125,7 @@
             </div>
 
             <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 3px solid var(--color-slate);">
-                <h4 style="color: var(--color-slate); margin-bottom: 8px; font-size: 0.95rem;">4. Arquitectura y Pricing</h4>
+                <h4 style="color: var(--color-slate); margin-bottom: 8px; font-size: 0.95rem;">4. Arquitectura Académica</h4>
                 <p style="font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.4;">Benchmarking cruzado que correlaciona rentabilidad (costo semestre) con la barrera de entrada curricular (volumen de créditos). Estratégico para valor percibido.</p>
             </div>
 
@@ -1141,7 +1141,7 @@
 
         </div>
 
-        <div class="footer-page">PÁGINA 12</div>
+        <div class="footer-page">PÁGINA 13</div>
     </div>
 
     <!-- Inyección JS -->
@@ -1162,10 +1162,7 @@
 
             // Metadatos y KPIs
             document.getElementById("val-subtitle-cover").textContent = data.metadata.subtitle;
-            document.getElementById("val-date-cover").textContent = "Generación: " + data.metadata.date;
-
-            document.getElementById("val-subtitle").textContent = data.metadata.subtitle;
-            document.getElementById("val-date").textContent = "Extracción: " + data.metadata.date;
+            document.getElementById("val-date-cover").textContent = data.metadata.date;
 
             // Años dinámicos en intro y fuentes
             if(data.metadata.year_start) document.getElementById("val-year-start").textContent = data.metadata.year_start;
@@ -1231,7 +1228,7 @@
             // Playwright genera PNG
             const bSrc = (b64) => b64 ? "data:image/png;base64," + b64 : "";
             
-            const mapPlot = (pId, arrId, sourceArr, sourceName) => {
+            const mapPlot = (pId, arrId, sourceArr, sourceName, hideCaption=false) => {
                 try {
                     const plotHtmlId = document.getElementById(`img-${pId}`);
                     const headHtmlId = document.getElementById(`ph-${pId}`);
@@ -1244,8 +1241,9 @@
                         plotHtmlId.src = bSrc(pt.b64);
                         if(headHtmlId) headHtmlId.innerHTML = pt.title;
                         if(capHtmlId) {
-                            const fuenteBase = sourceName || "SNIES";
-                            capHtmlId.innerHTML = `${pt.caption}<br><b>Fuente:</b> ${fuenteBase}<br>Elaboración propia`;
+                            const fuenteBase = pt.source ? pt.source.replace(/\n/g, " &nbsp; ") : (sourceName || "SNIES") + " &nbsp; Elaboración propia";
+                            const captionTxt = (pt.caption && !hideCaption) ? pt.caption + "<br>" : "";
+                            capHtmlId.innerHTML = `${captionTxt}<b>Fuente:</b> ${fuenteBase}`;
                         }
                     }
                 } catch(err) {
@@ -1255,7 +1253,7 @@
 
             // Pagina 1: SNIES
             const ps = data.snies.plots;
-            const srcSnies = "Ministerio de Educación Nacional (SNIES)";
+            const srcSnies = "SNIES";
             mapPlot("t1", "t1", ps, srcSnies); 
             mapPlot("t2", "t2", ps, srcSnies); 
             mapPlot("t3", "t3", ps, srcSnies); 
@@ -1265,7 +1263,7 @@
 
             // Pagina 2: OLE (Grid 3x2)
             const po = data.ole.plots;
-            const srcOle = "Ministerio de Educación Nacional (OLE)";
+            const srcOle = "OLE";
             mapPlot("o1", "o1", po, srcOle); 
             mapPlot("o2", "o2", po, srcOle); 
             mapPlot("o3", "o3", po, srcOle); 
@@ -1283,7 +1281,7 @@
 
             // Pagina 4: Salarios de Enganche (v1 - v6)
             const pv = data.salarios.plots;
-            const srcSal = "Ministerio de Educación Nacional (OLE) / SMMLV";
+            const srcSal = "OLE / SMMLV";
             mapPlot("v1", "v1", pv, srcSal); 
             mapPlot("v2", "v2", pv, srcSal); 
             mapPlot("v3", "v3", pv, srcSal); 
@@ -1293,7 +1291,7 @@
             if(data.salarios.technical_note) document.getElementById("val-note-sal").textContent = data.salarios.technical_note;
             // Pagina 5: SPADIES (d1 - d2)
             const psp = data.spadies.plots;
-            const srcSpadies = "Ministerio de Educación Nacional (SPADIES)";
+            const srcSpadies = "SPADIES";
             mapPlot("d1", "d1", psp, srcSpadies);
             mapPlot("d2", "d2", psp, srcSpadies);
             
@@ -1302,9 +1300,10 @@
 
             // Pagina 6 & 7: Saber Pro (sb1 - sb16)
             const psb = data.saber.plots;
-            const srcIcfes = "Ministerio de Educación Nacional (ICFES - Saber PRO)";
+            const srcIcfes = "ICFES";
             for(let i=1; i<=16; i++) {
-                mapPlot(`sb${i}`, `sb${i}`, psb, srcIcfes);
+                // Ocultar caption solo para sb5 en adelante (Sección 8)
+                mapPlot(`sb${i}`, `sb${i}`, psb, srcIcfes, i >= 5);
             }
             
             // KPIs Saber Pro
@@ -1315,7 +1314,8 @@
             if(data.kpis.s_ingles) document.getElementById("kpi-sb-5").textContent = data.kpis.s_ingles;
             if(data.kpis.s_escrita) document.getElementById("kpi-sb-6").textContent = data.kpis.s_escrita;
             
-            if(data.saber.technical_note) document.getElementById("val-note-saber").textContent = data.saber.technical_note;
+            const noteSaber = document.getElementById("val-note-saber");
+            if(data.saber.technical_note && noteSaber) noteSaber.textContent = data.saber.technical_note;
 
             // Pagina 8: Perfil Socio-demográfico (pr1 - pr8)
             const ppr = data.demo.plots;
@@ -1324,26 +1324,48 @@
             }
             
             // KPIs Movilidad Página 3
-            if(data.kpis.vinculacion) document.getElementById("kpi-ole-m1").textContent = data.kpis.vinculacion;
-            if(data.kpis.dep_grad) document.getElementById("kpi-ole-m2").textContent = data.kpis.dep_grad;
-            if(data.kpis.dep_cot) document.getElementById("kpi-ole-m3").textContent = data.kpis.dep_cot;
-            if(data.kpis.retencion) document.getElementById("kpi-ole-m4").textContent = data.kpis.retencion;
-            if(data.kpis.ratio_migratorio) document.getElementById("kpi-ole-m5").textContent = data.kpis.ratio_migratorio;
+            if(data.kpis.vinculacion) {
+                const k1 = document.getElementById("kpi-ole-m1");
+                if(k1) k1.textContent = data.kpis.vinculacion;
+            }
+            if(data.kpis.dep_grad) {
+                const k2 = document.getElementById("kpi-ole-m2");
+                if(k2) k2.textContent = data.kpis.dep_grad;
+            }
+            if(data.kpis.dep_cot) {
+                const k3 = document.getElementById("kpi-ole-m3");
+                if(k3) k3.textContent = data.kpis.dep_cot;
+            }
+            if(data.kpis.retencion) {
+                const k4 = document.getElementById("kpi-ole-m4");
+                if(k4) k4.textContent = data.kpis.retencion;
+            }
+            if(data.kpis.ratio_migratorio) {
+                const k5 = document.getElementById("kpi-ole-m5");
+                if(k5) k5.textContent = data.kpis.ratio_migratorio;
+            }
 
             // Tablas Página 4
             if(data.ole.mobility && data.ole.mobility.origin) mapTable("table-origin-body-v3", data.ole.mobility.origin);
             if(data.ole.mobility && data.ole.mobility.destination) mapTable("table-destination-body-v3", data.ole.mobility.destination);
             
             // KPIs Socio-demográficos Página 9
-            if(data.kpis.evaluados) document.getElementById("kpi-pr-1").textContent = data.kpis.evaluados;
-            if(data.kpis.progs_saber) document.getElementById("kpi-pr-2").textContent = data.kpis.progs_saber;
+            if(data.kpis.evaluados) {
+                const kpr1 = document.getElementById("kpi-pr-1");
+                if(kpr1) kpr1.textContent = data.kpis.evaluados;
+            }
+            if(data.kpis.progs_saber) {
+                const kpr2 = document.getElementById("kpi-pr-2");
+                if(kpr2) kpr2.textContent = data.kpis.progs_saber;
+            }
 
             // Ranking de Ingresos Página 2
             if(data.top_ranking_ingresos) {
                 mapRankingTable("table-ranking-ingresos-body", data.top_ranking_ingresos);
             }
 
-            if(data.demo.technical_note) document.getElementById("val-note-demo").textContent = data.demo.technical_note;
+            const noteDemo = document.getElementById("val-note-demo");
+            if(data.demo.technical_note && noteDemo) noteDemo.textContent = data.demo.technical_note;
             } catch(globalErr) {
                 console.error("Error crítico en renderizado del informe:", globalErr);
             }
@@ -1399,7 +1421,8 @@
             body.innerHTML = dataList.map(item => `
                 <tr>
                     <td>${item.name}</td>
-                    <td>${item.value}</td>
+                    <td style="text-align: right;">${item.value}</td>
+                    <td style="text-align: right; font-weight: 700; color: #64748b;">${item.percentage || '0%'}</td>
                 </tr>
             `).join('');
         }
@@ -1407,15 +1430,21 @@
         // Función específica para el Ranking con más columnas
         function mapRankingTable(bodyId, dataList) {
             const body = document.getElementById(bodyId);
-            if(!body || !dataList) return;
+            if(!body) return;
+            if(!dataList || dataList.length === 0) {
+                body.innerHTML = '<tr><td colspan="8" style="text-align:center; color:#94a3b8; padding: 20px;">Sin datos registrados para los filtros seleccionados.</td></tr>';
+                return;
+            }
             body.innerHTML = dataList.map((item) => `
                 <tr>
                     <td style="font-weight: 800; color: var(--color-coral); text-align: center;">${item.pos}</td>
                     <td style="text-align: center; font-weight: 700;">${item.snies}</td>
                     <td style="font-size: 0.6rem; font-weight: 700;">${item.inst}</td>
                     <td style="font-size: 0.6rem;">${item.prog}</td>
+                    <td style="text-align: center;">${item.sector}</td>
+                    <td style="text-align: center;">${item.mod || '-'}</td>
                     <td style="text-align: center;">${item.cred}</td>
-                    <td style="text-align: right; font-weight: 700;">${item.costo}</td>
+                    <td style="text-align: right; font-weight: 700;">${item.val}</td>
                     <td style="text-align: right; font-weight: 900; color: var(--color-slate);">${item.ing}</td>
                 </tr>
             `).join('');
