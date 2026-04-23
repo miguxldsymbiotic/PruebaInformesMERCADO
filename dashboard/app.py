@@ -324,7 +324,6 @@ max_anno_smmlv = df_smmlv_pl["anno_corte"].max()
 filtros_cols = [
     "institucion_label",
     "snies_label",
-    "nombre_institucion",
     "estado_programa",
     "modalidad",
     "nivel_de_formacion",
@@ -347,7 +346,11 @@ app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.input_selectize("institucion_label", "Institución (Cód - Nombre)", choices=valores_iniciales["institucion_label"], multiple=True),
         ui.input_selectize("snies_label", "Programa Académico (SNIES)", choices=valores_iniciales["snies_label"], multiple=True),
-        ui.input_selectize("nombre_institucion", "Institución", choices=valores_iniciales["nombre_institucion"], multiple=True),
+        ui.input_text("keyword_programa", "Búsqueda por Palabra Clave (Programa)", placeholder="ej: ingeniería sistemas"),
+        ui.div(
+            ui.HTML("<small style='color:#666;'>Separa palabras con espacios. Se busca que el nombre del programa contenga <b>todas</b> las palabras ingresadas (AND).</small>"),
+            style="margin-top:-8px; margin-bottom:8px;"
+        ),
         ui.input_selectize("estado_programa", "Estado del Programa", choices=valores_iniciales["estado_programa"], selected=["ACTIVO"], multiple=True),
         ui.input_selectize("modalidad", "Modalidad", choices=valores_iniciales["modalidad"], multiple=True),
         ui.input_selectize("nivel_de_formacion", "Nivel de Formación", choices=valores_iniciales["nivel_de_formacion"], multiple=True),
@@ -1413,7 +1416,6 @@ def server(input, output, session):
         curr_vals = {
             "institucion_label": input.institucion_label() or (),
             "snies_label": input.snies_label() or (),
-            "nombre_institucion": input.nombre_institucion() or (),
             "estado_programa": input.estado_programa() or (),
             "modalidad": input.modalidad() or (),
             "nivel_de_formacion": input.nivel_de_formacion() or (),
@@ -1507,7 +1509,7 @@ def server(input, output, session):
         return {
             "institucion_label": input.institucion_label(),
             "snies_label": input.snies_label(),
-            "nombre_institucion": input.nombre_institucion(),
+            "keyword_programa": input.keyword_programa(),
             "estado_programa": input.estado_programa(),
             "modalidad": input.modalidad(),
             "nivel_de_formacion": input.nivel_de_formacion(),
@@ -1518,6 +1520,18 @@ def server(input, output, session):
             "municipio": input.municipio()
         }
 
+    def _apply_keyword_filter(df, keyword_raw):
+        """Filtra df_snies por palabras clave sobre programa_academico (AND lógico, case-insensitive)."""
+        if not keyword_raw or not keyword_raw.strip():
+            return df
+        palabras = [p.strip().lower() for p in keyword_raw.split() if p.strip()]
+        if not palabras:
+            return df
+        mask = pl.lit(True)
+        for palabra in palabras:
+            mask = mask & pl.col("programa_academico").str.to_lowercase().str.contains(palabra)
+        return df.filter(mask)
+
     @reactive.calc
     def filtered_snies_no_geo():
         df = df_snies
@@ -1527,6 +1541,9 @@ def server(input, output, session):
             val = f_vals[col]
             if is_filtered(val): 
                 df = df.filter(pl.col(col).is_in(val))
+        
+        # Filtro por palabras clave sobre programa_academico (AND)
+        df = _apply_keyword_filter(df, f_vals.get("keyword_programa", ""))
         return df
 
     @reactive.calc
@@ -1538,6 +1555,9 @@ def server(input, output, session):
             val = f_vals[col]
             if is_filtered(val): 
                 df = df.filter(pl.col(col).is_in(val))
+        
+        # Filtro por palabras clave sobre programa_academico (AND)
+        df = _apply_keyword_filter(df, f_vals.get("keyword_programa", ""))
         
         # Filtro de Cobertura Geográfica
         dept = f_vals["departamento"]
