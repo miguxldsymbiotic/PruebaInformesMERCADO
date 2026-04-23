@@ -358,7 +358,7 @@ app_ui = ui.page_sidebar(
         ui.input_selectize("municipio", "Municipio de Oferta", choices=[], multiple=True),
         ui.input_action_button("btn_calcular", "Aplicar Filtros", class_="btn-danger w-100 mt-2 mb-2", style="font-weight: bold; font-size: 1.1em;"),
         ui.input_action_button("btn_preview_report", "Vista Previa Informe", class_="btn-success w-100 mt-2"),
-        ui.download_button("download_pdf", "Descargar Informe (PDF)", class_="btn-primary w-100 mt-2"),
+        # ui.download_button("download_pdf", "Descargar Informe (PDF)", class_="btn-primary w-100 mt-2"),
         open="desktop",
     ),
     ui.navset_card_underline(
@@ -6087,13 +6087,6 @@ def server(input, output, session):
                 size="xl",
                 easy_close=True,
                 footer=ui.div(
-                    ui.tags.button(
-                        "🖨️ Imprimir / Guardar (Nativo)",
-                        onclick="document.querySelector('iframe').contentWindow.print();",
-                        class_="btn btn-info",
-                        style="margin-right: 10px;"
-                    ),
-                    ui.download_button("download_pdf_inner", "Descargar PDF (Motor)", class_="btn-primary"),
                     ui.modal_button("Cerrar"),
                     style="display: flex; gap: 10px; justify-content: flex-end; width: 100%;"
                 )
@@ -6576,12 +6569,6 @@ def server(input, output, session):
                 size="xl",
                 easy_close=True,
                 footer=ui.div(
-                    ui.tags.button(
-                        "🖨️ Imprimir / Guardar PDF",
-                        onclick="document.querySelector('iframe').contentWindow.print();",
-                        class_="btn btn-primary",
-                        style="font-weight: bold; padding: 8px 20px;"
-                    ),
                     ui.modal_button("Cerrar"),
                     style="display: flex; gap: 10px; justify-content: flex-end; width: 100%;"
                 )
