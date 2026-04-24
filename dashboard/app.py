@@ -347,10 +347,6 @@ app_ui = ui.page_sidebar(
         ui.input_selectize("institucion_label", "Institución (Cód - Nombre)", choices=valores_iniciales["institucion_label"], multiple=True),
         ui.input_selectize("snies_label", "Programa Académico (SNIES)", choices=valores_iniciales["snies_label"], multiple=True),
         ui.input_text("keyword_programa", "Búsqueda por Palabra Clave (Programa)", placeholder="ej: ingeniería sistemas"),
-        ui.div(
-            ui.HTML("<small style='color:#666;'>Separa palabras con espacios. Se busca que el nombre del programa contenga <b>todas</b> las palabras ingresadas (AND).</small>"),
-            style="margin-top:-8px; margin-bottom:8px;"
-        ),
         ui.input_selectize("estado_programa", "Estado del Programa", choices=valores_iniciales["estado_programa"], selected=["ACTIVO"], multiple=True),
         ui.input_selectize("modalidad", "Modalidad", choices=valores_iniciales["modalidad"], multiple=True),
         ui.input_selectize("nivel_de_formacion", "Nivel de Formación", choices=valores_iniciales["nivel_de_formacion"], multiple=True),
@@ -378,19 +374,19 @@ app_ui = ui.page_sidebar(
     ),
     ui.layout_columns(
         ui.card(
-            ui.card_header(ui.HTML("Tendencia Total de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
+            ui.card_header(ui.HTML("Tendencia de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), 
             ui.output_ui("plot_primer_curso_total"), 
             ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
-            ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
+            ui.card_header(ui.HTML("Tendencia de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), 
             ui.output_ui("plot_matriculados_total"), 
             ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
         ),
         ui.card(
-            ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
+            ui.card_header(ui.HTML("Tendencia de Estudiantes <b style='color: #31497e;'>Graduados</b>")), 
             ui.output_ui("plot_graduados_total"), 
             ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"),
             full_screen=True, style="min-height: 500px;"
@@ -470,7 +466,7 @@ app_ui = ui.page_sidebar(
             "Observatorio Laboral",
             ui.layout_columns(
                 ui.value_box(
-                    f"Tasa de Empleabilidad ({max_anno_ole})", 
+                    f"Empleabilidad ({max_anno_ole})", 
                     ui.output_ui("kpi_empleabilidad"), 
                     showcase=fa.icon_svg("briefcase", "solid")
                 ),
@@ -504,8 +500,8 @@ app_ui = ui.page_sidebar(
                 fill=False
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), ui.output_ui("plot_empleabilidad_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), ui.output_ui("plot_dependientes_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Tendencia de <b style='color: #31497e;'>Empleabilidad</b>")), ui.output_ui("plot_empleabilidad_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
+                ui.card(ui.card_header(ui.HTML("Tendencia de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), ui.output_ui("plot_dependientes_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 500px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
@@ -514,8 +510,8 @@ app_ui = ui.page_sidebar(
                 class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), ui.output_ui("plot_dist_empleabilidad"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), ui.output_ui("plot_dist_dependientes"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), ui.output_ui("plot_dist_empleabilidad"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), ui.output_ui("plot_dist_dependientes"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
@@ -593,7 +589,7 @@ app_ui = ui.page_sidebar(
             ),
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(ui.HTML(f"Distribución Total por <b style='color: #31497e;'>Rango Salarial</b> ({max_anno_ole:.0f})")), 
+                    ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Rango Salarial</b> ({max_anno_ole:.0f})")), 
                     ui.output_ui("plot_salario_dist_total"), 
                     ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), 
                     full_screen=True, style="min-height: 500px;"
@@ -859,9 +855,9 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), ui.output_ui("prev_pcurso_total"), ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), ui.output_ui("prev_matricula_total"), ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de Estudiantes <b style='color: #31497e;'>Graduados</b>")), ui.output_ui("prev_graduados_total"), ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia de Estudiantes de <b style='color: #31497e;'>Primer Curso</b>")), ui.output_ui("prev_pcurso_total"), ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia de Estudiantes <b style='color: #31497e;'>Matriculados</b>")), ui.output_ui("prev_matricula_total"), ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia de Estudiantes <b style='color: #31497e;'>Graduados</b>")), ui.output_ui("prev_graduados_total"), ui.card_footer(ui.HTML("Fuente: SNIES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
@@ -873,14 +869,16 @@ app_ui = ui.page_sidebar(
 
             ui.h3("2. Observatorio Laboral para la Educación (OLE)", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px; mt-5"),
             ui.layout_columns(
-                ui.value_box("Tasa Empleabilidad", ui.output_ui("prev_kpi_emp"), showcase=fa.icon_svg("briefcase", "solid")),
-                ui.value_box("Retención Local", ui.output_ui("prev_kpi_ret"), showcase=fa.icon_svg("thumbtack", "solid")),
-                ui.value_box("Ratio Migratorio", ui.output_ui("prev_kpi_ratio"), showcase=fa.icon_svg("arrow-right-arrow-left", "solid")),
+                ui.value_box(f"Empleabilidad ({max_anno_ole})", ui.output_ui("prev_kpi_emp"), showcase=fa.icon_svg("briefcase", "solid")),
+                ui.value_box(f"Dependientes sobre Graduados ({max_anno_ole})", ui.output_ui("prev_kpi_dep_grad"), showcase=fa.icon_svg("user-graduate", "solid")),
+                ui.value_box(f"Dependientes sobre Cotizantes ({max_anno_ole})", ui.output_ui("prev_kpi_dep_cot"), showcase=fa.icon_svg("user-tie", "solid")),
+                ui.value_box(f"Tasa de Retención Local ({max_anno_ole})", ui.output_ui("prev_kpi_ret"), showcase=fa.icon_svg("thumbtack", "solid")),
+                ui.value_box(f"Ratio Salen / Entran ({max_anno_ole})", ui.output_ui("prev_kpi_ratio"), showcase=fa.icon_svg("arrow-right-arrow-left", "solid")),
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de <b style='color: #31497e;'>Empleabilidad</b>")), ui.output_ui("prev_ole_emp_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
-                ui.card(ui.card_header(ui.HTML("Tendencia Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), ui.output_ui("prev_ole_dep_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia de <b style='color: #31497e;'>Empleabilidad</b>")), ui.output_ui("prev_ole_emp_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML("Tendencia de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b>")), ui.output_ui("prev_ole_dep_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
             ui.layout_columns(
@@ -889,8 +887,8 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), ui.output_ui("prev_ole_dist_emp"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), ui.output_ui("prev_ole_dist_dep"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de <b style='color: #31497e;'>Empleabilidad</b> ({max_anno_ole})")), ui.output_ui("prev_ole_dist_emp"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
+                ui.card(ui.card_header(ui.HTML(f"Distribución de la <b style='color: #31497e;'>Relación Dependientes sobre Graduados</b> ({max_anno_ole})")), ui.output_ui("prev_ole_dist_dep"), ui.card_footer(ui.HTML("Frecuencia relativa de programas académicos. Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True, style="min-height: 400px;"),
                 class_="mb-4"
             ),
             ui.layout_columns(
@@ -932,7 +930,7 @@ app_ui = ui.page_sidebar(
                 fill=False, class_="mb-4"
             ),
             ui.layout_columns(
-                ui.card(ui.card_header(ui.HTML(f"Distribución Total por <b style='color: #31497e;'>Rango Salarial</b> ({max_anno_ole:.0f})")), ui.output_ui("prev_sal_dist_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
+                ui.card(ui.card_header(ui.HTML(f"Distribución por <b style='color: #31497e;'>Rango Salarial</b> ({max_anno_ole:.0f})")), ui.output_ui("prev_sal_dist_total"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 ui.card(ui.card_header(ui.HTML(f"Distribución Salarial por <b style='color: #31497e;'>Sexo</b> ({max_anno_ole:.0f})")), ui.output_ui("prev_sal_dist_sexo"), ui.card_footer(ui.HTML("Fuente: OLE<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-4"
             ),
@@ -947,7 +945,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
 
-            ui.h1("6-Permanencia y Deserción (SPADIES)"),
+            ui.h1("6-Permanencia y Deserción"),
             ui.layout_columns(
                 ui.value_box("Tasa Deserción", ui.output_ui("prev_kpi_des"), showcase=fa.icon_svg("user-minus", "solid")),
                 fill=False, class_="mb-4"
@@ -958,7 +956,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
 
-            ui.h3("5. Excelencia Académica (Prueba SABER PRO)", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px;"),
+            ui.h3("7. Excelencia Académica", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px;"),
             ui.layout_columns(
                 ui.value_box("Puntaje Global Promedio", ui.output_ui("prev_kpi_saber"), showcase=fa.icon_svg("award", "solid")),
                 ui.value_box("Razonamiento Cuantitativo", ui.output_ui("prev_kpi_saber_razona"), showcase=fa.icon_svg("calculator", "solid")),
@@ -981,7 +979,7 @@ app_ui = ui.page_sidebar(
                 ui.card(ui.card_header(ui.HTML(f"Cantidad de Evaluados por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_count_edad"), ui.card_footer(ui.HTML("Fuente: ICFES<br>Elaboración propia"), style="font-size: 0.85em; color: gray;"), full_screen=True),
                 class_="mb-5"
             ),
-            ui.h4("Evolución Detallada por Perfil Sociodemográfico", class_="mt-4 mb-3", style="color: #31497e;"),
+            ui.h4("8.Evolución prueba saber por perfil sociodemográfico", class_="mt-4 mb-3", style="color: #31497e;"),
             ui.layout_columns(
                 ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Sexo</b>")), ui.output_ui("prev_saber_trend_global_sexo"), full_screen=True),
                 ui.card(ui.card_header(ui.HTML("Puntaje Global por <b style='color: #31497e;'>Edad</b>")), ui.output_ui("prev_saber_trend_global_edad"), full_screen=True),
@@ -1008,7 +1006,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
 
-            ui.h3("6. Perfil Socio-demográfico de los Evaluados", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px;"),
+            ui.h3("9. Perfil Socio-demográfico de los Evaluados", style="color: #31497e; border-bottom: 2px solid #ccc; padding-bottom: 5px;"),
             ui.layout_columns(
                 ui.value_box("Total de Evaluados", ui.output_ui("prev_kpi_evaluados"), showcase=fa.icon_svg("users", "solid")),
                 ui.value_box("Programas Académicos", ui.output_ui("prev_kpi_progs_saber"), showcase=fa.icon_svg("graduation-cap", "solid")),
@@ -1103,7 +1101,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-4",
                 col_widths=(4, 8)
             ),
-            ui.h3("Grupo de Comparación", class_="mt-4 mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.h3("1. Grupo de Comparación", class_="mt-4 mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Universo de Comparación (Últ. Año)", ui.output_ui("comp_kpi_universo"), showcase=fa.icon_svg("users-rays", "solid"), class_="card-comparable"),
                 ui.value_box("Total Neto Primer Curso", ui.output_ui("comp_kpi_neto_pcurso"), showcase=ICONS["student"], class_="card-comparable"),
@@ -1147,7 +1145,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
-            ui.h3("Costos y Créditos", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.h3("2. Distribución de Costos, Créditos y Carga Académica", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Programa Seleccionado (Costo de Matrícula)", ui.output_ui("comp_kpi_base_promedio_matricula"), showcase=fa.icon_svg("money-check-dollar", "solid")),
                 ui.value_box("Media Comparable (Costo Promedio)", ui.output_ui("comp_kpi_promedio_matricula"), showcase=fa.icon_svg("money-check-dollar", "solid"), class_="card-comparable"),
@@ -1175,10 +1173,10 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
-            ui.h3("Observatorio Laboral y Calidad", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.h3("3. Desempeño Laboral y Empleabilidad", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
-                ui.value_box("Programa Seleccionado (Tasa Empleabilidad)", ui.output_ui("comp_kpi_base_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid")),
-                ui.value_box("Media Comparable (Tasa Empleabilidad)", ui.output_ui("comp_kpi_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid"), class_="card-comparable"),
+                ui.value_box("Programa Seleccionado (Empleabilidad)", ui.output_ui("comp_kpi_base_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid")),
+                ui.value_box("Media Comparable (Empleabilidad)", ui.output_ui("comp_kpi_empleabilidad"), showcase=fa.icon_svg("briefcase", "solid"), class_="card-comparable"),
                 fill=False, class_="mb-4", col_widths=(6, 6)
             ),
             ui.layout_columns(
@@ -1222,7 +1220,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
-            ui.h3("Salario de Enganche (Estimado)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.h3("4. Retorno Salarial, Salario de Enganche y Brechas", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Salario Promedio Estimado", ui.output_ui("comp_kpi_base_salario"), showcase=fa.icon_svg("hand-holding-dollar", "solid")),
                 ui.value_box("Promedio Estimado (Grupo)", ui.output_ui("comp_kpi_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid"), class_="card-comparable"),
@@ -1244,7 +1242,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-5", col_widths=(6, 6)
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
-            ui.h3("Deserción (SPADIES)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.h3("6. Permanencia y Deserción", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Programa Seleccionado (Tasa Deserción Promedio)", ui.output_ui("comp_kpi_base_desercion"), showcase=fa.icon_svg("user-minus", "solid")),
                 ui.value_box("Media Comparable (Tasa Deserción Promedio)", ui.output_ui("comp_kpi_desercion"), showcase=fa.icon_svg("user-minus", "solid"), class_="card-comparable"),
@@ -1266,7 +1264,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-5", col_widths=(6, 6)
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
-            ui.h3("Prueba SABER PRO", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.h3("7. Excelencia Académica", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.div(
                 ui.HTML("<b>Nota:</b> Esta sección aplica exclusivamente para programas habilitados en la Prueba SABER PRO. Si no se visualiza ninguna información, el programa seleccionado es de posgrado o carece de registros."),
                 style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-bottom: 20px;"
@@ -1308,7 +1306,7 @@ app_ui = ui.page_sidebar(
                 class_="mb-5", col_widths=(6, 6)
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
-            ui.h3("Perfil Socioeconómico", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.h3("8. Caracterización Sociodemográfica de la Población Estudiantil", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.div(
                 ui.HTML("<b>Nota:</b> Distribución sociodemográfica de los estudiantes matriculados en niveles de pregrado en el último año disponible (Saber PRO). Si no se visualiza ninguna información, el programa seleccionado es de posgrado o carece de registros estadísticos."),
                 style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-bottom: 20px;"
@@ -3101,8 +3099,6 @@ def server(input, output, session):
         })
         
         df_pd = df_res.to_pandas()
-        # Añadir columna de posición #
-        df_pd["#"] = range(1, len(df_pd) + 1)
         
         # Formatear moneda para Valor Matrícula (solo si no es nulo/NaN)
         df_pd["Valor Matrícula"] = df_pd["Valor Matrícula"].apply(
@@ -4922,7 +4918,7 @@ def server(input, output, session):
             "title": "Observatorio Laboral para la Educación (OLE)",
             "intro": "Métricas de vinculación laboral y movilidad de los graduados. Se analiza la capacidad de inserción en el mercado formal y el comportamiento geográfico de la fuerza laboral.",
             "kpis": [
-                ("Tasa Empleabilidad", calc_kpi_empleabilidad()),
+                ("Empleabilidad", calc_kpi_empleabilidad()),
                 ("Retención Local", calc_kpi_retencion()),
                 ("Ratio Migratorio", calc_kpi_ratio())
             ],
@@ -5043,6 +5039,10 @@ def server(input, output, session):
     def prev_kpi_graduados(): return wrap_kpi(calc_total_graduados())
     @render.ui
     def prev_kpi_emp(): return wrap_kpi(calc_kpi_empleabilidad())
+    @render.ui
+    def prev_kpi_dep_grad(): return wrap_kpi(calc_kpi_dependientes_graduados())
+    @render.ui
+    def prev_kpi_dep_cot(): return wrap_kpi(calc_kpi_cotizantes_dependientes())
     @render.ui
     def prev_kpi_ret(): return wrap_kpi(calc_kpi_retencion())
     @render.ui
@@ -5736,6 +5736,11 @@ def server(input, output, session):
             v_inst = ", ".join(inst_clean).replace("'", "").replace("(", "").replace(")", "")
             filtros_activos.append(f"<b>Institución</b>: {v_inst}")
             
+        # 2.5 Palabra Clave
+        keyword_val = get_input_safe("keyword_programa", "")
+        if keyword_val and str(keyword_val).strip():
+            filtros_activos.append(f"<b>Palabra Clave</b>: {str(keyword_val).strip()}")
+            
         # 3. Resto de filtros dinámicos
         for fid, label in filtros_mapeo.items():
             val = get_input_safe(fid, [])
@@ -5793,11 +5798,11 @@ def server(input, output, session):
             if not mob_df_pd.empty:
                 total_m = mob_df_pd["cotizantes"].sum()
                 if total_m > 0:
-                    # Top 13 Origen
-                    top_o = mob_df_pd.groupby(col_o)["cotizantes"].sum().sort_values(ascending=False).head(13)
+                    # Todos los registros de Origen
+                    top_o = mob_df_pd.groupby(col_o)["cotizantes"].sum().sort_values(ascending=False)
                     mob_origin = [{"name": str(n), "value": f"{v:,.0f}".replace(",", "."), "percentage": f"{(v/total_m):.1%}"} for n, v in top_o.items()]
-                    # Top 13 Destino
-                    top_d = mob_df_pd.groupby(col_d)["cotizantes"].sum().sort_values(ascending=False).head(13)
+                    # Todos los registros de Destino
+                    top_d = mob_df_pd.groupby(col_d)["cotizantes"].sum().sort_values(ascending=False)
                     mob_destination = [{"name": str(n), "value": f"{v:,.0f}".replace(",", "."), "percentage": f"{(v/total_m):.1%}"} for n, v in top_d.items()]
         except Exception as e:
             print(f"Error calculando movilidad para PDF: {e}")
@@ -5834,26 +5839,26 @@ def server(input, output, session):
         # Definimos las tareas de renderizado (Plot configurations)
         plot_tasks = [
             # SNIES
-            ("snies", 0, "t1", "Tendencia Total de Estudiantes de Primer Curso", calc_plot_primer_curso_total, "evolucion primer curso"),
-            ("snies", 1, "t2", "Tendencia Total de Estudiantes Matriculados", calc_plot_matriculados_total, "Población estudiantil activa en el sistema."),
-            ("snies", 2, "t3", "Tendencia Total de Estudiantes Graduados", calc_plot_graduados_total, "Egresados titulados por cohorte de salida."),
+            ("snies", 0, "t1", "Tendencia de Estudiantes de Primer Curso", calc_plot_primer_curso_total, "Evolución histórica del ingreso."),
+            ("snies", 1, "t2", "Tendencia de Estudiantes Matriculados", calc_plot_matriculados_total, "Población estudiantil activa en el sistema."),
+            ("snies", 2, "t3", "Tendencia de Estudiantes Graduados", calc_plot_graduados_total, "Egresados titulados por cohorte de salida."),
             ("snies", 3, "s1", "Tendencia por Sexo de Estudiantes de Primer Curso", calc_plot_primer_curso, "Participación por género en el ingreso."),
             ("snies", 4, "s2", "Tendencia por Sexo de Estudiantes Matriculados", calc_plot_matriculados, "Permanencia desagregada por sexo."),
             ("snies", 5, "s3", "Tendencia por Sexo de Estudiantes Graduados", calc_plot_graduados, "Perfil de egreso por género."),
             # OLE
-            ("ole", 0, "o1", "Tendencia Total de Empleabilidad", calc_plot_empleabilidad_total, "Evolución de la empleabilidad"),
-            ("ole", 1, "o2", "Tendencia Total de la Relación Dependientes sobre Graduados", calc_plot_dependientes_total, "Relación de empleados dependientes"),
+            ("ole", 0, "o1", "Tendencia de Empleabilidad", calc_plot_empleabilidad_total, "Evolución de la empleabilidad"),
+            ("ole", 1, "o2", "Tendencia de la Relación Dependientes sobre Graduados", calc_plot_dependientes_total, "Relación de empleados dependientes"),
             ("ole", 2, "o3", "Empleabilidad por Sexo", calc_plot_empleabilidad_sexo, "Empleabilidad por sexo"),
             ("ole", 3, "o4", "Relación Dependientes sobre Graduados por Sexo", calc_plot_dependientes_sexo, "Relación de dependientes por sexo"),
-            ("ole", 4, "o5", "Distribución Total de Empleabilidad (2022)", calc_plot_dist_empleabilidad, "Distribución de empleabilidad (2022)"),
-            ("ole", 5, "o6", "Distribución Total de la Relación Dependientes sobre Graduados (2022)", calc_plot_dist_dependientes, "Distribución de la relación de dependientes"),
+            ("ole", 4, "o5", "Distribución de Empleabilidad (2022)", calc_plot_dist_empleabilidad, "Distribución de empleabilidad (2022)"),
+            ("ole", 5, "o6", "Distribución de la Relación Dependientes sobre Graduados (2022)", calc_plot_dist_dependientes, "Distribución de la relación de dependientes"),
             ("ole", 6, "o7", "Distribución de Empleabilidad por Sexo (2022)", calc_plot_dist_empleabilidad_sexo, "Distribución de empleabilidad por sexo"),
             ("ole", 7, "o8", "Distribución de la Relación Dependientes sobre Graduados por Sexo (2022)", calc_plot_dist_dependientes_sexo, "Distribución de dependientes por sexo"),
             ("ole", 8, "o10", "Evolución de la Tasa de Retención Local", calc_plot_retencion_trend, ""),
             ("ole", 9, "o11", "Evolución del Ratio Salen / Entran", calc_plot_ratio_trend, ""),
             ("ole", 10, "o12", "Evolución de Dependientes sobre Cotizantes", calc_plot_dependientes_trend, ""),
             # Salarios
-            ("salarios", 0, "v1", "Distribución Total por Rango Salarial (2022)", calc_plot_salario_dist_total, "Distribución por rango salarial"),
+            ("salarios", 0, "v1", "Distribución por Rango Salarial (2022)", calc_plot_salario_dist_total, "Distribución por rango salarial"),
             ("salarios", 1, "v2", "Distribución Salarial por Sexo (2022)", calc_plot_salario_dist_sexo, "Distribución salarial por sexo"),
             ("salarios", 2, "v3", "Evolución del Salario Promedio Estimado (Pesos corrientes)", calc_plot_salario_evolucion_total, "Evolución del salario promedio"),
             ("salarios", 3, "v4", "Evolución Salarial por Sexo (Pesos corrientes)", calc_plot_salario_evolucion_sexo, "Evolución salarial por sexo"),
@@ -5906,7 +5911,7 @@ def server(input, output, session):
         report_data = {
             "metadata": {
                 "title": "Informe de Mercado de Educación Superior",
-                "subtitle": f"DEPARTAMENTO: {dept_name.upper()}",
+                "subtitle": "ANÁLISIS DEL SECTOR COLOMBIANO" if (not dept_sel and (not filtros_activos or (len(filtros_activos) == 1 and "Estado" in filtros_activos[0]))) else f"DEPARTAMENTO: {dept_name.upper()}",
                 "date": (lambda dt: ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][dt.month-1] + " " + str(dt.year))(datetime.datetime.now()),
                 "year_start": 2018,
                 "year_end": int(snies_y),
@@ -5915,12 +5920,12 @@ def server(input, output, session):
                 "scope": {"type": "filters", "description": filtros_desc, "details": {"Departamento": dept_name, "Institución": inst_name}}
             },
             "kpis": report_kpis,
-            "snies": {"technical_note": "Fuente: Registros administrativos SNIES.", "plots": [None]*6},
-            "ole": {"technical_note": "Nota Técnica: Los datos se calculan para el siguiente año después de graduado. Los graduados se dividen en cotizantes y no cotizantes. Los cotizantes se dividen en dependientes e independientes. para calcular el Ratio se consideran exclusivamente graduados con registro de cotización dependiente. El ratio solo tiene interpretación a nivel regional (al seleccionar un departamento) y muestra la proporción entre los dependientes que salen del departamento sobre los que ingresan al departamento.", "plots": [None]*12, "mobility": {"origin": mob_origin, "destination": mob_destination}},
+            "snies": {"technical_note": "se realizan conteos anualizados para permitir la comparacion con programas academicos de diferente periodicidad , el numero de matriculados corresponde al promedio anual.", "plots": [None]*6},
+            "ole": {"technical_note": "Los datos se calculan para el siguiente año después de graduado. Los graduados se dividen en cotizantes y no cotizantes. Los cotizantes se dividen en dependientes e independientes. para calcular el Ratio se consideran exclusivamente graduados con registro de cotización dependiente. El ratio solo tiene interpretación a nivel regional (al seleccionar un departamento) y muestra la proporción entre los dependientes que salen del departamento sobre los que ingresan al departamento. La retención local corresponde a dependientes que laboran en el departamento de grado sobre el total de dependientes graduados en dicho departamento", "plots": [None]*12, "mobility": {"origin": mob_origin, "destination": mob_destination}},
             "salarios": {"technical_note": "", "plots": [None]*6},
-            "spadies": {"technical_note": "Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})", "plots": [None]*2},
+            "spadies": {"technical_note": "Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t}).se utiliza como indicador la desercion anual que permite comparar programas acadmicos con diferente periodicidad", "plots": [None]*2},
             "saber": {"technical_note": "Fuente: ICFES, SABER PRO.", "plots": [None]*16},
-            "demo": {"technical_note": "Caracterización socio-demográfica.", "plots": [None]*8},
+            "demo": {"technical_note": "Caracterización socio-demográfica.", "plots": [None]*8, "title": "Perfil Socio-demográfico de los Evaluados"},
             "top_ranking_ingresos": []
         }
 
@@ -5945,18 +5950,39 @@ def server(input, output, session):
         try:
             df_top_ing = calc_top_ingresos_table()
             if not df_top_ing.empty:
-                top_df = df_top_ing.head(15)
-                for _, row in top_df.iterrows():
+                top_df = df_top_ing.head(19)
+                for i, (_, row) in enumerate(top_df.iterrows()):
+                    # Formatear SNIES y Créditos para quitar el .0 si son float
+                    try:
+                        snies_val = str(int(float(row["SNIES"])))
+                    except:
+                        snies_val = str(row["SNIES"])
+                    
+                    try:
+                        cred_val = str(int(float(row["Créditos"]))) if pd.notnull(row["Créditos"]) else "-"
+                    except:
+                        cred_val = str(row["Créditos"])
+
+                    # Obtener ingresos (la columna tiene el año en el nombre, usamos iloc o búsqueda dinámica)
+                    ing_val = "0"
+                    for col in top_df.columns:
+                        if "Ingresos" in col:
+                            try:
+                                ing_val = str(int(float(row[col])))
+                            except:
+                                ing_val = str(row[col])
+                            break
+
                     report_data["top_ranking_ingresos"].append({
-                        "pos": str(row["#"]),
-                        "snies": str(row["SNIES"]),
+                        "pos": str(i + 1),
+                        "snies": snies_val,
                         "inst": str(row["Institución"]),
                         "prog": str(row["Programa Académico"]),
                         "sector": str(row["Sector"]),
                         "mod": str(row["Modalidad"]),
-                        "cred": str(row["Créditos"]),
+                        "cred": cred_val,
                         "val": str(row["Valor Matrícula"]),
-                        "ing": str(row.iloc[8]) # La columna 8 es Ingresos (YEAR) despues de añadir Modalidad y #
+                        "ing": ing_val
                     })
         except Exception as e:
             print(f"Error generando ranking ingresos PDF: {e}")
@@ -6266,9 +6292,9 @@ def server(input, output, session):
             if not df_mob_base.empty:
                 # Usar el nombre de columna real del backend: graduados_que_cotizan
                 total_mob = df_mob_base["graduados_que_cotizan"].sum()
-                top_o = df_mob_base.groupby(col_o)["graduados_que_cotizan"].sum().sort_values(ascending=False).head(13)
+                top_o = df_mob_base.groupby(col_o)["graduados_que_cotizan"].sum().sort_values(ascending=False)
                 mob_origin = [{"name": str(n), "value": f"{v:,.0f}".replace(",", "."), "percentage": f"{(v/total_mob):.1%}"} for n, v in top_o.items()]
-                top_d = df_mob_base.groupby(col_d)["graduados_que_cotizan"].sum().sort_values(ascending=False).head(13)
+                top_d = df_mob_base.groupby(col_d)["graduados_que_cotizan"].sum().sort_values(ascending=False)
                 mob_destination = [{"name": str(n), "value": f"{v:,.0f}".replace(",", "."), "percentage": f"{(v/total_mob):.1%}"} for n, v in top_d.items()]
         except Exception as e:
             print(f"Error movilidad PDF comp: {e}")
@@ -6380,7 +6406,7 @@ def server(input, output, session):
 
             },
             "snies": {
-                "technical_note": "Fuente: SNIES.",
+                "technical_note": "La información corresponde a estadísticas descriptivas del grupo de comparación SNIES. La mediana se utiliza como referencia central y las bandas en los gráficos representan la dispersión de los datos. Las métricas se calculan con base en el último período disponible.",
                 "plots": [
                     {"id": "t1", "title": "Estudiantes de Primer Curso",   "b64": safe_fig_comp(calc_fig_comp_pcurso),    "caption": "Evolución histórica consolidada de ingresos.",      "source": "Fuente: SNIES\nElaboración propia"},
                     {"id": "t2", "title": "Estudiantes Matriculados",   "b64": safe_fig_comp(calc_fig_comp_matricula), "caption": "Población estudiantil activa en el sistema.",        "source": "Fuente: SNIES\nElaboración propia"},
@@ -6397,7 +6423,7 @@ def server(input, output, session):
             "ole": {
                 "technical_note": "Nota Técnica: Los datos se calculan para el siguiente año después de graduado. Los graduados se dividen en cotizantes y no cotizantes. Los cotizantes se dividen en dependientes e independientes. para calcular el Ratio se consideran exclusivamente graduados con registro de cotización dependiente. El ratio solo tiene interpretación a nivel regional (al seleccionar un departamento) y muestra la proporción entre los dependientes que salen del departamento sobre los que ingresan al departamento.",
                 "plots": [
-                    {"id": "o1", "title": "Tendencia Total de Empleabilidad",          "b64": safe_fig_comp(calc_fig_comp_ole_empleabilidad),    "caption": "Evolución de la empleabilidad",                        "source": "Fuente: OLE\nElaboración propia"},
+                    {"id": "o1", "title": "Tendencia de Empleabilidad",                "b64": safe_fig_comp(calc_fig_comp_ole_empleabilidad),    "caption": "Evolución de la empleabilidad",                        "source": "Fuente: OLE\nElaboración propia"},
                     {"id": "o2", "title": "Evolución de Dependientes sobre Cotizantes",            "b64": safe_fig_comp(calc_fig_comp_ole_dependientes),     "caption": "Proporción de empleados dependientes sobre cotizantes",          "source": "Fuente: OLE\nElaboración propia"},
                     {"id": "o3", "title": "Distribución de Tasa de Empleabilidad (2022)",          "b64": safe_fig_comp(calc_plot_comp_dist_empleabilidad, w=1100, h=620), "caption": "Distribución de empleabilidad (2022)", "source": "Fuente: OLE\nElaboración propia"},
                     {"id": "o4", "title": f"Evolución del Salario Promedio Estimado (Pesos Ctes. {max_anno_ole:.0f})", "b64": safe_fig_comp(calc_fig_comp_salario_evolucion), "caption": "Evolución del salario promedio", "source": "Fuente: OLE\nElaboración propia"},
@@ -6405,7 +6431,7 @@ def server(input, output, session):
                 ]
             },
             "spadies": {
-                "technical_note": "Nota: Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t})",
+                "technical_note": "Para programas de Posgrado sin registro en SPADIES, se estima un proxy de deserción empleando la fórmula: (Matriculados_{t-1} + Primer Curso_{t} - Graduados_{t} - Matriculados_{t}) / (Matriculados_{t-1} + Primer Curso_{t}). se utiliza como indicador la deserción anual que permite comparar programas académicos con diferente periodicidad.",
                 "plots": [
                     {"id": "d1", "title": "Tendencia Histórica de Deserción Anual", "b64": safe_fig_comp(calc_plot_comp_desercion_trend),      "caption": "",     "source": "Fuente: SPADIES\nElaboración propia"},
                     {"id": "d2", "title": "Distribución de la Tasa de Deserción (Último Año)",       "b64": safe_fig_comp(calc_plot_comp_dist_desercion),     "caption": "",   "source": "Fuente: SPADIES\nElaboración propia"}
