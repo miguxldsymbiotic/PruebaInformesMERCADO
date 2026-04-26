@@ -5,7 +5,7 @@ from shiny import App, reactive, render, ui, session
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
-from report_engine import ReportEngine
+# import ReportEngine removed
 import datetime
 import base64
 import io
@@ -114,7 +114,7 @@ def _ensure_pw_page(width: int, height: int):
     return _PW_PAGE
 
 
-def _render_in_thread(fig_json_str: str, width: int, height: int) -> bytes:
+def _render_in_thread(fig_json_str: str, width: int, height: int) -> str:
     """Worker que corre en el thread dedicado (sin asyncio loop de Shiny).
     Playwright Sync API funciona perfecto aquí."""
     import asyncio, sys
@@ -127,41 +127,58 @@ def _render_in_thread(fig_json_str: str, width: int, height: int) -> bytes:
 
     # Pasar JSON como string y parsear en JS evita límites de serialización
     # de Playwright con objetos grandes (figuras Saber PRO, etc.)
-    page.evaluate(f"""
+    # Retornamos el contenido base64 del SVG
+    b64_svg = page.evaluate(f"""
         async (figJsonStr) => {{
             const spec = JSON.parse(figJsonStr);
             const gd  = document.getElementById('gd');
             gd.style.width  = '{width}px';
             gd.style.height = '{height}px';
             if (gd._fullLayout) Plotly.purge(gd);
+            
             await Plotly.newPlot(gd, spec.data,
                 Object.assign({{}}, spec.layout, {{ width: {width}, height: {height} }}),
                 {{displayModeBar: false, staticPlot: true}}
             );
+            
+            // Exportar a SVG vía Plotly.toImage
+            const dataUrl = await Plotly.toImage(gd, {{
+                format: 'svg', 
+                width: {width}, 
+                height: {height}
+            }});
+            
+            // Extraer la parte base64 o codificar si viene como URI component
+            const parts = dataUrl.split(',');
+            if (parts[0].includes('base64')) {{
+                return parts[1];
+            }} else {{
+                // Si viene como SVG plano (URI encoded), lo pasamos a base64
+                return btoa(unescape(encodeURIComponent(decodeURIComponent(parts[1]))));
+            }}
         }}
     """, fig_json_str)
 
-    page.wait_for_timeout(80)
-    return page.locator("#gd").screenshot(type="png")
+    return b64_svg
 
 
 def fig_to_base64(fig, width=800, height=450):
-    """Convierte figura Plotly a PNG base64.
-    Usa Playwright en thread dedicado (sin conflicto con asyncio de Shiny).
-    Fallback a Kaleido si Playwright falla.
+    """Convierte figura Plotly a SVG base64 para máxima resolución en PDF.
+    Usa Playwright en thread dedicado. Fallback a Kaleido si falla.
     """
     try:
         if fig is None: return ""
         fig_json = fig.to_json()
-        # Enviar al thread de Playwright (fuera del asyncio loop de Shiny)
+        # Enviar al thread de Playwright
         future = _PW_EXECUTOR.submit(_render_in_thread, fig_json, width, height)
-        img_bytes = future.result(timeout=60)
-        return base64.b64encode(img_bytes).decode('utf-8')
+        # Ya retorna el string base64 directamente
+        return future.result(timeout=60)
 
     except Exception as e:
-        print(f"WARN Playwright ({type(e).__name__}): {e}. Fallback a Kaleido...")
+        print(f"WARN Playwright ({type(e).__name__}): {e}. Fallback a Kaleido (SVG)...")
         try:
-            img_bytes = fig.to_image(format="png", width=width, height=height, engine="kaleido", scale=1)
+            # Fallback usando kaleido en formato svg
+            img_bytes = fig.to_image(format="svg", width=width, height=height, engine="kaleido")
             return base64.b64encode(img_bytes).decode('utf-8')
         except Exception as e2:
             print(f"ERROR total en fig_to_base64: {e2}")
@@ -6636,4 +6653,4 @@ def server(input, output, session):
         # pero para gráficas complejas se recomienda el botón de Imprimir del visor.
         pass
 
-app = App(app_ui, server, static_assets={"/temp_report": app_dir / "temp_report"})
+app = App(app_ui, server)

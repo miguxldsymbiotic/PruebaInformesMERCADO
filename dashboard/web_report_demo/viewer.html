@@ -1218,7 +1218,7 @@
             setT("val-note-ole", data.ole.technical_note);
 
             // Playwright genera PNG
-            const bSrc = (b64) => b64 ? "data:image/png;base64," + b64 : "";
+            const bSrc = (b64) => b64 ? "data:image/svg+xml;base64," + b64 : "";
             
             const mapPlot = (pId, arrId, sourceArr, sourceName, hideCaption=false) => {
                 try {

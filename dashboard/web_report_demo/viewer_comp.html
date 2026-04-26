@@ -886,7 +886,7 @@
 
             // --- METADATOS ---
             const setTxt = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.innerHTML = val; };
-            const setSrc = (id, b64) => { const el = document.getElementById(id); if (el && b64) el.src = "data:image/png;base64," + b64; };
+            const setSrc = (id, b64) => { const el = document.getElementById(id); if (el && b64) el.src = "data:image/svg+xml;base64," + b64; };
 
             const kpis = data.kpis || {};
             const filtros = data.metadata.filtros || [];
