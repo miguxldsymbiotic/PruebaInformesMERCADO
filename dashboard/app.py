@@ -363,7 +363,7 @@ app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.input_selectize("institucion_label", "Institución (Cód - Nombre)", choices=valores_iniciales["institucion_label"], multiple=True),
         ui.input_selectize("snies_label", "Programa Académico (SNIES)", choices=valores_iniciales["snies_label"], multiple=True),
-        ui.input_text("keyword_programa", "Búsqueda por Palabra Clave (Programa)", placeholder="ej: ingeniería sistemas"),
+        ui.input_selectize("keyword_programa", "Búsqueda por Palabra Clave (Programa)", choices=[], multiple=True, options={"create": True, "placeholder": "Escriba palabras y presione Enter..."}),
         ui.input_selectize("estado_programa", "Estado del Programa", choices=valores_iniciales["estado_programa"], selected=["ACTIVO"], multiple=True),
         ui.input_selectize("modalidad", "Modalidad", choices=valores_iniciales["modalidad"], multiple=True),
         ui.input_selectize("nivel_de_formacion", "Nivel de Formación", choices=valores_iniciales["nivel_de_formacion"], multiple=True),
@@ -374,6 +374,7 @@ app_ui = ui.page_sidebar(
         ui.input_selectize("municipio", "Municipio de Oferta", choices=[], multiple=True),
         ui.input_action_button("btn_calcular", "Aplicar Filtros", class_="btn-danger w-100 mt-2 mb-2", style="font-weight: bold; font-size: 1.1em;"),
         ui.input_action_button("btn_preview_report", "Vista Previa Informe", class_="btn-success w-100 mt-2"),
+        width=350,
         open="desktop",
     ),
     ui.navset_card_underline(
@@ -1407,7 +1408,25 @@ app_ui = ui.page_sidebar(
         """)
     ),
     ui.include_css(app_dir / "styles.css"),
-    title="Dashboard de Mercado de Educación Superior",
+    title=ui.tags.div(
+        ui.tags.a(
+            ui.tags.img(src="Logo%20uniminuto%20H.png", height="65px"),
+            href="https://www.uniminuto.edu/", 
+            target="_blank"
+        ),
+        ui.tags.span(
+            "Informes de Mercado de Sistema de Educación Superior en Colombia", 
+            class_="flex-grow-1 text-center",
+            style="font-size: 2.2rem; font-weight: 800; color: #31497e; letter-spacing: -1px; padding: 0 20px;"
+        ),
+        ui.tags.a(
+            ui.tags.img(src="logo_symbiotic.svg", height="65px"),
+            href="https://jolly-hill-015b13e0f.1.azurestaticapps.net/", 
+            target="_blank"
+        ),
+        class_="d-flex align-items-center justify-content-between w-100 px-3",
+        style="min-height: 90px;"
+    ),
     fillable=False,
 )
 
@@ -1563,13 +1582,20 @@ def server(input, output, session):
             "municipio": input.municipio()
         }
 
-    def _apply_keyword_filter(df, keyword_raw):
+    def _apply_keyword_filter(df, keywords):
         """Filtra df_snies por palabras clave sobre programa_academico (AND lógico, case-insensitive)."""
-        if not keyword_raw or not keyword_raw.strip():
+        if not keywords:
             return df
-        palabras = [p.strip().lower() for p in keyword_raw.split() if p.strip()]
+        
+        # Manejar tanto string (compatible con versiones previas) como lista/tupla (selectize múltiple)
+        if isinstance(keywords, str):
+            palabras = [p.strip().lower() for p in keywords.split() if p.strip()]
+        else:
+            palabras = [p.strip().lower() for p in keywords if p.strip()]
+            
         if not palabras:
             return df
+            
         mask = pl.lit(True)
         for palabra in palabras:
             mask = mask & pl.col("programa_academico").str.to_lowercase().str.contains(palabra)
@@ -5855,9 +5881,15 @@ def server(input, output, session):
             filtros_activos.append(f"<b>Institución</b>: {v_inst}")
             
         # 2.5 Palabra Clave
-        keyword_val = get_input_safe("keyword_programa", "")
-        if keyword_val and str(keyword_val).strip():
-            filtros_activos.append(f"<b>Palabra Clave</b>: {str(keyword_val).strip()}")
+        keyword_val = get_input_safe("keyword_programa", [])
+        if keyword_val:
+            if isinstance(keyword_val, str):
+                kv_str = keyword_val.strip()
+            else:
+                kv_str = ", ".join(keyword_val)
+            
+            if kv_str:
+                filtros_activos.append(f"<b>Palabra Clave</b>: {kv_str}")
             
         # 3. Resto de filtros dinámicos
         for fid, label in filtros_mapeo.items():
@@ -6818,4 +6850,4 @@ def server(input, output, session):
         # pero para gráficas complejas se recomienda el botón de Imprimir del visor.
         pass
 
-app = App(app_ui, server)
+app = App(app_ui, server, static_assets=str(app_dir))

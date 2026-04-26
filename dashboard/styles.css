@@ -1,12 +1,112 @@
 :root {
-  --bslib-sidebar-main-bg: #f8f8f8;
+  --bslib-sidebar-main-bg: #ffffff;
+  --primary-color: #31497e;
+  --secondary-color: #674f95;
+  --accent-color: #f9596f;
+  --sidebar-bg: #fdfdfd;
 }
 
+/* Sidebar Styles */
+.bslib-sidebar-layout .sidebar {
+  background-color: var(--sidebar-bg) !important;
+  border-right: 1px solid #eee;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.02);
+}
+
+.sidebar .form-group {
+  margin-bottom: 0px !important;
+}
+
+.sidebar label {
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 0px !important;
+  font-size: 0.85rem;
+}
+
+.sidebar .selectize-control {
+  margin-bottom: 4px !important;
+}
+
+/* Button enhancements */
+.btn-danger {
+  background: linear-gradient(135deg, #d9534f, #c9302c) !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(217, 83, 79, 0.2);
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(217, 83, 79, 0.3);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #5cb85c, #4cae4c) !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(92, 184, 92, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* Card Enhancements */
+.card {
+  border-radius: 12px !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 8px 25px rgba(0,0,0,0.06) !important;
+}
+
+.card-header {
+  background-color: transparent !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  padding: 1rem 1.25rem !important;
+  font-weight: 700 !important;
+}
+
+/* Selectize adjustments */
+.selectize-input {
+  border-radius: 8px !important;
+  border: 1px solid #ddd !important;
+  padding: 0.6rem 0.8rem !important;
+}
+
+.selectize-input.focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(49, 73, 126, 0.1) !important;
+}
+
+/* Popover styles */
 .popover {
   --bs-popover-header-bg: #222;
   --bs-popover-header-color: #fff;
+  border-radius: 10px;
 }
 
 .popover .btn-close {
   filter: var(--bs-btn-close-white-filter);
+}
+
+/* Header / Navbar Styles */
+.navbar {
+  background-color: white !important;
+  border-bottom: 2px solid #f0f0f0 !important;
+  padding: 0 !important;
+}
+
+.navbar-brand, .navbar-title {
+  color: var(--primary-color) !important;
+  font-size: 2.2rem !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  width: 100%;
+  margin: 0 !important;
+  letter-spacing: -1px;
+}
+
+.navbar-brand .d-flex {
+  height: 90px;
 }

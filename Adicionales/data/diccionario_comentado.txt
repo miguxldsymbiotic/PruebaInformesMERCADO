@@ -1,0 +1,53 @@
+table_name	column_name	data_type	Caraterizar	Descripcion
+df_Cobertura_distinct	departamento_oferta	VARCHAR	1	El departamento de oferta es donde se oferta el programa, un programa puede ofertarse en varios lugares en este caso es contar el numero de departamentos de oferta para cada codigo_snies_del_programa
+df_Cobertura_distinct	snies_divipola	VARCHAR	1	La llave para realizar analisis a nivel de municipio es snies_divipola, esta variable tambien permite analizar cualquier variable que se requiera para la cobertura
+df_Graduados_agg	snies_divipola	VARCHAR	1	todos los calculos que se hagan con las variables termindas en "_agg" se deben resalizar con cruces y filtros usando la varaible "snies_divipola". Esto la KPI por municipio que despues se pueden agrupar por departamento o por programa academico como se desee. para estas agrupaciones se tomaria la varaible snies o divipola
+df_Matricula_agg	matricula_sum	DOUBLE	1	Las variables terminadas en "_sum" son sumas sobre los semestres pues oficialmente se reporta por semestre pero nosotros hacemos infomres anuales nuestra granularidad es anual
+df_OLE_Movilidad	graduados	DOUBLE	1	Los graduados deberían coincidir con los graduados del snies pero no es asi en todos los casos por alguna razon el OLE y el SNIES parecen teern cortes diferentes. Esta variable se usa es como la base para calcular los porcentajes de graduados_que_cotizan y graduados_cotizantes_dependientes. 
+df_OLE_Movilidad	graduados_que_cotizan	DOUBLE	1	Esta variable se usa en combinación con la variables graduados para calcular porcentajes
+df_OLE_Movilidad	graduados_cotizantes_dependientes	DOUBLE	1	Esta variable se usa en combinación con la variables graduados para calcular porcentajes
+df_OLE_Movilidad_M0	graduados	DOUBLE	1	Se llama "M0" cuando se ha calculado justo para el año siguiente, en este caso es la movilidad al año siguiente. Los graduados deberían coincidir con los graduados del snies pero no es asi en todos los casos por alguna razon el OLE y el SNIES parecen teern cortes diferentes. Esta variable se usa es como la base para calcular los porcentajes de graduados_que_cotizan y graduados_cotizantes_dependientes. 
+df_OLE_Movilidad_M0	graduados_que_cotizan	DOUBLE	1	Se llama "M0" cuando se ha calculado justo para el año siguiente, en este caso es la movilidad al año siguiente. Esta variable se usa en combinación con la variables graduados para calcular porcentajes
+df_OLE_Movilidad_M0	graduados_cotizantes_dependientes	DOUBLE	1	Se llama "M0" cuando se ha calculado justo para el año siguiente, en este caso es la movilidad al año siguiente. Esta variable se usa en combinación con la variables graduados para calcular porcentajes
+df_OLE_Salario_M0	rango_salario	VARCHAR	1	El rango esta en salarios minimimos mensuales legales vigentes
+df_PCurso_agg	primer_curso_sum	DOUBLE	1	Inscritos en primer curso en la institución, no necesariamente en primer semestre pero si primera vez que se inscribe
+df_SNIES_Programas	estado_institucion	VARCHAR	1	Se debe validar siempre que sea "ACTIVA" para los reportes o los calculos de KPI. Se podria usar la "INACTIVA" para indicadores de superviviencia como un estadistico
+df_SNIES_Programas	caracter_academico	VARCHAR	1	El carácter no se suele usar mucho pero puede servir para una descripcion general
+df_SNIES_Programas	sector	VARCHAR	1	El sector es importante por ejemplo para el calculo de costo_matricula_estud_nuevos, pues las "OFICIALES" pueden tener cosoto ceo o no tener valor pues la matricula se calcula según el estudiante, esta diferencia es de tener en cuanta si se quieren KPI con costos de matricula.
+df_SNIES_Programas	codigo_snies_del_programa	DOUBLE	1	Es el indicador del programa pero se debe tener en cuanta que a nivel de cobertura se debe usar snies_divipola por si el mismo codigo se usa en varios lugares
+df_SNIES_Programas	estado_programa	VARCHAR	1	Se debe validar siempre que sea "ACTIVO" para los reportes o los calculos de KPI. Se podria usar la "INACTIVO" para indicadores de superviviencia como un estadistico
+df_SNIES_Programas	reconocimiento_del_ministerio	VARCHAR	1	Esta variable no es confiable para identificar los programas con reconocimiento de "ACREDITACION DE ALTA CALIDAD" pues esta base solo tiene el ultimo reporte que puede ser un cambio o modificación del programa y eso no le quita la acreditación. Usear con cautela!
+df_SNIES_Programas	fecha_de_resolucion	TIMESTAMP	1	Ultima fecha disponible de la ultima resolución
+df_SNIES_Programas	fecha_ejecutoria	TIMESTAMP		Ultima fecha disponible de ejecucion
+df_SNIES_Programas	vigencia_annos	DOUBLE	1	vigencia de la ultima resolución
+df_SNIES_Programas	fecha_de_registro_en_snies	TIMESTAMP	1	Fecha del ultimo registro en snies, noes la fecha de naciamiento del programa. Esta fecha mas los años de vigencia da la ultima fecha de inscripción o de vigencia
+df_SNIES_Programas	cine_f_2013_ac_campo_amplio	VARCHAR	1	Campo Cine de clasificación de campos de conocimiento
+df_SNIES_Programas	cine_f_2013_ac_campo_especific	VARCHAR	1	Campo Cine de clasificación de campos de conocimiento
+df_SNIES_Programas	cine_f_2013_ac_campo_detallado	VARCHAR	1	Campo Cine de clasificación de campos de conocimiento
+df_SNIES_Programas	area_de_conocimiento	VARCHAR	1	Otra forma de agrupar los programas por disciplias, deferente de la clasificacion CINE, va de la mano con Nucleos basicos de conocimiento
+df_SNIES_Programas	nucleo_basico_del_conocimiento	VARCHAR	1	Otra forma de agrupar los programas por disciplias, deferente de la clasificacion CINE, va de la mano con Area de Conocimiento
+df_SNIES_Programas	nivel_academico	VARCHAR	1	Sirve para separar en pregrado y posgrado
+df_SNIES_Programas	nivel_de_formacion	VARCHAR	1	denominación mas especifica de la formación, es la mas usada
+df_SNIES_Programas	modalidad	VARCHAR	1	Hay muchas modalidades que aparecieron en un momento pero las mas usadas son presencial, virtual y a distancia.
+df_SNIES_Programas	numero_creditos	DOUBLE	1	Este es un descriptivo que va de la mano con el costo de matricula.
+df_SNIES_Programas	costo_matricula_estud_nuevos	DOUBLE	1	 Importante anotar que no hay valor en muchas universidades OFICIAL dado que son publicas y tambien anotar que el valor rgistrado ante MEN suele ser mayor al valor real dado descuentos
+df_SNIES_Programas	programa_academico	VARCHAR	1	nombre del programa academico
+df_SNIES_Programas	nombre_institucion	VARCHAR	1	nombre institucion
+df_SNIES_Programas	divipola_depto_principal	DOUBLE	1	divipola de la cede principal y no del lugar de aplicación para el lugar ver cobertura
+df_SNIES_Programas	divipola_mpio_principal	DOUBLE	1	divipola de la cede principal y no del lugar de aplicación para el lugar ver cobertura
+df_SNIES_Programas	departamento_principal	VARCHAR	1	Departamento de la cede principal y no del lugar de aplicación para el lugar ver cobertura
+df_SNIES_Programas	municipio_principal	VARCHAR	1	Municipio de la cede principal y no del lugar de aplicación para el lugar ver cobertura
+df_SPADIES_Desercion	desercion_anual_mean	DOUBLE	1	La desercion anual promedio entre los dos semestre que se reporta
+df_SaberPRO	sexo	VARCHAR	1	para calcular porcentajes con respecto a n_estudiantes_saberpro
+df_SaberPRO	pro_gen_estu_consecutivo	VARCHAR	1	cada registro es un estudiante
+df_SaberPRO	pro_gen_fami_estratovivienda	INTEGER	1	para calcular porcentajes con respecto a n_estudiantes_saberpro
+df_SaberPRO	pro_gen_estu_horassemanatrabaja	VARCHAR	1	para calcular porcentajes con respecto a n_estudiantes_saberpro
+df_SaberPRO	pro_gen_estu_edad	INTEGER	1	Edad en valor numerico
+df_SaberPRO	grupo_edad	VARCHAR	1	Variable de agrupación etarea
+df_SaberPRO	pro_gen_punt_global	INTEGER	1	Puntaje obtenido
+df_SaberPRO	divipola_depto_reside	INTEGER	1	Posible variable para describir la ubicación de estudiantes de programas virtuales
+df_SaberPRO	divipola_mpio_reside	INTEGER	1	Posible variable para describir la ubicación de estudiantes de programas virtuales
+df_SaberPRO_mean	codigo_snies_del_programa	INTEGER		cada registro es un programa academico
+df_SaberPRO_mean	pro_gen_punt_global_mean	DOUBLE	1	Es un valor promedio del programa dado los estudiantes que presentaron la prueba ese año que puede diferir de los graduados
+df_SaberPRO_mean	pro_gen_punt_global_std	DOUBLE	1	Es un valor promedio del programa dado los estudiantes que presentaron la prueba ese año que puede diferir de los graduados
+df_SaberPRO_mean	n_estudiantes_saberpro	INTEGER	1	Numero de estudiantes que presentaron la prueba, util para calcular porcentajes de varaibles sociales
