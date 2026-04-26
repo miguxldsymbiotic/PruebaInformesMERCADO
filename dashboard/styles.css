@@ -1,104 +1,29 @@
+@import url("https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/flatly/bootstrap.min.css");
+
+/* ========================================================
+   SISTEMA DE DISEÑO: Paleta Disruptiva (Variables)
+   ======================================================== */
 :root {
-  --bslib-sidebar-main-bg: #ffffff;
-  --primary-color: #31497e;
-  --secondary-color: #674f95;
-  --accent-color: #f9596f;
-  --sidebar-bg: #fdfdfd;
+  --color-1: #003f5c;
+  --color-2: #394a82;
+  --color-3: #7a4f99;
+  --color-4: #bc4c96;
+  --color-5: #ef527a;
+  --color-6: #ff734f;
+  --color-7: #ffa600;
 }
 
-/* Sidebar Styles */
-.bslib-sidebar-layout .sidebar {
-  background-color: var(--sidebar-bg) !important;
-  border-right: 1px solid #eee;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.02);
-}
-
-.sidebar .form-group {
-  margin-bottom: 0px !important;
-}
-
-.sidebar label {
-  font-weight: 600;
-  color: #444;
-  margin-bottom: 0px !important;
-  font-size: 0.85rem;
-}
-
-.sidebar .selectize-control {
-  margin-bottom: 4px !important;
-}
-
-/* Button enhancements */
-.btn-danger {
-  background: linear-gradient(135deg, #d9534f, #c9302c) !important;
-  border: none !important;
-  box-shadow: 0 4px 6px rgba(217, 83, 79, 0.2);
-  transition: all 0.3s ease;
-}
-
-.btn-danger:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(217, 83, 79, 0.3);
-}
-
-.btn-success {
-  background: linear-gradient(135deg, #5cb85c, #4cae4c) !important;
-  border: none !important;
-  box-shadow: 0 4px 6px rgba(92, 184, 92, 0.2);
-  transition: all 0.3s ease;
-}
-
-/* Card Enhancements */
-.card {
-  border-radius: 12px !important;
-  border: 1px solid rgba(0,0,0,0.05) !important;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card:hover {
-  box-shadow: 0 8px 25px rgba(0,0,0,0.06) !important;
-}
-
-.card-header {
-  background-color: transparent !important;
-  border-bottom: 1px solid #f0f0f0 !important;
-  padding: 1rem 1.25rem !important;
-  font-weight: 700 !important;
-}
-
-/* Selectize adjustments */
-.selectize-input {
-  border-radius: 8px !important;
-  border: 1px solid #ddd !important;
-  padding: 0.6rem 0.8rem !important;
-}
-
-.selectize-input.focus {
-  border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 3px rgba(49, 73, 126, 0.1) !important;
-}
-
-/* Popover styles */
-.popover {
-  --bs-popover-header-bg: #222;
-  --bs-popover-header-color: #fff;
-  border-radius: 10px;
-}
-
-.popover .btn-close {
-  filter: var(--bs-btn-close-white-filter);
-}
-
-/* Header / Navbar Styles */
+/* --- 1. IDENTIDAD Y TÍTULOS --- */
 .navbar {
-  background-color: white !important;
-  border-bottom: 2px solid #f0f0f0 !important;
-  padding: 0 !important;
+  background-color: #e9f4f8 !important;
+  /* Azul claro solicitado */
+  border-bottom: 1px solid #b8ced7 !important;
+  padding: 10px 0 !important;
 }
 
-.navbar-brand, .navbar-title {
-  color: var(--primary-color) !important;
+.navbar-brand,
+.navbar-title {
+  color: #13485d !important; /* Nuevo azul petróleo */
   font-size: 2.2rem !important;
   font-weight: 800 !important;
   text-align: center !important;
@@ -107,6 +32,164 @@
   letter-spacing: -1px;
 }
 
-.navbar-brand .d-flex {
-  height: 90px;
+
+
+.sidebar label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-1);
+}
+
+.nav-underline .nav-link.active {
+  color: var(--color-4) !important;
+  border-bottom-color: var(--color-4) !important;
+  font-weight: 800 !important;
+}
+
+/* --- 2. FONDO TOTAL UNIFICADO (Gris Claro Neutro) --- */
+html,
+body,
+.bslib-page-sidebar,
+.bslib-sidebar-layout,
+.bslib-sidebar-layout .sidebar,
+.bslib-sidebar-layout>.main,
+.bslib-sidebar-layout>.main>main,
+.bslib-sidebar-layout>.main>main>div,
+.bslib-sidebar-layout>.main>main>div>.card-body,
+.bslib-navs-card,
+.bslib-navs-card>.card-body,
+.tab-content,
+.tab-pane,
+[id^="tab-"] {
+  background-color: #f1f5f9 !important;
+  /* Gris claro profesional */
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Banner de Pestañas (Más oscuro para contraste) */
+.bslib-navs-card>.card-header {
+  background-color: #cbd5e1 !important;
+  /* Gris más oscuro (Steel) */
+  border-bottom: 1px solid #94a3b8 !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.nav-link {
+  color: #1e293b !important;
+  /* Texto mucho más oscuro */
+  font-weight: 700 !important;
+  font-size: 1.3rem !important;
+  /* Tamaño equilibrado */
+}
+
+
+
+.nav-link:hover {
+  color: var(--color-1) !important;
+}
+
+
+/* --- 3. TARJETAS Y KPIs (Blanco Puro) --- */
+.card:not(.bslib-navs-card),
+.bslib-value-box {
+  background-color: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 12px !important;
+  transition: transform 0.2s ease;
+}
+
+.card:not(.bslib-navs-card):hover,
+.bslib-value-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* --- 4. BOTONES Y ACENTOS --- */
+.btn-danger {
+  background-color: var(--color-5) !important;
+  border: none !important;
+}
+
+.btn-success {
+  background-color: var(--color-2) !important;
+  border: none !important;
+}
+
+.bslib-sidebar-layout .collapse-toggle {
+  color: var(--color-2) !important;
+}
+
+/* Botones específicos de Tendencia Comparada */
+#btn_download_comp_excel {
+  background-color: var(--color-6) !important;
+  /* Coral #ff734f */
+  border: none !important;
+  color: white !important;
+  transition: all 0.3s ease;
+}
+
+#btn_preview_comp {
+  background-color: var(--color-7) !important;
+  /* Naranja #ffa600 */
+  border: none !important;
+  color: white !important;
+  transition: all 0.3s ease;
+}
+
+#btn_download_comp_excel:hover,
+#btn_preview_comp:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+
+/* Sidebar Ultra-Compacto */
+.sidebar .form-group {
+  margin-bottom: 4px !important;
+  margin-top: 0 !important;
+}
+
+.sidebar label {
+  margin-bottom: 0px !important;
+  display: block;
+}
+
+.sidebar .selectize-control {
+  margin-bottom: 0px !important;
+}
+
+.sidebar-content {
+  gap: 0 !important;
+  padding-top: 20px !important;
+}
+
+.sidebar-title,
+.bslib-sidebar-title {
+  color: #13485d !important; /* Azul petróleo para consistencia */
+  font-size: 2.2rem !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  width: 100% !important;
+  margin: 0 !important;
+  letter-spacing: -1px !important;
+  line-height: 1.2 !important;
+  display: block !important;
+  text-transform: none !important;
+  border-bottom: 3px solid #13485d !important; /* Línea del mismo color */
+  padding-bottom: 10px !important;
+  margin-bottom: 25px !important;
+}
+
+/* Unificar botones del sidebar */
+.sidebar .btn {
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.5px;
+  border-radius: 8px !important;
+  padding: 10px 15px !important;
+  margin-top: 10px !important;
+  width: 100% !important;
 }

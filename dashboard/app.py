@@ -374,6 +374,7 @@ app_ui = ui.page_sidebar(
         ui.input_selectize("municipio", "Municipio de Oferta", choices=[], multiple=True),
         ui.input_action_button("btn_calcular", "Aplicar Filtros", class_="btn-danger w-100 mt-2 mb-2", style="font-weight: bold; font-size: 1.1em;"),
         ui.input_action_button("btn_preview_report", "Vista Previa Informe", class_="btn-success w-100 mt-2"),
+        title="Filtros",
         width=350,
         open="desktop",
     ),
