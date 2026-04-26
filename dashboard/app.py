@@ -374,7 +374,6 @@ app_ui = ui.page_sidebar(
         ui.input_selectize("municipio", "Municipio de Oferta", choices=[], multiple=True),
         ui.input_action_button("btn_calcular", "Aplicar Filtros", class_="btn-danger w-100 mt-2 mb-2", style="font-weight: bold; font-size: 1.1em;"),
         ui.input_action_button("btn_preview_report", "Vista Previa Informe", class_="btn-success w-100 mt-2"),
-        # ui.download_button("download_pdf", "Descargar Informe (PDF)", class_="btn-primary w-100 mt-2"),
         open="desktop",
     ),
     ui.navset_card_underline(
@@ -1064,7 +1063,17 @@ app_ui = ui.page_sidebar(
             "Tendencia Comparada",
             ui.div(
                 ui.h2("Análisis Comparativo de Tendencias", class_="m-0", style="color: #31497e; font-weight: bold;"),
-                ui.input_action_button("btn_preview_comp", "VISTA PREVIA INFORME COMPARATIVO", class_="btn-primary btn-lg", icon=fa.icon_svg("file-pdf", "solid"), style="background: linear-gradient(135deg, #31497e, #4a69bd); border: none; font-weight: 800; padding: 12px 25px;"),
+                ui.div(
+                    ui.download_button(
+                        "btn_download_comp_excel", 
+                        "DATOS CLÚSTER", 
+                        class_="btn-success btn-lg", 
+                        icon=fa.icon_svg("file-excel", "solid"), 
+                        style="font-weight: 800; padding: 12px 25px;"
+                    ),
+                    ui.input_action_button("btn_preview_comp", "VISTA PREVIA INFORME COMPARATIVO", class_="btn-primary btn-lg", icon=fa.icon_svg("file-pdf", "solid"), style="background: linear-gradient(135deg, #31497e, #4a69bd); border: none; font-weight: 800; padding: 12px 25px;"),
+                    class_="d-flex gap-2"
+                ),
                 class_="d-flex justify-content-between align-items-center mt-2 mb-3"
             ),
             ui.layout_columns(
@@ -1237,7 +1246,26 @@ app_ui = ui.page_sidebar(
                 class_="mb-5"
             ),
             ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
-            ui.h3("4. Retorno Salarial, Salario de Enganche y Brechas", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.h3("Distribución Geográfica de la Fuerza Laboral", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
+            ui.div(
+                ui.HTML("<b>Nota sobre Movilidad:</b> Esta tabla detalla el flujo geográfico de los graduados que registran cotización laboral. Se desglosa el <b>Origen</b> (donde cursaron sus estudios) y el <b>Destino</b> (donde se encuentran laborando actualmente)."),
+                style="font-size: 0.85em; color: #555; background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #31497e; margin-bottom: 20px;"
+            ),
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header(ui.HTML("Graduados por <b>Lugar de Origen</b> (Seleccionado)")), 
+                    ui.output_data_frame("comp_table_mobility_origen"), 
+                    full_screen=True
+                ),
+                ui.card(
+                    ui.card_header(ui.HTML("Graduados por <b>Lugar de Destino</b> (Seleccionado)")), 
+                    ui.output_data_frame("comp_table_mobility_destino"), 
+                    full_screen=True
+                ),
+                class_="mb-5"
+            ),
+            ui.hr(style="margin-top: 2rem; margin-bottom: 2rem; border-color: #31497e; opacity: 1; border-width: 3px;"),
+            ui.h3("Salario de Enganche (Estimado)", class_="mb-3", style="color: #31497e; font-weight: bold; font-size: 1.5em;"),
             ui.layout_columns(
                 ui.value_box("Salario Promedio Estimado", ui.output_ui("comp_kpi_base_salario"), showcase=fa.icon_svg("hand-holding-dollar", "solid")),
                 ui.value_box("Promedio Estimado (Grupo)", ui.output_ui("comp_kpi_salario"), showcase=fa.icon_svg("money-bill-trend-up", "solid"), class_="card-comparable"),
@@ -4408,17 +4436,6 @@ def server(input, output, session):
         
         df_base = df_ole_salario.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
         
-        if is_filtered(dept) or is_filtered(mpio):
-            # Obtener divis válidos para este programa específico bajo el filtro geo actual
-            df_cob_geo = df_cobertura.filter(pl.col("codigo_snies_del_programa") == attr["codigo"])
-            if is_filtered(dept):
-                df_cob_geo = df_cob_geo.filter(pl.col("departamento_oferta").is_in(dept))
-            if is_filtered(mpio):
-                df_cob_geo = df_cob_geo.filter(pl.col("municipio_oferta").is_in(mpio))
-            
-            divis_num = df_cob_geo["divipola_mpio_oferta"].drop_nulls().unique()
-            df_base = df_base.filter(pl.col("divipola_mpio_principal").is_in(divis_num))
-
         comp_codigos = comparable_snies_codigos()
         
         if len(comp_codigos) == 0:
@@ -5398,6 +5415,73 @@ def server(input, output, session):
         df = df_desercion.filter((pl.col("codigo_snies_del_programa").is_in(comp_codigos)) & (pl.col("anno") == max_yr))
         if len(df) == 0: return None, None
         return df["desercion_anual_mean"].mean(), df["desercion_anual_mean"].std()
+        
+    @reactive.calc
+    def calc_comp_mobility_tables_data():
+        """Calcula los datos de movilidad (Origen/Destino) para el programa base de Tendencia Comparada"""
+        import pandas as pd
+        attr = comp_profile_attr()
+        if not attr: return None, None, "Departamento"
+        
+        snies_base = attr["codigo"]
+        max_anno_corte = df_ole_m0["anno_corte"].max()
+        
+        # Determinar si usamos Depto o Mpio según filtros globales
+        f_vals = isolated_filters()
+        mpio_filtro = f_vals.get("municipio", [])
+        if is_filtered(mpio_filtro):
+            col_orig = "municipio_origen"
+            col_dest = "municipio_destino"
+            label = "Municipio"
+        else:
+            col_orig = "departamento_origen"
+            col_dest = "departamento_destino"
+            label = "Departamento"
+
+        df_base = df_ole_m0.filter(
+            (pl.col("codigo_snies_del_programa") == snies_base) & 
+            (pl.col("anno_corte") == max_anno_corte)
+        )
+        
+        if len(df_base) == 0: return None, None, label
+
+        def agg_mobility(col):
+            # Limpiar valores anómalos
+            df_agg = df_base.with_columns(
+                pl.col(col).cast(pl.Utf8).replace({"1": "SIN INFORMACIÓN", "1.0": "SIN INFORMACIÓN"})
+            ).group_by(col).agg(
+                pl.col("graduados_que_cotizan").sum().alias("cotizantes")
+            ).filter(pl.col("cotizantes") > 0).sort("cotizantes", descending=True).to_pandas()
+            
+            total = df_agg["cotizantes"].sum()
+            df_agg["porcentaje"] = (df_agg["cotizantes"] / total) if total > 0 else 0
+            return df_agg
+
+        return agg_mobility(col_orig), agg_mobility(col_dest), label
+
+    @render.data_frame
+    def comp_table_mobility_origen():
+        import pandas as pd
+        df_orig, _, label = calc_comp_mobility_tables_data()
+        if df_orig is None or df_orig.empty: return pd.DataFrame()
+        
+        df_fmt = df_orig.copy()
+        df_fmt["cotizantes"] = df_fmt["cotizantes"].apply(lambda x: f"{int(x):,}")
+        df_fmt["porcentaje"] = df_fmt["porcentaje"].apply(lambda x: f"{x:.1%}")
+        df_fmt.columns = [f"{label} de Origen", "Graduados Cotizantes", "%"]
+        return render.DataGrid(df_fmt, filters=False, selection_mode="none")
+
+    @render.data_frame
+    def comp_table_mobility_destino():
+        import pandas as pd
+        _, df_dest, label = calc_comp_mobility_tables_data()
+        if df_dest is None or df_dest.empty: return pd.DataFrame()
+        
+        df_fmt = df_dest.copy()
+        df_fmt["cotizantes"] = df_fmt["cotizantes"].apply(lambda x: f"{int(x):,}")
+        df_fmt["porcentaje"] = df_fmt["porcentaje"].apply(lambda x: f"{x:.1%}")
+        df_fmt.columns = [f"{label} de Destino", "Graduados Cotizantes", "%"]
+        return render.DataGrid(df_fmt, filters=False, selection_mode="none")
 
     @render.ui
     def comp_kpi_desercion():
@@ -5708,6 +5792,23 @@ def server(input, output, session):
         def safe_fig(fn, w=None, h=None):
             try:
                 fig = fn()
+                # Ajustes para reporte estático
+                fig.update_layout(
+                    margin=dict(l=15, r=15, t=30, b=45),
+                    font=dict(family="Montserrat", size=9),
+                    legend=dict(
+                        orientation="h",
+                        yanchor="top",
+                        y=-0.12,
+                        xanchor="center",
+                        x=0.5,
+                        font=dict(size=8)
+                    )
+                )
+                for trace in fig.data:
+                    if hasattr(trace, 'marker') and isinstance(trace.marker, dict):
+                        if 'size' in trace.marker: trace.marker['size'] = 6
+                
                 # Usar dimensiones del layout de la figura si no se especifican explícitamente
                 final_w = w if w is not None else (fig.layout.width or 800)
                 final_h = h if h is not None else (fig.layout.height or 450)
@@ -6207,9 +6308,7 @@ def server(input, output, session):
                 print(f"DEBUG: Error Detallado en PDF:\n{error_details}")
                 yield b"Error"
 
-    @render.download(filename=lambda: f"Informe_Mercado_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
-    def download_pdf_inner():
-        return download_pdf()
+
 
 
     # ==========================================
@@ -6221,12 +6320,28 @@ def server(input, output, session):
         def safe_fig_comp(fn, w=800, h=450):
             try:
                 fig = fn()
-                # Aplicamos estilo reporte premium
+                # Aplicamos estilo reporte premium optimizado para exportación estática
                 fig.update_layout(
                     plot_bgcolor='white', paper_bgcolor='white',
-                    margin=dict(l=10, r=10, t=30, b=10),
-                    font=dict(family="Montserrat", size=10)
+                    margin=dict(l=15, r=15, t=30, b=45), # Aumentamos margen inferior para la leyenda
+                    font=dict(family="Montserrat", size=9),
+                    legend=dict(
+                        orientation="h",
+                        yanchor="top",
+                        y=-0.12,
+                        xanchor="center",
+                        x=0.5,
+                        font=dict(size=8)
+                    )
                 )
+                # Reducir tamaño de marcadores en las trazas si existen
+                for trace in fig.data:
+                    if hasattr(trace, 'marker') and isinstance(trace.marker, dict):
+                        if 'size' in trace.marker:
+                            trace.marker['size'] = 6
+                    if hasattr(trace, 'textfont') and isinstance(trace.textfont, dict):
+                        trace.textfont['size'] = 8
+
                 return fig_to_base64(fig, width=w, height=h)
             except Exception as e:
                 print("Error safe_fig_comp:", e)
@@ -6289,42 +6404,34 @@ def server(input, output, session):
         creditos_vals = df_c_cr["numero_creditos"].to_list() if len(df_c_cr) > 0 else []
         creditos_sd = np.std(creditos_vals) if creditos_vals else None
 
-        # --- MOVILIDAD GEOGRÁFICA (Solo Programa Base) ---
-        mob_origin = []
-        mob_destination = []
-        try:
-            f_vals = isolated_filters()
-            mpio_filtro = f_vals["municipio"]
-            if hasattr(mpio_filtro, '__iter__') and len(mpio_filtro) > 0 and mpio_filtro[0]:
-                col_o, col_d, label = "municipio_origen", "municipio_destino", "Municipio"
-            else:
-                col_o, col_d, label = "departamento_origen", "departamento_destino", "Departamento"
-                
-            max_anno_ole = df_ole_m0["anno_corte"].max()
-            df_mob_base = df_ole_m0.filter(
-                (pl.col("codigo_snies_del_programa") == attr["codigo"]) & 
-                (pl.col("anno_corte") == max_anno_ole)
-            ).to_pandas()
-            
-            if not df_mob_base.empty:
-                # Usar el nombre de columna real del backend: graduados_que_cotizan
-                total_mob = df_mob_base["graduados_que_cotizan"].sum()
-                top_o = df_mob_base.groupby(col_o)["graduados_que_cotizan"].sum().sort_values(ascending=False)
-                mob_origin = [{"name": str(n), "value": f"{v:,.0f}".replace(",", "."), "percentage": f"{(v/total_mob):.1%}"} for n, v in top_o.items()]
-                top_d = df_mob_base.groupby(col_d)["graduados_que_cotizan"].sum().sort_values(ascending=False)
-                mob_destination = [{"name": str(n), "value": f"{v:,.0f}".replace(",", "."), "percentage": f"{(v/total_mob):.1%}"} for n, v in top_d.items()]
-        except Exception as e:
-            print(f"Error movilidad PDF comp: {e}")
+        # 3. Tablas de Movilidad (Origen/Destino)
+        df_orig, df_dest, label_mob = calc_comp_mobility_tables_data()
+        
+        def table_to_list(df, col_name):
+            if df is None or df.empty: return []
+            # Tomar los top 10 para no saturar el PDF si hay muchos
+            df_top = df.head(10)
+            return [
+                {
+                    "lugar": str(row[col_name]),
+                    "cantidad": format_num_es(row["cotizantes"]),
+                    "porcentaje": f"{row['porcentaje']:.1%}"
+                }
+                for _, row in df_top.iterrows()
+            ]
 
-        # 3. COMPETITIVIDAD (PRIMEROS 15 PARA EL INFORME)
-        df_ranking = calc_top_ingresos_comp_table().head(15)
+        mobility_origen_list = table_to_list(df_orig, df_orig.columns[0] if df_orig is not None else "")
+        mobility_destino_list = table_to_list(df_dest, df_dest.columns[0] if df_dest is not None else "")
+
+        # 4. COMPETITIVIDAD (Ranking)
+        df_ranking = calc_top_ingresos_comp_table().head(20)
         ranking_data = []
         if not df_ranking.empty:
             max_yr_col = [c for c in df_ranking.columns if "Ingresos" in c][0]
             for _, row in df_ranking.iterrows():
                 ranking_data.append({
                     "pos": str(row["#"]),
-                    "snies": str(row["SNIES"]),
+                    "snies": str(int(row["SNIES"])),
                     "inst": str(row["Institución"]),
                     "prog": str(row["Programa Académico"]),
                     "sector": str(row["Sector"]),
@@ -6349,9 +6456,9 @@ def server(input, output, session):
                 "max_anno_saber":   int(max_anno_saber)
             },
             "mobility": {
-                "label": label,
-                "origin": mob_origin,
-                "destination": mob_destination
+                "label": label_mob,
+                "origen": mobility_origen_list,
+                "destino": mobility_destino_list
             },
             "top_ranking_comp": ranking_data,
             "kpis": {
@@ -6473,10 +6580,68 @@ def server(input, output, session):
                     {"id": "pr3", "title": "Distribución por Horas de Trabajo",          "b64": safe_fig_comp(lambda: build_comp_saber_categorical("pro_gen_estu_horassemanatrabaja")), "caption": "Distribución por horas de trabajo",            "source": "Fuente: ICFES - Saber PRO\nElaboración propia"},
                     {"id": "pr4", "title": "Distribución por Estrato Social", "b64": safe_fig_comp(lambda: build_comp_saber_categorical("pro_gen_fami_estratovivienda")),     "caption": "Distribución por estrato social","source": "Fuente: ICFES - Saber PRO\nElaboración propia"}
                 ]
+            },
+            "mobility": {
+                "label": label_mob,
+                "origen": mobility_origen_list,
+                "destino": mobility_destino_list
             }
         }
         print(f"DEBUG COMP REPORT - Universo: {report_data['kpis']['universo']}, Base Costo: {report_data['kpis']['base_costo']}")
         return report_data
+
+    @render.download(filename=lambda: "Datos_Cluster_Comparable.xlsx")
+    def btn_download_comp_excel():
+        import io
+        import pandas as pd
+        snies_list = comparable_snies_codigos()
+        if not snies_list:
+            yield b""
+            return
+            
+        output = io.BytesIO()
+        
+        def clean_tz(df_pd):
+            # Convierte columnas datetime con zona horaria a sin zona horaria (naive) para Excel
+            for col in df_pd.columns:
+                if pd.api.types.is_datetime64_any_dtype(df_pd[col]):
+                    if getattr(df_pd[col].dtype, 'tz', None) is not None:
+                        df_pd[col] = df_pd[col].dt.tz_localize(None)
+            return df_pd
+
+        try:
+            with pd.ExcelWriter(output) as writer:
+                # 1. SNIES
+                try:
+                    df1 = df_snies.filter(pl.col("codigo_snies_del_programa").is_in(snies_list)).to_pandas()
+                    df1 = clean_tz(df1)
+                    df1.to_excel(writer, sheet_name="SNIES", index=False)
+                except Exception as e: print("Error SNIES export:", e)
+                
+                # 2. OLE
+                try:
+                    df2 = df_ole_m0.filter(pl.col("codigo_snies_del_programa").is_in(snies_list)).to_pandas()
+                    df2 = clean_tz(df2)
+                    df2.to_excel(writer, sheet_name="OLE", index=False)
+                except Exception as e: print("Error OLE export:", e)
+                
+                # 3. SPADIES (Deserción)
+                try:
+                    df3 = df_desercion.filter(pl.col("codigo_snies_del_programa").is_in(snies_list)).to_pandas()
+                    df3 = clean_tz(df3)
+                    df3.to_excel(writer, sheet_name="SPADIES", index=False)
+                except Exception as e: print("Error SPADIES export:", e)
+                
+                # 4. SABER PRO
+                try:
+                    df4 = df_saber.filter(pl.col("codigo_snies_del_programa").is_in(snies_list)).to_pandas()
+                    df4 = clean_tz(df4)
+                    df4.to_excel(writer, sheet_name="SABER PRO", index=False)
+                except Exception as e: print("Error SABER export:", e)
+        except Exception as main_e:
+            print("Error general al generar Excel:", main_e)
+            
+        yield output.getvalue()
 
     @reactive.effect
     @reactive.event(input.btn_preview_comp)
