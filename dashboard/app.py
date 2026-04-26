@@ -260,8 +260,16 @@ df_desercion = pl.concat([df_desercion, _df_proxy_filtrado]).sort(["codigo_snies
 
 max_anno_desercion = df_desercion["anno"].max()
 
-df_saber = pl.read_parquet(data_dir / "df_SaberPRO.parquet").with_columns(
-    pl.col("codigo_snies_del_programa").cast(pl.Int64)
+df_saber = pl.read_parquet(data_dir / "df_SaberPRO.parquet").with_columns([
+    pl.col("codigo_snies_del_programa").cast(pl.Int64),
+    pl.col("pro_gen_estu_edad").cast(pl.Float64)
+]).with_columns(
+    pl.when((pl.col("pro_gen_estu_edad") >= 15) & (pl.col("pro_gen_estu_edad") < 25)).then(pl.lit("15 - 24"))
+    .when((pl.col("pro_gen_estu_edad") >= 25) & (pl.col("pro_gen_estu_edad") < 35)).then(pl.lit("25 - 34"))
+    .when((pl.col("pro_gen_estu_edad") >= 35) & (pl.col("pro_gen_estu_edad") < 45)).then(pl.lit("35 - 44"))
+    .when((pl.col("pro_gen_estu_edad") >= 45) & (pl.col("pro_gen_estu_edad") < 55)).then(pl.lit("45 - 54"))
+    .when((pl.col("pro_gen_estu_edad") >= 55) & (pl.col("pro_gen_estu_edad") <= 100)).then(pl.lit("55 - 100"))
+    .otherwise(pl.lit("ND")).alias("grupo_edad")
 )
 max_anno_saber = df_saber["anno"].max()
 
@@ -3397,8 +3405,7 @@ def server(input, output, session):
     def calc_saber_score(column):
         df = filtered_saber_latest()
         if len(df) == 0: return "Sin dato"
-        agg = df.group_by("codigo_snies_del_programa").agg(pl.col(column).mean())
-        val = agg[column].mean()
+        val = df[column].mean()
         return format_num_es(val, decimals=1) if val is not None else "Sin dato"
 
     @render.ui
@@ -3439,13 +3446,8 @@ def server(input, output, session):
             "pro_gen_mod_comuni_escrita_punt": "Comunicación Escrita"
         }
         
-        # Agregación por año: promedio de los promedios de los programas
-        # 1. Promedio por programa y año
-        df_agg = df.group_by(["anno", "codigo_snies_del_programa"]).agg([
-            pl.col(c).mean().alias(c) for c in cols_map.keys()
-        ])
-        # 2. Promedio de los programas por año
-        df_trend = df_agg.group_by("anno").agg([
+        # Agregación por año: promedio directo de todos los estudiantes evaluados
+        df_trend = df.group_by("anno").agg([
             pl.col(c).mean().alias(name) for c, name in cols_map.items()
         ]).sort("anno")
         
@@ -3475,35 +3477,34 @@ def server(input, output, session):
         df = filtered_saber_latest()
         if len(df) == 0: return go.Figure()
         
-        # Agregación por programa académico
-        agg = df.group_by("codigo_snies_del_programa").agg(pl.col("pro_gen_punt_global").mean())
-        df_pd = agg.to_pandas()
+        # Trabajamos a nivel de microdato (estudiante)
+        df_pd = df.select("pro_gen_punt_global").to_pandas()
         
-        # Caso especial: 1 solo programa o todos con el mismo valor
-        if len(df_pd) == 1 or df_pd["pro_gen_punt_global"].nunique() == 1:
+        # Caso especial: muy pocos datos o variabilidad nula
+        if len(df_pd) < 2 or df_pd["pro_gen_punt_global"].nunique() == 1:
             val = df_pd["pro_gen_punt_global"].iloc[0]
             fig = go.Figure()
             fig.add_vline(x=val, line_width=4, line_color="#31497e")
-            fig.add_annotation(x=val, y=0.5, yref="paper", text=f"<b>{val:.1f} pts</b><br>Puntaje del programa",
+            fig.add_annotation(x=val, y=0.5, yref="paper", text=f"<b>{val:.0f} pts</b><br>Valor detectado",
                                showarrow=True, arrowhead=2, arrowcolor="#31497e", font=dict(size=16, color="#31497e"),
                                bgcolor="white", bordercolor="#31497e", borderwidth=2)
             fig.update_layout(showlegend=False, plot_bgcolor='white', paper_bgcolor='white',
                               margin=dict(l=20, r=20, t=40, b=20),
-                              xaxis=dict(title="Puntaje Global Promedio",
-                                         range=[max(0, val-20), val+20], showgrid=True, gridcolor='#EEEEEE'),
+                              xaxis=dict(title="Puntaje Global",
+                                         range=[max(0, val-20), min(300, val+20)], showgrid=True, gridcolor='#EEEEEE'),
                               yaxis=dict(visible=False),
                               annotations=[dict(x=0.5, y=1.05, xref="paper", yref="paper", showarrow=False,
-                                               text="<i>Programa único seleccionado — se muestra valor puntual</i>",
+                                               text="<i>Puntaje único detectado — se muestra valor puntual</i>",
                                                font=dict(size=12, color="#888"))])
             return fig
         
-        fig = px.histogram(df_pd, x="pro_gen_punt_global", histnorm='percent', nbins=100)
-        fig.update_traces(marker_color="#31497e", marker_line_color="white", marker_line_width=1, xbins=dict(size=1))
+        fig = px.histogram(df_pd, x="pro_gen_punt_global", histnorm='percent', nbins=300)
+        fig.update_traces(marker_color="#31497e", marker_line_color="white", marker_line_width=0.5, xbins=dict(size=1))
         
         fig.update_layout(
             plot_bgcolor='white', paper_bgcolor='white', margin=dict(l=20, r=20, t=20, b=20),
-            xaxis=dict(title="Puntaje Global Promedio", gridcolor='#EEEEEE'),
-            yaxis=dict(title="Participación de Programas (%)", ticksuffix="%", gridcolor='#EEEEEE')
+            xaxis=dict(title="Puntaje Global", gridcolor='#EEEEEE', range=[0, 300]),
+            yaxis=dict(title="Participación de Estudiantes (%)", ticksuffix="%", gridcolor='#EEEEEE')
         )
         return fig
 
@@ -3548,9 +3549,8 @@ def server(input, output, session):
     def calc_plot_saber_trend_dim(column, dim):
         df = filtered_saber()
         if len(df) == 0: return go.Figure()
-        agg = df.group_by(["anno", "codigo_snies_del_programa", dim]).agg(pl.col(column).mean())
-        # Tendencia final de promedios
-        trend = agg.group_by(["anno", dim]).agg(pl.col(column).mean()).sort(["anno", dim])
+        # Tendencia final de promedios directos por dimensión
+        trend = df.group_by(["anno", dim]).agg(pl.col(column).mean()).sort(["anno", dim])
         
         df_pd = trend.to_pandas()
         fig = px.line(df_pd, x="anno", y=column, color=dim, markers=True, text=df_pd[column].round(0))
