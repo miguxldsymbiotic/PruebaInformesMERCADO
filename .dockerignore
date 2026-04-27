@@ -8,6 +8,7 @@ __pycache__
 .ipynb_checkpoints
 .venv
 venv
-dashboard/doc-mig
-# Opcional: Ignorar carpetas de datos pesados si se cargarán por URL
-# data/
+app/doc-mig
+Adicionales/
+dashboard/
+
