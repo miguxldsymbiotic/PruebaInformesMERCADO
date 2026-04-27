@@ -1,0 +1,25 @@
+# Core App
+shiny
+shinychat==0.2.9
+faicons
+
+# Data Processing
+polars
+pyarrow
+pandas
+numpy==1.24.4
+openpyxl
+
+# Visualization & PDF
+plotly
+kaleido
+ridgeplot
+jinja2==3.1.6
+weasyprint==68.1
+
+# Cloud & Security
+supabase
+python-dotenv
+cryptography
+playwright
+playwright-stealth

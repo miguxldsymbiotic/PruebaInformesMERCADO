@@ -1,28 +1,26 @@
-name: Azure Deployment (The Button)
+name: Azure Web App Deployment (Publish Profile)
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch: # Permite ejecutar el botón manualmente desde la pestaña Actions de GitHub
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Log in to Azure
-        uses: azure/login@v1
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          python-version: '3.11'
 
-      - name: Build and deploy Container App
-        uses: azure/container-apps-deploy-action@v1
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
         with:
-          appSourcePath: ${{ github.workspace }}
-          acrName: ${{ secrets.ACR_NAME }}
-          containerAppName: ${{ secrets.CONTAINER_APP_NAME }}
-          resourceGroup: ${{ secrets.RESOURCE_GROUP }}
-          imageToBuild: ${{ secrets.ACR_NAME }}.azurecr.io/informe-pdf:${{ github.sha }}
+          app-name: informepdf-free
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .

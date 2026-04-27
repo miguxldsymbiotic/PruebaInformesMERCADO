@@ -1,36 +1,22 @@
-# Guía de Configuración en Azure
+# Configuración de Despliegue en Azure (Plan Gratis)
 
-Para que el "Botón de Sincronización" funcione, necesitas configurar estos recursos en Azure y conectarlos con GitHub.
+Este proyecto está configurado para desplegarse en **Azure App Service (Plan F1 Gratis)**.
 
-## 1. Crear Recursos en Azure
-Necesitas tener creados los siguientes recursos (puedes usar la capa gratuita/consumo):
-1.  **Resource Group** (Ej: `rg-informepdf`)
-2.  **Azure Container Registry** (ACR) - Es donde se guardan las imágenes. (Ej: `acrinformepdf`)
-3.  **Azure Container App** (ACA) - Es donde corre la aplicación.
+## 1. Recursos Creados en Azure
+1.  **Resource Group**: `rg-pruebas`
+2.  **App Service (Web App)**: `informepdf-free` (Python 3.11 / Linux)
+3.  **Plan de Precios**: F1 (Gratis)
 
-## 2. Crear las "Llaves" (Service Principal)
-Ejecuta el siguiente comando en tu terminal de Azure (Cloud Shell) para generar las credenciales que GitHub usará:
-
-```bash
-az ad sp create-for-rbac --name "github-actions-sp" --role contributor \
-  --scopes /subscriptions/TU_SUBSCRIPTION_ID/resourceGroups/TU_GRUPO_DE_RECURSOS \
-  --sdk-auth
-```
-*Copia el resultado JSON que te devuelva.*
+## 2. Configuración en el Portal de Azure
+*   **Comando de Inicio**: `python -m shiny run app/app.py --host 0.0.0.0 --port 8080`
+*   **Autenticación SCM**: Activada en la Configuración General para permitir el despliegue desde GitHub.
 
 ## 3. Configurar GitHub Secrets
-Ve a tu repositorio en GitHub -> **Settings** -> **Secrets and variables** -> **Actions** -> **New repository secret**.
+Para que el botón de despliegue funcione, añade este secreto en GitHub:
 
-Añade los siguientes secretos:
-
-| Nombre del Secreto | Valor |
+| Nombre del Secreto | Origen del Valor |
 | :--- | :--- |
-| `AZURE_CREDENTIALS` | Pega aquí el JSON completo del paso 2. |
-| `ACR_NAME` | El nombre de tu registro (ej: `acrinformepdf`). |
-| `CONTAINER_APP_NAME` | El nombre de tu Container App. |
-| `RESOURCE_GROUP` | El nombre de tu grupo de recursos. |
+| `AZURE_WEBAPP_PUBLISH_PROFILE` | Contenido del archivo descargado con "Obtener perfil de publicación". |
 
-## 4. ¡Listo!
-A partir de ahora, cada vez que hagas `git push`, la aplicación se actualizará sola.
-
-> **Nota:** La primera vez que el robot corra, tardará unos 5-8 minutos porque debe instalar Playwright y todas las dependencias. Las siguientes veces será más rápido.
+## 4. Limitaciones del Plan Gratis
+> **IMPORTANTE:** Al no usar Docker en el plan gratis, la generación de PDFs con Playwright NO funcionará en Azure (faltan librerías de sistema). La aplicación web será 100% funcional, pero el botón de PDF dará error.

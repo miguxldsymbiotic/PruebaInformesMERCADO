@@ -46,8 +46,8 @@ RUN python -m playwright install chromium
 # Copy application code
 COPY --chown=user . .
 
-# Azure Container Apps uses port 8080 by default
-EXPOSE 8080
+# Hugging Face Spaces uses port 7860 by default
+EXPOSE 7860
 
 # We point to app/app.py as the entry point
-CMD ["python", "-m", "shiny", "run", "app/app.py", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["python", "-m", "shiny", "run", "app/app.py", "--host", "0.0.0.0", "--port", "7860"]
