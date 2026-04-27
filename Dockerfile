@@ -1,5 +1,7 @@
 FROM python:3.11-slim
 
+ENV PYTHONUNBUFFERED=1
+
 # Install system dependencies for WeasyPrint, Kaleido, and Playwright
 RUN apt-get update && apt-get install -y \
     libnss3 \
@@ -44,8 +46,8 @@ RUN python -m playwright install chromium
 # Copy application code
 COPY --chown=user . .
 
-# Hugging Face uses port 7860 by default
-EXPOSE 7860
+# Azure Container Apps uses port 8080 by default
+EXPOSE 8080
 
 # We point to app/app.py as the entry point
-CMD ["python", "-m", "shiny", "run", "app/app.py", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["python", "-m", "shiny", "run", "app/app.py", "--host", "0.0.0.0", "--port", "8080"]

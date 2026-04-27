@@ -1,0 +1,28 @@
+name: Azure Deployment (The Button)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Permite ejecutar el botón manualmente desde la pestaña Actions de GitHub
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build and deploy Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          appSourcePath: ${{ github.workspace }}
+          acrName: ${{ secrets.ACR_NAME }}
+          containerAppName: ${{ secrets.CONTAINER_APP_NAME }}
+          resourceGroup: ${{ secrets.RESOURCE_GROUP }}
+          imageToBuild: ${{ secrets.ACR_NAME }}.azurecr.io/informe-pdf:${{ github.sha }}
