@@ -47,5 +47,5 @@ COPY --chown=user . .
 # Hugging Face uses port 7860 by default
 EXPOSE 7860
 
-# We point to dashboard/app.py as the entry point
-CMD ["python", "-m", "shiny", "run", "dashboard/app.py", "--host", "0.0.0.0", "--port", "7860"]
+# We point to app/app.py as the entry point
+CMD ["python", "-m", "shiny", "run", "app/app.py", "--host", "0.0.0.0", "--port", "7860"]

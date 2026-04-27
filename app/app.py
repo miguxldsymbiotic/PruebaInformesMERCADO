@@ -6327,7 +6327,7 @@ def server(input, output, session):
                     html_content = html_content.replace('src="../logo_symbiotic.svg"', f'src="{logo_data}"')
                 
                 pdf_buffer = io.BytesIO()
-                # Pasar app_dir como base_url para que WeasyPrint encuentre el logo en dashboard/logo_symbiotic.svg
+                # Pasar app_dir como base_url para que WeasyPrint encuentre el logo en app/logo_symbiotic.svg
                 HTML(string=html_content, base_url=str(app_dir)).write_pdf(pdf_buffer)
                 pdf_buffer.seek(0)
                 yield pdf_buffer.read()
