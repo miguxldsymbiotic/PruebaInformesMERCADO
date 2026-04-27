@@ -11,7 +11,15 @@ import base64
 import io
 import numpy as np
 from jinja2 import Template
-from weasyprint import HTML
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except Exception:
+    # WeasyPrint requires system libraries (Pango, Cairo) not available in Azure App Service Free tier.
+    # PDF generation will be disabled, but the rest of the app works normally.
+    HTML = None
+    WEASYPRINT_AVAILABLE = False
+    print("WARN: WeasyPrint no disponible en este entorno. Generacion de PDF deshabilitada.")
 from concurrent.futures import ThreadPoolExecutor
 
 # Custom palette global para Plotly (puntos, lineas, barras, etc.)
